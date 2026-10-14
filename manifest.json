@@ -1,18 +1,41 @@
 {
+  "id": "/FinVault/",
   "name": "FinVault — Smart Loan & EMI Manager",
   "short_name": "FinVault",
   "description": "Apple-grade, offline-first personal loan, EMI and repayment ledger manager.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0B0F17",
   "theme_color": "#0071E3",
   "orientation": "portrait-primary",
   "icons": [
     {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "./icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FinVault Dashboard"
     }
   ]
 }

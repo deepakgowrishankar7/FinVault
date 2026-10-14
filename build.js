@@ -6,7 +6,17 @@ if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }
 
-const files = ['index.html', 'styles.css', 'app.js', 'manifest.json', 'sw.js', 'icon.svg'];
+const files = [
+  'index.html',
+  'styles.css',
+  'app.js',
+  'manifest.json',
+  'sw.js',
+  'icon.svg',
+  'icon-192.png',
+  'icon-512.png',
+  'screenshot1.png'
+];
 
 files.forEach(file => {
   const src = path.join(__dirname, file);

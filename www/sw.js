@@ -1,12 +1,14 @@
 // FinVault Service Worker (Offline Support)
-const CACHE_NAME = 'finvault-v1';
+const CACHE_NAME = 'finvault-v2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
