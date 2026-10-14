@@ -1,0 +1,8 @@
+{
+  "appId": "com.finvault.app",
+  "appName": "FinVault",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

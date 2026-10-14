@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0071E3"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FinVault"/>
+  <meta name="description" content="Apple-grade smart loan, EMI and repayment ledger manager for mobile and web."/>
+  
+  <title>FinVault — Smart Loan & Repayment Manager</title>
+  
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
+</head>
+<body>
+  <!-- Ambient Apple Glows -->
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Dynamic Notification Pill (Toast) -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- ==================== APPLE-STYLE PASSCODE LOCK SCREEN ==================== -->
+  <div id="lockScreenOverlay" class="lock-screen-overlay" aria-modal="true" role="dialog">
+    <div class="lock-container">
+      <img src="icon.svg" class="lock-logo" alt="FinVault Logo"/>
+      <h2 class="lock-title">FinVault</h2>
+      <p id="lockRoleSubtitle" class="lock-sub">Enter Passcode to Unlock</p>
+
+      <!-- Role Selector -->
+      <div class="role-segmented-control">
+        <button id="roleBtnAdmin" class="role-segment-btn active" type="button">👑 Admin (Financier)</button>
+        <button id="roleBtnAgent" class="role-segment-btn" type="button">🏃 Field Agent</button>
+      </div>
+
+      <!-- PIN Dots -->
+      <div class="pin-dots-wrap">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+
+      <!-- Numpad Grid -->
+      <div class="numpad-grid">
+        <button class="numpad-btn" data-key="1">1<span class="numpad-letters">&nbsp;</span></button>
+        <button class="numpad-btn" data-key="2">2<span class="numpad-letters">ABC</span></button>
+        <button class="numpad-btn" data-key="3">3<span class="numpad-letters">DEF</span></button>
+        <button class="numpad-btn" data-key="4">4<span class="numpad-letters">GHI</span></button>
+        <button class="numpad-btn" data-key="5">5<span class="numpad-letters">JKL</span></button>
+        <button class="numpad-btn" data-key="6">6<span class="numpad-letters">MNO</span></button>
+        <button class="numpad-btn" data-key="7">7<span class="numpad-letters">PQRS</span></button>
+        <button class="numpad-btn" data-key="8">8<span class="numpad-letters">TUV</span></button>
+        <button class="numpad-btn" data-key="9">9<span class="numpad-letters">WXYZ</span></button>
+        <button class="numpad-btn" style="font-size:13px;font-weight:600" id="numpadClearBtn">Clear</button>
+        <button class="numpad-btn" data-key="0">0<span class="numpad-letters">+</span></button>
+        <button class="numpad-btn" style="font-size:18px" id="numpadDeleteBtn">⌫</button>
+      </div>
+
+      <!-- Privacy Guarantee Badge -->
+      <div class="privacy-badge">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>100% On-Device Private Vault • Zero Cloud Tracking</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;justify-content:center">
+        <button type="button" id="forgotPinBtn" class="btn btn-ghost btn-sm" style="font-size:12px">
+          🔑 Forgot Passcode?
+        </button>
+        <label class="btn btn-ghost btn-sm" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          📥 Transfer Vault (.dgsvault)
+          <input type="file" id="lockVaultImportInput" accept=".dgsvault,.json" style="display:none;" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <div class="brand-wrapper" onclick="switchAppTab('overview')">
+        <img src="icon.svg" class="brand-logo" alt="FinVault Logo"/>
+        <div class="brand-info">
+          <h1>FinVault</h1>
+          <span class="brand-badge">PRO EDITION</span>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Tabs -->
+      <nav class="desktop-nav-tabs">
+        <button class="nav-tab-btn active" data-tab="overview">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Overview
+        </button>
+        <button class="nav-tab-btn" data-tab="loans">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Loans & Ledger
+        </button>
+        <button class="nav-tab-btn" data-tab="calculator">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+          EMI Simulator
+        </button>
+        <button class="nav-tab-btn" data-tab="settings">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="nav-actions">
+        <!-- Current User Role Badge (Click to Lock / Switch) -->
+        <button id="currentUserBadge" class="current-user-tag" title="Switch User / Lock App">
+          <span id="roleIcon">👑</span>
+          <span id="roleName">Admin</span>
+        </button>
+
+        <button id="themeToggleBtn" class="btn btn-ghost btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button id="newLoanBtn" class="btn btn-primary admin-only">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>New Loan</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+
+    <!-- ==================== SCREEN 1: OVERVIEW ==================== -->
+    <div id="screen-overview">
+      <!-- Apple Card Hero Banner -->
+      <section class="hero-card">
+        <div class="hero-top">
+          <div>
+            <div class="hero-label">Total Outstanding Balance</div>
+            <div id="heroBalance" class="hero-balance">₹ 0</div>
+            <div class="hero-sub">Remaining to be collected from active borrowers</div>
+          </div>
+          <button id="newLoanHeroBtn" class="btn btn-secondary admin-only">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + New Loan
+          </button>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="hero-metric-item">
+            <div class="metric-title">Total Lent</div>
+            <div id="heroLent" class="metric-val">₹ 0</div>
+          </div>
+          <div class="hero-metric-item">
+            <div class="metric-title">Total Collected</div>
+            <div id="heroCollected" class="metric-val text-collected">₹ 0</div>
+          </div>
+          <div class="hero-metric-item admin-only">
+            <div class="metric-title">Interest Profit</div>
+            <div id="heroProfit" class="metric-val text-profit">₹ 0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 Quick Stats -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-label">Active Loans</div>
+          <div id="statActiveLoans" class="stat-value">0</div>
+          <div class="stat-desc">Currently in repayment cycle</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="stat-label">Closed & Paid</div>
+          <div id="statPaidLoans" class="stat-value">0</div>
+          <div class="stat-desc">Fully settled without dues</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-label">Total Accounts</div>
+          <div id="statTotalLoans" class="stat-value">0</div>
+          <div class="stat-desc">Borrowers registered</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="stat-label">Recovery Rate</div>
+          <div id="statRecoveryRate" class="stat-value">0%</div>
+          <div class="stat-desc">Collection efficiency</div>
+        </div>
+      </section>
+
+      <!-- Recent Loans Preview -->
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Recent Loans</h2>
+            <div class="section-sub">Latest active lending accounts & repayment progress</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="switchAppTab('loans')">View All Loans →</button>
+        </div>
+        <div id="recentLoansList"></div>
+      </section>
+    </div>
+
+    <!-- ==================== SCREEN 2: ALL LOANS ==================== -->
+    <div id="screen-loans" class="hidden">
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">All Loans & Ledger</h2>
+            <div class="section-sub">Search borrowers, track EMI installments, and record payments</div>
+          </div>
+        </div>
+
+        <!-- Toolbar (Search & Filter Pills) -->
+        <div class="toolbar" style="margin-bottom: 20px;">
+          <div class="search-box">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="loansSearchInput" type="text" placeholder="Search by name, phone, or amount..."/>
+          </div>
+
+          <div class="filter-pills">
+            <button class="pill-btn active" data-filter="all">All</button>
+            <button class="pill-btn" data-filter="active">Active</button>
+            <button class="pill-btn" data-filter="overdue">Overdue</button>
+            <button class="pill-btn" data-filter="paid">Fully Paid</button>
+          </div>
+        </div>
+
+        <div id="allLoansContainer"></div>
+      </section>
+    </div>
+
+    <!-- ==================== SCREEN 3: CALCULATOR & SIMULATOR ==================== -->
+    <div id="screen-calculator" class="hidden">
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Interactive Loan & EMI Simulator</h2>
+            <div class="section-sub">Drag the sliders to simulate loan repayments, calculate interest, and plan tenure</div>
+          </div>
+        </div>
+
+        <div class="calc-grid">
+          <!-- Controls -->
+          <div class="card calc-controls">
+            <!-- Principal Slider -->
+            <div class="slider-group">
+              <label>
+                <span>Principal Amount</span>
+                <span id="calcValP" class="slider-val">₹ 1,00,000</span>
+              </label>
+              <input id="calcSliderP" type="range" min="10000" max="2000000" step="5000" value="100000"/>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                <span>₹10,000</span>
+                <span>₹20,00,000</span>
+              </div>
+            </div>
+
+            <!-- Interest Slider -->
+            <div class="slider-group">
+              <label>
+                <span>Interest Rate (% per annum)</span>
+                <span id="calcValR" class="slider-val">12% p.a.</span>
+              </label>
+              <input id="calcSliderR" type="range" min="1" max="36" step="0.5" value="12"/>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                <span>1%</span>
+                <span>36%</span>
+              </div>
+            </div>
+
+            <!-- Tenure Slider -->
+            <div class="slider-group">
+              <label>
+                <span>Tenure (Months)</span>
+                <span id="calcValT" class="slider-val">12 months</span>
+              </label>
+              <input id="calcSliderT" type="range" min="1" max="60" step="1" value="12"/>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                <span>1 month</span>
+                <span>5 years (60m)</span>
+              </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="form-group" style="margin-top: 10px;">
+              <label>Calculation Model</label>
+              <select id="calcModelSelect" class="form-control">
+                <option value="emi">Reducing Balance (Standard Bank EMI)</option>
+                <option value="simple">Simple / Flat Interest (Fixed Monthly)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="calc-result-card">
+            <div>
+              <div class="calc-highlight-box">
+                <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--accent)">
+                  Monthly Payment (EMI)
+                </div>
+                <div id="calcResultMonthly" class="calc-monthly-val">₹ 8,885</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Payable every month by borrower</div>
+              </div>
+
+              <div>
+                <div class="breakdown-row">
+                  <span style="color:var(--text-secondary)">Total Repayment</span>
+                  <span id="calcResultTotalPayable" style="font-weight:700">₹ 1,06,619</span>
+                </div>
+                <div class="breakdown-row">
+                  <span style="color:var(--text-secondary)">Total Interest Profit</span>
+                  <span id="calcResultInterest" style="font-weight:700;color:var(--warning)">₹ 6,619</span>
+                </div>
+
+                <!-- Visual Split Bar -->
+                <div class="split-bar">
+                  <div id="calcSplitPrincipal" class="split-principal" style="width: 85%" title="Principal"></div>
+                  <div id="calcSplitInterest" class="split-interest" style="width: 15%" title="Interest"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary)">
+                  <span>● Principal Amount</span>
+                  <span>● Interest Profit</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px;">
+              <button class="btn btn-primary" style="width: 100%;" onclick="openNewLoanModal()">
+                + Create Loan with These Values
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== SCREEN 4: SETTINGS & BACKUP ==================== -->
+    <div id="screen-settings" class="hidden">
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Settings & Data Management</h2>
+            <div class="section-sub">Backup your records, import data, or test with sample loans</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Data Backup & Restore</h3>
+          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
+            Your data is stored securely in this device's local database. You can export a full backup anytime or transfer your records to a new computer or phone.
+          </p>
+
+          <div id="vaultHealthBadgeWrap" style="margin-bottom:14px">
+            <div id="vaultHealthIndicator" class="health-pill healthy">
+              <div class="health-dot"></div>
+              <span id="vaultHealthText">Dual-Layer Vault: 100% Protected (IndexedDB + LocalStorage)</span>
+            </div>
+            <div id="vaultPersistenceBadge" style="font-size:12px;color:var(--text-secondary);margin-top:6px">
+              🛡️ OS Persistent Storage: <strong>Active (Protected against browser clearing)</strong>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button id="exportEncryptedVaultBtn" class="btn btn-primary">
+              📦 Download Complete Vault (.dgsvault)
+            </button>
+            <button id="exportJsonBtn" class="btn btn-secondary">
+              Export JSON Backup
+            </button>
+            <button id="exportCsvBtn" class="btn btn-secondary">
+              Export CSV Spreadsheet
+            </button>
+            <label class="btn btn-secondary" style="cursor:pointer">
+              Restore Backup / Vault
+              <input id="importFileInput" type="file" accept=".dgsvault,.json,.csv" style="display:none"/>
+            </label>
+          </div>
+        </div>
+
+        <!-- Field Agents & Team Management Roster (Admin Only) -->
+        <div class="card admin-only" style="margin-bottom: 20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div>
+              <h3 style="font-size:16px;font-weight:700">👥 Team, Partners & Field Agents</h3>
+              <div style="font-size:13px;color:var(--text-secondary)">Manage Co-Admins and field collection staff</div>
+            </div>
+            <button id="openAddAgentBtn" class="btn btn-primary btn-sm">+ Add Team Member / Co-Admin</button>
+          </div>
+
+          <div class="agent-table-wrap">
+            <table class="ledger-table" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Phone</th>
+                  <th>Passcode</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="agentTableBody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Private Cloud Sync (Supabase Option B) -->
+        <div class="card admin-only" style="margin-bottom: 20px;">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">☁️ Private Cloud Sync (Supabase Option B)</h3>
+          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
+            Connect your own private Supabase database to automatically synchronize borrower collections across all agent phones in real time. (Leave empty for 100% on-device private mode).
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="settingSupabaseUrl">Supabase Project URL</label>
+              <input id="settingSupabaseUrl" class="form-control" placeholder="https://xyz.supabase.co"/>
+            </div>
+            <div class="form-group">
+              <label for="settingSupabaseKey">Supabase Public Anon Key</label>
+              <input id="settingSupabaseKey" class="form-control" type="password" placeholder="eyJhbGciOiJIUzI1Ni..."/>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap">
+            <button id="saveCloudSyncBtn" class="btn btn-primary btn-sm">Save & Connect Cloud</button>
+            <button id="syncNowBtn" class="btn btn-secondary btn-sm">☁️ Sync Now</button>
+            <span id="cloudSyncStatusText" style="font-size:12.5px;color:var(--text-secondary)">Local-Only Mode</span>
+          </div>
+        </div>
+
+        <!-- Admin Master Security & Recovery Settings -->
+        <div class="card admin-only" style="margin-bottom: 20px;">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">👑 Admin Master Security & Recovery</h3>
+          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
+            Your master passcode and security recovery question are stored encrypted locally on this device.
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="settingAdminPin">Admin Master Passcode (4 Digits)</label>
+              <input id="settingAdminPin" class="form-control" type="password" maxlength="4" placeholder="1234"/>
+            </div>
+            <div class="form-group">
+              <label for="settingOwnerUpi">Owner UPI ID (for QR code payments)</label>
+              <input id="settingOwnerUpi" class="form-control" placeholder="owner@okhdfcbank"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="settingSecurityQuestion">Security Recovery Question</label>
+              <input id="settingSecurityQuestion" class="form-control" placeholder="City where business started?"/>
+            </div>
+            <div class="form-group">
+              <label for="settingSecurityAnswer">Recovery Answer (confidential)</label>
+              <input id="settingSecurityAnswer" class="form-control" type="password" placeholder="Answer to reset PIN"/>
+            </div>
+          </div>
+          <button id="saveSecuritySettingsBtn" class="btn btn-primary btn-sm" style="margin-top:8px">
+            Save Security & UPI Settings
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Quick Demonstration</h3>
+          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
+            Explore how the app looks and functions with realistic borrower records, payment schedules, and calculations.
+          </p>
+          <button id="loadSampleDataBtn" class="btn btn-secondary">
+            🚀 Load Sample Demo Loans
+          </button>
+        </div>
+
+        <div class="card admin-only" style="border-color: rgba(255, 59, 48, 0.2);">
+          <h3 style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:8px">Danger Zone</h3>
+          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
+            Clear all borrower records and payment ledgers from this browser. This cannot be undone unless you have a backup.
+          </p>
+          <button id="clearDataBtn" class="btn btn-ghost" style="color:var(--danger);border:1px solid rgba(255,59,48,0.3)">
+            Clear All Stored Data
+          </button>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL 1: NEW / EDIT LOAN ==================== -->
+  <div id="loanModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 id="loanModalTitle" class="modal-title">Create New Loan</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <form id="loanForm">
+        <input id="editLoanId" type="hidden"/>
+
+        <div class="form-group">
+          <label for="loanBorrower">Borrower Full Name *</label>
+          <input id="loanBorrower" class="form-control" placeholder="e.g. Rajesh Kumar" required/>
+        </div>
+
+        <div class="form-group">
+          <label for="loanPhone">Mobile Number (for WhatsApp Reminders)</label>
+          <input id="loanPhone" class="form-control" type="tel" placeholder="e.g. 9876543210"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="loanPrincipal">Principal Amount (₹) *</label>
+            <input id="loanPrincipal" class="form-control" type="number" min="1" step="1" placeholder="100000" required/>
+          </div>
+          <div class="form-group">
+            <label for="loanInterest">Interest Rate (% p.a.)</label>
+            <input id="loanInterest" class="form-control" type="number" step="0.1" value="12" required/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="loanTenure">Tenure (Months) *</label>
+            <input id="loanTenure" class="form-control" type="number" min="1" value="12" required/>
+          </div>
+          <div class="form-group">
+            <label for="loanModel">Repayment Model</label>
+            <select id="loanModel" class="form-control">
+              <option value="emi">Reducing Balance (EMI)</option>
+              <option value="simple">Flat / Simple Interest</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loanStartDate">Loan Issue Date</label>
+          <input id="loanStartDate" class="form-control" type="date"/>
+        </div>
+
+        <div class="form-group">
+          <label for="loanNotes">Notes / Collateral / Reference</label>
+          <textarea id="loanNotes" class="form-control" rows="2" placeholder="Guarantor, business purpose, collateral details..."></textarea>
+        </div>
+
+        <div style="background:var(--accent-light);padding:12px;border-radius:12px;margin:16px 0;font-size:13.5px">
+          <span style="color:var(--text-secondary)">Estimated Installment: </span>
+          <strong id="loanSuggestPreview" style="color:var(--accent)">—</strong>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Loan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: RECORD PAYMENT ==================== -->
+  <div id="paymentModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">Record Payment</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <div style="background:var(--bg-tertiary);padding:14px;border-radius:12px;margin-bottom:18px">
+        <div style="font-size:12px;color:var(--text-secondary)">Borrower</div>
+        <div id="payBorrowerName" style="font-size:17px;font-weight:700">—</div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">
+          <span>Remaining Balance: <strong id="payRemainingBalance">—</strong></span>
+          <span>Due EMI: <strong id="paySuggestedAmount">—</strong></span>
+        </div>
+      </div>
+
+      <form id="paymentForm">
+        <input id="payLoanId" type="hidden"/>
+
+        <div class="form-group">
+          <label for="payAmount">Payment Amount (₹) *</label>
+          <input id="payAmount" class="form-control" type="number" min="1" step="1" required/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="payDate">Date of Payment</label>
+            <input id="payDate" class="form-control" type="date" required/>
+          </div>
+          <div class="form-group">
+            <label for="payMode">Payment Mode</label>
+            <select id="payMode" class="form-control">
+              <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer / NEFT</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="payNote">Reference / Remarks</label>
+          <input id="payNote" class="form-control" placeholder="Transaction ID, receipt notes..."/>
+        </div>
+
+        <!-- UPI QR Code Section -->
+        <div style="margin: 16px 0;">
+          <button type="button" id="toggleUpiQrBtn" class="btn btn-secondary btn-sm" style="width:100%">
+            📷 Show UPI QR Code to Borrower (GPay/PhonePe)
+          </button>
+          <div id="upiQrSection" class="upi-qr-card hidden">
+            <div style="font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:0.5px">Scan & Pay</div>
+            <canvas id="upiQrCanvas" class="upi-qr-canvas"></canvas>
+            <div>
+              <span id="upiIdBadge" class="upi-id-badge">UPI: lender@dgs</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Payment & Receipt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: LOAN DETAILS & LEDGER ==================== -->
+  <div id="loanDetailsModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 720px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">Loan Details & Ledger</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div id="loanDetailsContent"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: DIGITAL RECEIPT ==================== -->
+  <div id="receiptModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 500px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">Payment Receipt</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div id="receiptContent"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: FIRST-TIME ADMIN SETUP WIZARD ==================== -->
+  <div id="setupWizardModal" class="wizard-overlay hidden" role="dialog" aria-modal="true">
+    <div class="wizard-card">
+      <div class="wizard-header">
+        <span class="wizard-badge">Initial Setup</span>
+        <h2 style="font-size:24px;font-weight:800;letter-spacing:-0.5px">Register Your Lending Firm</h2>
+        <p style="font-size:13.5px;color:var(--text-secondary);margin-top:6px">
+          Configure your master security credentials. Stored 100% on this device with zero external tracking.
+        </p>
+      </div>
+
+      <!-- Method A: Transfer from another device / restore existing vault -->
+      <div style="margin-bottom: 20px; padding: 14px 16px; background: var(--bg-tertiary); border: 1.5px dashed var(--border-card); border-radius: 14px; text-align: center;">
+        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+          Already using FinVault on another device?
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px; margin-bottom: 10px;">
+          Transfer your complete vault file (.dgsvault) from Phone/PC in 1 click.
+        </div>
+        <label class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+          📥 Transfer Vault from Another Device (.dgsvault)
+          <input type="file" id="wizardVaultImportInput" accept=".dgsvault,.json" style="display: none;" />
+        </label>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); font-weight: 600;">OR REGISTER NEW FIRM</span>
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+      </div>
+
+      <form id="setupWizardForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wizFirmName">Firm / Business Name *</label>
+            <input id="wizFirmName" class="form-control" placeholder="FinVault" value="FinVault" required/>
+          </div>
+          <div class="form-group">
+            <label for="wizAdminName">Admin Full Name *</label>
+            <input id="wizAdminName" class="form-control" placeholder="Dhanasekar" required/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wizPin">Master Passcode (4 Digits) *</label>
+            <input id="wizPin" class="form-control" type="password" maxlength="4" placeholder="e.g. 7845" required/>
+          </div>
+          <div class="form-group">
+            <label for="wizPinConfirm">Confirm Passcode *</label>
+            <input id="wizPinConfirm" class="form-control" type="password" maxlength="4" placeholder="Confirm 4 digits" required/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wizQuestion">Security Recovery Question *</label>
+            <input id="wizQuestion" class="form-control" placeholder="e.g. City where you started?" required/>
+          </div>
+          <div class="form-group">
+            <label for="wizAnswer">Secret Recovery Answer *</label>
+            <input id="wizAnswer" class="form-control" placeholder="Secret answer to reset PIN" required/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="wizUpi">Owner UPI ID (for QR code payments)</label>
+          <input id="wizUpi" class="form-control" placeholder="yourname@okhdfcbank" value="owner@okhdfcbank"/>
+        </div>
+
+        <div style="margin-top:24px">
+          <button type="submit" class="btn btn-primary" style="width:100%;padding:12px">
+            ✨ Complete Registration & Enter Vault
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 6: PASSCODE RECOVERY ==================== -->
+  <div id="recoveryModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 440px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">Reset Admin Passcode</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <form id="recoveryForm">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">
+          Answer your confidential security recovery question to set a new master passcode.
+        </p>
+
+        <div class="form-group">
+          <label id="recoveryQuestionLabel">Security Question</label>
+          <input id="recoveryAnswerInput" class="form-control" placeholder="Enter your secret answer" required/>
+        </div>
+
+        <div class="form-group">
+          <label for="recoveryNewPin">New 4-Digit Passcode</label>
+          <input id="recoveryNewPin" class="form-control" type="password" maxlength="4" placeholder="Enter new 4 digits" required/>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Reset Passcode</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 7: ADD / EDIT TEAM MEMBER ==================== -->
+  <div id="agentModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 id="agentModalTitle" class="modal-title">Add Team Member</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <form id="agentForm">
+        <input id="agentEditId" type="hidden"/>
+
+        <div class="form-group">
+          <label for="agentInputRole">Role & Access Level *</label>
+          <select id="agentInputRole" class="form-control">
+            <option value="admin">👑 Co-Admin / Business Partner (Full access to profits, editing & settings)</option>
+            <option value="agent" selected>🏃 Field Collection Agent (Collections only, profits & rates hidden)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="agentInputName">Full Name *</label>
+          <input id="agentInputName" class="form-control" placeholder="e.g. Suresh Patel" required/>
+        </div>
+
+        <div class="form-group">
+          <label for="agentInputPhone">Mobile Phone</label>
+          <input id="agentInputPhone" class="form-control" type="tel" placeholder="e.g. 9812345678"/>
+        </div>
+
+        <div class="form-group">
+          <label for="agentInputPin">Personal 4-Digit Passcode *</label>
+          <input id="agentInputPin" class="form-control" type="password" maxlength="4" placeholder="e.g. 2468" required/>
+          <div style="font-size:11.5px;color:var(--text-tertiary);margin-top:4px">
+            This person will use this 4-digit PIN to log into their assigned role on any device.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Team Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MOBILE BOTTOM TAB BAR (iOS Style) ==================== -->
+  <nav class="bottom-nav">
+    <button class="bottom-tab active" data-tab="overview">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Overview</span>
+    </button>
+    <button class="bottom-tab" data-tab="loans">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+      <span>Loans</span>
+    </button>
+    <button class="bottom-tab" data-tab="calculator">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+      <span>Calculator</span>
+    </button>
+    <button class="bottom-tab" data-tab="settings">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

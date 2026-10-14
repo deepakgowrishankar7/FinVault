@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Android Build & Gradle Cache
+.gradle/
+build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/
+
+# OS & Environment Files
+legacy_backup/
+.DS_Store
+Thumbs.db
+*.log
