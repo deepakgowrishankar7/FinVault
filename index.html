@@ -4,9 +4,13 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="theme-color" content="#0071E3"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="FinVault"/>
+  <meta name="application-name" content="FinVault"/>
+  <meta name="apple-touch-fullscreen" content="yes"/>
+  <meta name="format-detection" content="telephone=no"/>
   <meta name="description" content="Apple-grade smart loan, EMI and repayment ledger manager for mobile and web."/>
   
   <title>FinVault — Smart Loan & Repayment Manager</title>
@@ -81,6 +85,14 @@
           📥 Transfer Vault (.dgsvault)
           <input type="file" id="lockVaultImportInput" accept=".dgsvault,.json" style="display:none;" />
         </label>
+      </div>
+
+      <!-- Real App Installation Pill (Removes top browser address link) -->
+      <div id="pwaInstallBanner" class="pwa-install-banner" style="display:none;">
+        <button type="button" id="pwaInstallBtn" class="pwa-install-btn">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>📲 Install App (Removes Top Link Bar)</span>
+        </button>
       </div>
     </div>
   </div>
@@ -823,6 +835,55 @@
           <button type="submit" class="btn btn-primary">Save Team Member</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 8: PWA STANDALONE INSTALL GUIDE ==================== -->
+  <div id="pwaInstallModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 440px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">📲 Use FinVault as Fullscreen App</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <div style="padding: 6px 0;">
+        <p style="font-size:13.5px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px">
+          To remove the browser top link bar and open FinVault with a clean, full-screen native mobile feel:
+        </p>
+
+        <div style="background:rgba(0,113,227,0.08);border:1px solid rgba(0,113,227,0.2);border-radius:14px;padding:14px;margin-bottom:12px">
+          <div style="font-weight:700;font-size:13.5px;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+            📱 On Android (Chrome, Samsung, Mi, Vivo)
+          </div>
+          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-primary);line-height:1.6">
+            <li>Tap the <strong>three dots menu (⋮)</strong> at the top right of your browser.</li>
+            <li>Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+            <li>Confirm by clicking <strong>"Install"</strong> or <strong>"Add"</strong>.</li>
+            <li>Open <strong>FinVault</strong> from your phone's home screen icon! The top link bar will be completely gone.</li>
+          </ol>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.04);border:1px solid var(--border-card);border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-weight:700;font-size:13.5px;color:var(--text-primary);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+            🍎 On iPhone (Safari)
+          </div>
+          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.6">
+            <li>Tap the <strong>Share</strong> icon (bottom center).</li>
+            <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+            <li>Tap <strong>Add</strong> at the top right.</li>
+          </ol>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+          <button type="button" id="pwaTriggerNativeBtn" class="btn btn-primary btn-sm" style="display:none">
+            ⚡ Quick Install Now
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" data-close-modal>
+            Got It
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

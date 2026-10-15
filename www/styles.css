@@ -1581,6 +1581,38 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 600;
 }
 
+/* PWA Standalone Real App Banner & Button */
+.pwa-install-banner {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.pwa-install-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #0071e3 0%, #0056b3 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.28);
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.pwa-install-btn:active {
+  transform: scale(0.97);
+}
+
+.pwa-install-btn svg {
+  flex-shrink: 0;
+}
+
 /* Role Indicator Tag on Header */
 .current-user-tag {
   display: inline-flex;

@@ -629,6 +629,7 @@
 
     renderDashboard();
     renderLoansList();
+    setupPWAInstaller();
 
     // Check initial URL hash
     const hash = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -646,6 +647,88 @@
         console.log('SW registration skipped:', err);
       });
     }
+  }
+
+  /* ------------------ PWA Fullscreen Standalone App Installer ------------------ */
+  let deferredPrompt = null;
+
+  function setupPWAInstaller() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone === true ||
+                         document.referrer.includes('android-app://');
+
+    const installBanner = document.getElementById('pwaInstallBanner');
+    const installBtn = document.getElementById('pwaInstallBtn');
+    const installModal = document.getElementById('pwaInstallModal');
+    const nativeInstallBtn = document.getElementById('pwaTriggerNativeBtn');
+
+    // If already running inside installed standalone app, hide install banner
+    if (isStandalone) {
+      if (installBanner) installBanner.style.display = 'none';
+      return;
+    }
+
+    // Capture browser beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBanner) installBanner.style.display = 'block';
+      if (nativeInstallBtn) nativeInstallBtn.style.display = 'inline-flex';
+    });
+
+    // Auto-display on mobile browsers after 1s if not standalone
+    setTimeout(() => {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile && !isStandalone && installBanner) {
+        installBanner.style.display = 'block';
+      }
+    }, 1000);
+
+    const handleInstallClick = () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult && choiceResult.outcome === 'accepted') {
+            showToast('🚀 Installing FinVault to your phone home screen...');
+            if (installBanner) installBanner.style.display = 'none';
+            closeAllModals();
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        // Show step-by-step native guide modal
+        if (installModal) {
+          openModal(installModal);
+        }
+      }
+    };
+
+    if (installBtn) {
+      installBtn.addEventListener('click', handleInstallClick);
+    }
+
+    if (nativeInstallBtn) {
+      nativeInstallBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult && choiceResult.outcome === 'accepted') {
+              showToast('🚀 Installing FinVault...');
+              if (installBanner) installBanner.style.display = 'none';
+              closeAllModals();
+            }
+            deferredPrompt = null;
+          });
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      showToast('🎉 FinVault installed! Open from Home Screen for zero-browser-bar experience.');
+      if (installBanner) installBanner.style.display = 'none';
+      closeAllModals();
+      deferredPrompt = null;
+    });
   }
 
   /* ------------------ Theme Switcher ------------------ */
