@@ -556,24 +556,12 @@
     const isCloud = Boolean(sec.cloudSyncEnabled);
 
     const activePill = document.getElementById('activeStoragePill');
-    const engineEl = document.getElementById('primaryStorageEngine');
-    const locationEl = document.getElementById('primaryStorageLocation');
     const payloadEl = document.getElementById('primaryStoragePayload');
     const cloudMirrorEl = document.getElementById('cloudMirrorStatus');
 
     if (activePill) {
       activePill.textContent = isCloud ? '☁️ Dual Hybrid (Device + Cloud)' : '🔒 100% On-Device Mode';
       activePill.className = isCloud ? 'health-pill healthy' : 'health-pill';
-    }
-    if (engineEl) {
-      engineEl.textContent = isCloud 
-        ? 'IndexedDB + Supabase PostgreSQL' 
-        : 'IndexedDB (finvault-db) + WebStorage';
-    }
-    if (locationEl) {
-      locationEl.textContent = isCloud 
-        ? 'Local Device + Supabase Cloud' 
-        : 'Private Device Sandbox (Offline)';
     }
     if (payloadEl) {
       const kbSize = (payloadBytes / 1024).toFixed(1);
@@ -2965,6 +2953,9 @@
           if (pendingAction === 'local' || pendingAction === 'factory') {
             localStorage.removeItem(STORAGE_KEY);
             await idbSet('loans', []);
+            const updatedSec = getSecuritySettings();
+            updatedSec.unbackedChanges = 0;
+            saveSecuritySettings(updatedSec);
           }
 
           if (pendingAction === 'cloud' || pendingAction === 'factory') {
@@ -2985,13 +2976,13 @@
           } else if (pendingAction === 'cloud') {
             showToast('☁️ Central cloud database wiped clean (0 loans).');
           } else if (pendingAction === 'factory') {
-            showToast('⚠️ Factory reset completed! Both device and cloud database cleared.');
+            showToast('🎉 Complete Factory Reset Done! Local device and Supabase cloud database permanently cleared.');
           }
 
           renderDashboard();
           renderLoansList();
           updateBackupHealthUI();
-          if (typeof testCloudConnection === 'function') testCloudConnection();
+          if (typeof testCloudConnection === 'function') await testCloudConnection();
         } catch(err) {
           showToast('⚠️ Error during database wipe: ' + err.message);
         } finally {
