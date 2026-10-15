@@ -20,9 +20,7 @@
     securityQuestion: 'City where business was started?',
     securityAnswer: 'chennai',
     ownerUpiId: 'owner@okhdfcbank',
-    agents: [
-      { id: 'ag_1', name: 'Ravi Kumar', phone: '9876543210', pin: '0000', role: 'agent', active: true, createdAt: Date.now() }
-    ],
+    agents: [],
     lastBackupDate: null,
     unbackedChanges: 0,
     supabaseUrl: '',
@@ -38,9 +36,21 @@
   function getSecuritySettings() {
     try {
       const stored = localStorage.getItem(SETTINGS_KEY);
-      if (stored) return { ...DEFAULT_SECURITY, ...JSON.parse(stored) };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const settings = { ...DEFAULT_SECURITY, ...parsed };
+        // Purge hardcoded legacy demo agent if still cached locally
+        if (Array.isArray(settings.agents)) {
+          const filtered = settings.agents.filter(a => !(a.id === 'ag_1' && a.name === 'Ravi Kumar' && a.pin === '0000'));
+          if (filtered.length !== settings.agents.length) {
+            settings.agents = filtered;
+            saveSecuritySettings(settings);
+          }
+        }
+        return settings;
+      }
     } catch(e) {}
-    return { ...DEFAULT_SECURITY };
+    return { ...DEFAULT_SECURITY, agents: [] };
   }
 
   function saveSecuritySettings(settings) {
@@ -780,9 +790,14 @@
       if (roleBtnAgent) roleBtnAgent.classList.toggle('active', currentRole === 'agent');
       const settings = getSecuritySettings();
       if (roleSubtitle) {
-        roleSubtitle.textContent = currentRole === 'admin' 
-          ? `Enter Admin Passcode (${settings.adminName || 'Owner'})` 
-          : 'Enter Field Agent 4-Digit Passcode';
+        if (currentRole === 'admin') {
+          roleSubtitle.textContent = `Enter Admin Passcode (${settings.adminName || 'Owner'})`;
+        } else {
+          const totalAgents = (settings.agents || []).filter(a => a.role === 'agent' || !a.role).length;
+          roleSubtitle.textContent = totalAgents > 0 
+            ? 'Enter Field Agent 4-Digit Passcode' 
+            : 'No Field Agents added yet (Admin can add in Settings)';
+        }
       }
       if (forgotBtn) {
         forgotBtn.textContent = currentRole === 'admin' ? '🔑 Forgot Passcode?' : '❓ Agent Passcode Help';
@@ -893,7 +908,12 @@
             const dot = document.getElementById(`dot-${i}`);
             if (dot) dot.classList.add('error');
           }
-          showToast('⚠️ Incorrect Field Agent Passcode');
+          const totalAgents = (settings.agents || []).filter(a => a.role === 'agent' || !a.role).length;
+          if (totalAgents === 0) {
+            showToast('⚠️ No Field Agents registered. Log in as Admin to add agents.');
+          } else {
+            showToast('⚠️ Incorrect Field Agent Passcode');
+          }
           setTimeout(() => resetPin(), 400);
         }
       }
