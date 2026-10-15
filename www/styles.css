@@ -1711,10 +1711,71 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   cursor: pointer;
+  max-width: 140px;
+  white-space: nowrap;
+  flex-shrink: 1;
+  transition: all var(--transition-fast);
+}
+
+.current-user-tag #roleName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 90px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .current-user-tag:hover {
   border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* Mobile Header Refinement: Prevents long user names from pushing + New Loan off-screen */
+@media (max-width: 600px) {
+  .top-nav-inner {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .brand-wrapper {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+  .brand-info h1 {
+    font-size: 15px;
+  }
+  .brand-badge {
+    display: none !important; /* Hide PRO EDITION badge on small screens to save space */
+  }
+  .nav-actions {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .current-user-tag {
+    max-width: 105px;
+    padding: 4px 8px;
+    font-size: 11.5px;
+  }
+  .current-user-tag #roleName {
+    max-width: 65px;
+  }
+  #newLoanBtn {
+    padding: 7px 11px;
+    font-size: 12.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #themeToggleBtn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    flex-shrink: 0;
+  }
 }
 
 /* Agent Restricted View hiding classes */

@@ -914,9 +914,42 @@
 
     if (userBadge) {
       userBadge.addEventListener('click', () => {
-        lockApp();
+        openUserProfileModal();
       });
     }
+
+  function openUserProfileModal() {
+    const modal = document.getElementById('userProfileModal');
+    if (!modal) return;
+
+    const avatarEl = document.getElementById('profileModalAvatar');
+    const nameEl = document.getElementById('profileModalName');
+    const badgeEl = document.getElementById('profileModalRoleBadge');
+    const accessEl = document.getElementById('profileModalAccessMode');
+    const settings = getSecuritySettings();
+
+    if (currentRole === 'admin') {
+      const adminName = settings.adminName || 'Admin (Financier)';
+      if (avatarEl) avatarEl.textContent = '👑';
+      if (nameEl) nameEl.textContent = adminName;
+      if (badgeEl) {
+        badgeEl.textContent = '👑 Admin (Financier)';
+        badgeEl.className = 'health-pill healthy';
+      }
+      if (accessEl) accessEl.textContent = 'Full Master Control (Loans, Ledger & Settings)';
+    } else {
+      const agentName = currentAgent ? currentAgent.name : 'Field Agent';
+      if (avatarEl) avatarEl.textContent = '🏃';
+      if (nameEl) nameEl.textContent = agentName;
+      if (badgeEl) {
+        badgeEl.textContent = '🏃 Field Collection Staff';
+        badgeEl.className = 'health-pill healthy';
+      }
+      if (accessEl) accessEl.textContent = 'Field Mode (Borrower Collections & Receipts)';
+    }
+
+    openModal(modal);
+  }
 
     window.addEventListener('keydown', (e) => {
       if (!isUnlocked) {
@@ -1688,6 +1721,24 @@
         renderLoansList();
       });
     });
+
+    // Profile Modal Action Buttons
+    const profileLogoutBtn = document.getElementById('profileLogoutBtn');
+    if (profileLogoutBtn) {
+      profileLogoutBtn.addEventListener('click', () => {
+        closeAllModals();
+        lockApp();
+        showToast('🔒 Locked & Logged out successfully');
+      });
+    }
+
+    const profileGoSettingsBtn = document.getElementById('profileGoSettingsBtn');
+    if (profileGoSettingsBtn) {
+      profileGoSettingsBtn.addEventListener('click', () => {
+        closeAllModals();
+        if (window.switchAppTab) window.switchAppTab('settings');
+      });
+    }
   }
 
   function openModal(modal) {

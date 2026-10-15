@@ -887,6 +887,51 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL 9: USER PROFILE & SESSION ==================== -->
+  <div id="userProfileModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 400px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">User Profile</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <div style="padding: 12px 4px; text-align: center;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(0, 113, 227, 0.12); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 10px auto; border: 2px solid rgba(0, 113, 227, 0.25);">
+          <span id="profileModalAvatar">👑</span>
+        </div>
+        <h3 id="profileModalName" style="font-size: 18px; font-weight: 700; margin-bottom: 4px; word-break: break-word;">Admin</h3>
+        <div id="profileModalRoleBadge" class="health-pill healthy" style="display: inline-flex; margin-bottom: 18px; font-size: 12px; padding: 4px 12px;">
+          👑 Admin (Financier)
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 14px; text-align: left; margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Session Status</span>
+            <span style="color: var(--success); font-weight: 600;">● Active (Unlocked)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Storage Vault</span>
+            <span style="font-weight: 600;">100% On-Device</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Role Access</span>
+            <span id="profileModalAccessMode" style="font-weight: 600;">Full Control</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" id="profileGoSettingsBtn" class="btn btn-secondary admin-only" style="width: 100%; justify-content: center;">
+            ⚙️ Vault Settings & Team
+          </button>
+          <button type="button" id="profileLogoutBtn" class="btn" style="width: 100%; justify-content: center; background: rgba(255, 59, 48, 0.12); color: var(--danger); border: 1px solid rgba(255, 59, 48, 0.25); font-weight: 600;">
+            🔒 Lock & Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MOBILE BOTTOM TAB BAR (iOS Style) ==================== -->
   <nav class="bottom-nav">
     <button class="bottom-tab active" data-tab="overview">
