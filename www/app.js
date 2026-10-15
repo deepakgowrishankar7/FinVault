@@ -2106,7 +2106,7 @@
             <div>
               <div class="borrower-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
                 <span>${escapeHtml(loan.borrower)}</span>
-                ${loan.photo ? `<span title="ID Document Attached (Tap to View)" style="font-size:13px;cursor:pointer;" onclick="event.stopPropagation();openImageLightbox('${loan.photo}')">📷</span>` : ''}
+                ${loan.photo ? `<span title="ID Document Attached (Tap to View)" style="font-size:13px;cursor:pointer;" onclick="event.stopPropagation();openLoanPhotoLightbox('${loan.id}')">📷</span>` : ''}
                 ${dueTagHTML}
               </div>
               ${loan.phone ? `<div class="borrower-phone">
@@ -2530,13 +2530,13 @@
       ${loan.photo ? `
         <div style="margin: 14px 0; background: var(--bg-tertiary); padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="${loan.photo}" alt="Borrower ID" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onclick="openImageLightbox('${loan.photo}')" />
+            <img src="${loan.photo}" alt="Borrower ID" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onclick="openLoanPhotoLightbox('${loan.id}')" />
             <div>
               <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Borrower ID / Document Attached</div>
               <div style="font-size: 11.5px; color: var(--text-secondary);">Tap image to inspect full size</div>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="openImageLightbox('${loan.photo}')">🔍 View ID</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openLoanPhotoLightbox('${loan.id}')">🔍 View ID</button>
         </div>
       ` : ''}
 
@@ -2916,16 +2916,41 @@
     reader.readAsDataURL(file);
   }
 
-  window.openImageLightbox = function(imgSrc) {
+  window.openLoanPhotoLightbox = function(loanIdOrSrc) {
     const modal = document.getElementById('imageLightboxModal');
     const img = document.getElementById('lightboxImage');
     const dl = document.getElementById('lightboxDownloadBtn');
-    if (modal && img) {
-      img.src = imgSrc;
-      if (dl) dl.href = imgSrc;
-      openModal(modal);
+    if (!modal || !img) return;
+
+    let targetSrc = '';
+    let fileName = 'Borrower_ID.jpg';
+
+    if (loanIdOrSrc) {
+      // Check if it's a loan ID
+      const loans = loadState();
+      const loan = loans.find(x => String(x.id) === String(loanIdOrSrc));
+      if (loan && loan.photo) {
+        targetSrc = loan.photo;
+        fileName = `${(loan.borrower || 'Borrower').replace(/\s+/g, '_')}_ID.jpg`;
+      } else if (typeof loanIdOrSrc === 'string' && (loanIdOrSrc.startsWith('data:') || loanIdOrSrc.startsWith('http') || loanIdOrSrc.startsWith('blob:'))) {
+        targetSrc = loanIdOrSrc;
+      }
     }
+
+    if (!targetSrc) {
+      showToast('⚠️ No document attached to this loan');
+      return;
+    }
+
+    img.src = targetSrc;
+    if (dl) {
+      dl.href = targetSrc;
+      dl.download = fileName;
+    }
+    openModal(modal);
   };
+
+  window.openImageLightbox = window.openLoanPhotoLightbox;
 
   /* ------------------ Interactive Calculator (Apple Sliders) ------------------ */
 

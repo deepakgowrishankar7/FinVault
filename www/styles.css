@@ -1510,22 +1510,40 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Fullscreen ID Lightbox */
+#imageLightboxModal {
+  z-index: 2500 !important;
+  background: rgba(0, 0, 0, 0.92) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+}
+
 #imageLightboxModal .modal-sheet {
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  text-align: center;
-  padding: 10px !important;
-  max-width: 92vw !important;
+  text-align: center !important;
+  padding: 0 !important;
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  transform: scale(0.95) !important;
+  border-radius: 14px !important;
+}
+
+#imageLightboxModal.open .modal-sheet {
+  transform: scale(1) !important;
 }
 
 #imageLightboxModal img {
   max-width: 90vw;
-  max-height: 78vh;
+  max-height: 75vh;
   border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
   object-fit: contain;
   background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: block;
+  margin: 0 auto;
 }
 
 
