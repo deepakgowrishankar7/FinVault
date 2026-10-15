@@ -32,10 +32,7 @@
   let currentAgent = null; // active agent object
   let isUnlocked = false;
   let enteredPin = '';
-  let cachedSettings = null;
-
   function getSecuritySettings() {
-    if (cachedSettings) return cachedSettings;
     try {
       const stored = localStorage.getItem(SETTINGS_KEY);
       if (stored) {
@@ -49,16 +46,13 @@
             saveSecuritySettings(settings);
           }
         }
-        cachedSettings = settings;
         return settings;
       }
     } catch(e) {}
-    cachedSettings = { ...DEFAULT_SECURITY, agents: [] };
-    return cachedSettings;
+    return { ...DEFAULT_SECURITY, agents: [] };
   }
 
   function saveSecuritySettings(settings) {
-    cachedSettings = settings;
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       idbSet('security', settings);
@@ -134,10 +128,8 @@
       // If localStorage is empty/missing but IndexedDB holds the vault, restore it!
       if ((!localLoans || (Array.isArray(localLoans) && localLoans.length === 0)) && idbLoans && Array.isArray(idbLoans) && idbLoans.length > 0) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(idbLoans));
-        stateCache = idbLoans;
         showToast('🛡️ Auto-restored loan vault from IndexedDB mirror!');
       } else if (localLoans && Array.isArray(localLoans) && localLoans.length > 0) {
-        stateCache = localLoans;
         if (!idbLoans || !idbLoans.length) {
           await idbSet('loans', localLoans);
         }
@@ -153,9 +145,7 @@
       const idbSec = await idbGet('security');
       if ((!localSec || !localSec.isRegistered) && idbSec && idbSec.isRegistered) {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(idbSec));
-        cachedSettings = idbSec;
       } else if (localSec && localSec.isRegistered) {
-        cachedSettings = localSec;
         if (!idbSec || !idbSec.isRegistered) {
           await idbSet('security', localSec);
         }
@@ -544,18 +534,12 @@
     }
   }
 
-  /* ------------------ State & Storage Management (60+ FPS In-Memory Cache) ------------------ */
-
-  let stateCache = null;
+  /* ------------------ State & Storage Management ------------------ */
 
   function loadState() {
-    if (stateCache && Array.isArray(stateCache)) return stateCache;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        stateCache = JSON.parse(raw);
-        return stateCache;
-      }
+      if (raw) return JSON.parse(raw);
     } catch (e) {
       console.warn('Failed to parse state:', e);
     }
@@ -585,12 +569,10 @@
       }
     } catch (e) {}
 
-    stateCache = [];
-    return stateCache;
+    return [];
   }
 
   function saveState(loans) {
-    stateCache = loans;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(loans));
       idbSet('loans', loans);
@@ -740,22 +722,24 @@
 
   async function initApp() {
     registerServiceWorker();
+
+    // 1. Verify OS persistent storage and restore mirrored credentials/loans FIRST
+    await initPersistentStorage();
+    await checkDualLayerRecovery();
+
+    // 2. Initialize Core App Controls
     setupThemeToggle();
     setupNavigation();
     setupModals();
     setupCalculator();
     setupExportImport();
     setupDangerZone();
+
+    // 3. Setup Lock Screen, Setup Wizard and Security with verified credentials
     setupLockScreen();
     setupWizardModal();
     setupRecoveryModal();
     setupAgentManager();
-
-    // Verify OS persistent storage and restore mirrored credentials/loans first
-    await initPersistentStorage();
-    await checkDualLayerRecovery();
-
-    // Initialize Cloud Sync & Security Settings with verified credentials
     setupCloudSync();
     setupSecuritySettingsForm();
     setupUpiQrToggle();
@@ -1163,7 +1147,18 @@
     const settings = getSecuritySettings();
     if (!settings.isRegistered) {
       wizardModal.classList.remove('hidden');
+    } else {
+      wizardModal.classList.add('hidden');
     }
+
+    // Auto-scroll input into center when mobile software keyboard opens
+    wizardForm.querySelectorAll('input').forEach(input => {
+      input.addEventListener('focus', () => {
+        setTimeout(() => {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 280);
+      });
+    });
 
     wizardForm.addEventListener('submit', (e) => {
       e.preventDefault();

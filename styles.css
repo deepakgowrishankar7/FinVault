@@ -2002,23 +2002,6 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
     scrollbar-width: none !important;
   }
 
-  /* Mobile 60 FPS Blur Reduction & Hardware Acceleration Layers */
-  .top-nav,
-  .bottom-nav,
-  .modal-overlay,
-  .lock-screen-overlay {
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-  }
-
-  .top-nav,
-  .bottom-nav,
-  .loan-card,
-  .modal-sheet,
-  .lock-container {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
 }
 
 /* iOS-Style Toggle Switch */
@@ -2102,26 +2085,28 @@ body.role-agent .admin-only {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 100000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 16px 260px 16px;
 }
 
 .wizard-card {
   max-width: 520px;
   width: 100%;
+  margin: 16px auto;
   background: var(--bg-secondary);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: 28px 20px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--glass-border);
   position: relative;
-  max-height: 90vh;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .wizard-header {
