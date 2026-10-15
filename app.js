@@ -770,10 +770,12 @@
     const numpadClearBtn = document.getElementById('numpadClearBtn');
     const numpadDeleteBtn = document.getElementById('numpadDeleteBtn');
     const userBadge = document.getElementById('currentUserBadge');
+    const forgotBtn = document.getElementById('forgotPinBtn');
 
     if (!overlay) return;
 
     function updateRoleUI() {
+      closeAllModals();
       if (roleBtnAdmin) roleBtnAdmin.classList.toggle('active', currentRole === 'admin');
       if (roleBtnAgent) roleBtnAgent.classList.toggle('active', currentRole === 'agent');
       const settings = getSecuritySettings();
@@ -781,6 +783,9 @@
         roleSubtitle.textContent = currentRole === 'admin' 
           ? `Enter Admin Passcode (${settings.adminName || 'Owner'})` 
           : 'Enter Field Agent 4-Digit Passcode';
+      }
+      if (forgotBtn) {
+        forgotBtn.textContent = currentRole === 'admin' ? '🔑 Forgot Passcode?' : '❓ Agent Passcode Help';
       }
       resetPin();
     }
@@ -830,6 +835,7 @@
 
           isUnlocked = true;
           currentAgent = matchingCoAdmin || null;
+          closeAllModals();
           overlay.classList.add('hidden');
           document.body.classList.remove('role-admin', 'role-agent');
           document.body.classList.add('role-admin');
@@ -868,6 +874,7 @@
 
           isUnlocked = true;
           currentAgent = matchingAgent;
+          closeAllModals();
           overlay.classList.add('hidden');
           document.body.classList.remove('role-admin', 'role-agent');
           document.body.classList.add('role-agent');
@@ -1052,22 +1059,39 @@
   function setupRecoveryModal() {
     const forgotBtn = document.getElementById('forgotPinBtn');
     const recoveryModal = document.getElementById('recoveryModal');
+    const agentHelpModal = document.getElementById('agentPasscodeHelpModal');
     const recoveryForm = document.getElementById('recoveryForm');
     const qLabel = document.getElementById('recoveryQuestionLabel');
 
-    if (forgotBtn && recoveryModal) {
+    if (forgotBtn) {
       forgotBtn.addEventListener('click', () => {
         const sec = getSecuritySettings();
-        if (qLabel) qLabel.textContent = sec.securityQuestion || 'Security Recovery Question';
-        document.getElementById('recoveryAnswerInput').value = '';
-        document.getElementById('recoveryNewPin').value = '';
-        openModal(recoveryModal);
+        if (currentRole === 'admin') {
+          // Master Admin Recovery Form
+          if (qLabel) qLabel.textContent = sec.securityQuestion || 'Security Recovery Question';
+          const ansInput = document.getElementById('recoveryAnswerInput');
+          const pinInput = document.getElementById('recoveryNewPin');
+          if (ansInput) ansInput.value = '';
+          if (pinInput) pinInput.value = '';
+          if (recoveryModal) openModal(recoveryModal);
+        } else {
+          // Field Agent Assistance (Never show admin recovery to agents)
+          const adminNameEl = document.getElementById('agentHelpAdminName');
+          if (adminNameEl) adminNameEl.textContent = sec.adminName || 'Admin (Financier)';
+          if (agentHelpModal) openModal(agentHelpModal);
+        }
       });
     }
 
     if (recoveryForm) {
       recoveryForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (currentRole !== 'admin') {
+          showToast('⚠️ Only Admin master passcode can be recovered here');
+          closeAllModals();
+          return;
+        }
+
         const sec = getSecuritySettings();
         const enteredAnswer = document.getElementById('recoveryAnswerInput').value.trim().toLowerCase();
         const newPin = document.getElementById('recoveryNewPin').value.trim();
@@ -1084,7 +1108,7 @@
 
         sec.adminPin = newPin;
         saveSecuritySettings(sec);
-        recoveryModal.classList.remove('open');
+        closeAllModals();
         showToast('✨ Master Passcode reset successfully! Please log in.');
       });
     }

@@ -792,6 +792,40 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL 6B: AGENT PASSCODE ASSISTANCE ==================== -->
+  <div id="agentPasscodeHelpModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-sheet" style="max-width: 440px;">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <h2 class="modal-title">🏃 Field Agent Passcode Help</h2>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+
+      <div style="padding: 10px 0;">
+        <div style="background: rgba(0,113,227,0.08); border: 1px solid rgba(0,113,227,0.2); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+          <p style="font-size: 13.5px; line-height: 1.5; color: var(--text-primary); margin-bottom: 10px;">
+            Field Agent passcodes are private and assigned directly by the <strong>Admin (Financier)</strong>.
+          </p>
+          <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            To retrieve or reset your 4-digit agent passcode:
+            <ol style="margin: 6px 0 0 18px; padding: 0;">
+              <li>Contact your <strong>Admin (<span id="agentHelpAdminName">Deepak Gowri Shankar</span>)</strong>.</li>
+              <li>Admin will log into FinVault and open:
+                <br/><code>Settings ➔ Team, Partners & Field Agents</code></li>
+              <li>Admin can view your assigned passcode or edit it to a new 4-digit PIN.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-primary btn-sm" data-close-modal>
+            Understood
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL 7: ADD / EDIT TEAM MEMBER ==================== -->
   <div id="agentModal" class="modal-overlay" role="dialog" aria-modal="true">
     <div class="modal-sheet" style="max-width: 480px;">
