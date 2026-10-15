@@ -440,26 +440,27 @@
           </div>
         </div>
 
-        <!-- Private Cloud Sync (Supabase Option B) -->
+        <!-- Cloud Sync & Multi-Device Backup (User Control) -->
         <div class="card admin-only" style="margin-bottom: 20px;">
-          <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">☁️ Private Cloud Sync (Supabase Option B)</h3>
-          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
-            Connect your own private Supabase database to automatically synchronize borrower collections across all agent phones in real time. (Leave empty for 100% on-device private mode).
-          </p>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="settingSupabaseUrl">Supabase Project URL</label>
-              <input id="settingSupabaseUrl" class="form-control" placeholder="https://xyz.supabase.co"/>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+            <div>
+              <h3 style="font-size:16px;font-weight:700">☁️ Cloud Backup & Multi-Device Sync</h3>
+              <div style="font-size:13px;color:var(--text-secondary)">Securely sync borrower ledger across devices</div>
             </div>
-            <div class="form-group">
-              <label for="settingSupabaseKey">Supabase Public Anon Key</label>
-              <input id="settingSupabaseKey" class="form-control" type="password" placeholder="eyJhbGciOiJIUzI1Ni..."/>
-            </div>
+            <label class="switch-toggle" style="display:inline-flex;align-items:center;cursor:pointer;gap:10px">
+              <input type="checkbox" id="cloudSyncToggle" style="display:none;" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+              <span id="cloudSyncToggleLabel" style="font-size:13px;font-weight:600;color:var(--text-secondary)">OFF (Local Device Only)</span>
+            </label>
           </div>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap">
-            <button id="saveCloudSyncBtn" class="btn btn-primary btn-sm">Save & Connect Cloud</button>
-            <button id="syncNowBtn" class="btn btn-secondary btn-sm">☁️ Sync Now</button>
-            <span id="cloudSyncStatusText" style="font-size:12.5px;color:var(--text-secondary)">Local-Only Mode</span>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px">
+            By default, all your data remains <strong>100% offline and private on this device</strong>. Turn this switch <strong>ON</strong> if you want your loans and repayment ledger automatically backed up and synced to the central cloud database.
+          </p>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button type="button" id="syncNowBtn" class="btn btn-primary btn-sm" style="display:none;">☁️ Sync Now</button>
+            <div id="cloudSyncStatusPill" class="health-pill healthy" style="display:inline-flex;padding:4px 10px;font-size:12px;">
+              🔒 100% On-Device Private Mode
+            </div>
           </div>
         </div>
 

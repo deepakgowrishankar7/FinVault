@@ -506,6 +506,11 @@
       sec.unbackedChanges = (Number(sec.unbackedChanges) || 0) + 1;
       saveSecuritySettings(sec);
       updateBackupHealthUI();
+
+      // Sync to cloud in background only if user explicitly turned it ON
+      if (sec.cloudSyncEnabled && typeof syncToSupabase === 'function') {
+        syncToSupabase(false);
+      }
     } catch (e) {
       console.error('Storage write error:', e);
       idbSet('loans', loans);
@@ -1257,71 +1262,155 @@
     }
   };
 
-  /* ------------------ Private Cloud Sync (Supabase Option B) ------------------ */
+  /* ------------------ Central Cloud Database (Developer Provided) ------------------ */
+  const CENTRAL_SUPABASE_CONFIG = {
+    url: 'https://cpfpmnyipiqdtcnobwoq.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZnBtbnlpcGlxZHRjbm9id29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMzYwMzcsImV4cCI6MjEwNzYxMjAzN30.KnKEfEWrUFNbvveRnwf9w71-nXULRDKQhrnhYoCrd_w'
+  };
 
+  /* ------------------ Cloud Sync Control (User Permission Toggle) ------------------ */
   function setupCloudSync() {
-    const urlInput = document.getElementById('settingSupabaseUrl');
-    const keyInput = document.getElementById('settingSupabaseKey');
-    const saveBtn = document.getElementById('saveCloudSyncBtn');
+    const toggle = document.getElementById('cloudSyncToggle');
+    const toggleLabel = document.getElementById('cloudSyncToggleLabel');
+    const statusPill = document.getElementById('cloudSyncStatusPill');
     const syncBtn = document.getElementById('syncNowBtn');
-    const statusText = document.getElementById('cloudSyncStatusText');
 
     const sec = getSecuritySettings();
-    if (urlInput) urlInput.value = sec.supabaseUrl || '';
-    if (keyInput) keyInput.value = sec.supabaseKey || '';
-    if (statusText) {
-      statusText.innerHTML = sec.supabaseUrl 
-        ? '<span style="color:var(--success)">🟢 Supabase Connected</span>' 
-        : 'Local-Only Mode';
+    const isEnabled = Boolean(sec.cloudSyncEnabled);
+
+    function updateCloudUI(enabled) {
+      if (toggle) toggle.checked = enabled;
+      if (toggleLabel) {
+        toggleLabel.textContent = enabled ? 'ON (Syncing to Cloud)' : 'OFF (Local Device Only)';
+        toggleLabel.style.color = enabled ? 'var(--success)' : 'var(--text-secondary)';
+      }
+      if (statusPill) {
+        statusPill.innerHTML = enabled 
+          ? '☁️ Cloud Sync Active (Connected)' 
+          : '🔒 100% On-Device Private Mode';
+        statusPill.className = enabled ? 'health-pill healthy' : 'health-pill';
+      }
+      if (syncBtn) {
+        syncBtn.style.display = enabled ? 'inline-flex' : 'none';
+      }
     }
 
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        if (currentRole !== 'admin') return;
-        const url = (urlInput.value || '').trim();
-        const key = (keyInput.value || '').trim();
-        sec.supabaseUrl = url;
-        sec.supabaseKey = key;
-        sec.cloudSyncEnabled = Boolean(url && key);
-        saveSecuritySettings(sec);
-        if (statusText) {
-          statusText.innerHTML = url 
-            ? '<span style="color:var(--success)">🟢 Supabase Connected</span>' 
-            : 'Local-Only Mode';
+    updateCloudUI(isEnabled);
+
+    if (toggle) {
+      toggle.addEventListener('change', () => {
+        if (currentRole !== 'admin') {
+          showToast('⚠️ Only Admin can change cloud sync settings');
+          toggle.checked = !toggle.checked;
+          return;
         }
-        showToast(url ? '☁️ Cloud Sync Credentials Saved!' : 'Switched to Local-Only Mode');
+        const enabled = toggle.checked;
+        const currentSec = getSecuritySettings();
+        currentSec.cloudSyncEnabled = enabled;
+        saveSecuritySettings(currentSec);
+        updateCloudUI(enabled);
+
+        if (enabled) {
+          showToast('☁️ Cloud Backup enabled! Syncing to database...');
+          syncToSupabase(true);
+        } else {
+          showToast('🔒 Cloud Sync disabled. Data strictly saved on this device.');
+        }
       });
     }
 
     if (syncBtn) {
-      syncBtn.addEventListener('click', async () => {
-        const s = getSecuritySettings();
-        if (!s.supabaseUrl || !s.supabaseKey) {
-          showToast('⚠️ Please enter your Supabase URL & Key first');
-          return;
-        }
-        showToast('☁️ Syncing with Supabase...');
-        try {
-          const loans = loadState();
-          const res = await fetch(`${s.supabaseUrl}/rest/v1/loans`, {
-            method: 'POST',
-            headers: {
-              'apikey': s.supabaseKey,
-              'Authorization': `Bearer ${s.supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify(loans)
-          });
-          if (res.ok) {
-            showToast('✅ Supabase Cloud Sync Completed!');
+      syncBtn.addEventListener('click', () => {
+        syncToSupabase(true);
+      });
+    }
+
+    // If cloud sync was enabled by user, fetch updates on startup
+    if (isEnabled) {
+      pullFromSupabase();
+    }
+  }
+
+  async function syncToSupabase(userInitiated = false) {
+    const sec = getSecuritySettings();
+    if (!sec.cloudSyncEnabled) return; // Strictly local-only when disabled
+
+    if (userInitiated) showToast('☁️ Syncing with Cloud Database...');
+    try {
+      const loans = loadState();
+      const res = await fetch(`${CENTRAL_SUPABASE_CONFIG.url}/rest/v1/loans`, {
+        method: 'POST',
+        headers: {
+          'apikey': CENTRAL_SUPABASE_CONFIG.key,
+          'Authorization': `Bearer ${CENTRAL_SUPABASE_CONFIG.key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(loans)
+      });
+
+      if (res.ok) {
+        if (userInitiated) showToast('✅ Cloud Sync Completed! All loans backed up.');
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        console.warn('Supabase sync status:', res.status, errJson);
+        if (userInitiated) {
+          if (res.status === 404 || (errJson.message && errJson.message.includes('loans'))) {
+            showToast('⚠️ Database table "loans" not found in Supabase. Run SQL setup script.');
           } else {
-            showToast('⚠️ Cloud response: ' + res.statusText);
+            showToast('⚠️ Sync notice: ' + (errJson.message || res.statusText));
           }
-        } catch(err) {
-          showToast('⚠️ Cloud Sync notice: Check connection or Supabase table "loans"');
+        }
+      }
+    } catch(err) {
+      console.warn('Supabase sync error (device offline or network):', err);
+      if (userInitiated) {
+        showToast('⚠️ Notice: Could not connect to cloud. Saved safely on local device.');
+      }
+    }
+  }
+
+  async function pullFromSupabase() {
+    const sec = getSecuritySettings();
+    if (!sec.cloudSyncEnabled) return;
+
+    try {
+      const res = await fetch(`${CENTRAL_SUPABASE_CONFIG.url}/rest/v1/loans?select=*`, {
+        headers: {
+          'apikey': CENTRAL_SUPABASE_CONFIG.key,
+          'Authorization': `Bearer ${CENTRAL_SUPABASE_CONFIG.key}`
         }
       });
+      if (res.ok) {
+        const cloudLoans = await res.json();
+        if (Array.isArray(cloudLoans) && cloudLoans.length > 0) {
+          const localLoans = loadState();
+          const localMap = new Map(localLoans.map(l => [String(l.id), l]));
+          let updated = false;
+          cloudLoans.forEach(cl => {
+            const idStr = String(cl.id);
+            if (!localMap.has(idStr)) {
+              localMap.set(idStr, cl);
+              updated = true;
+            } else {
+              const existing = localMap.get(idStr);
+              if (cl.payments && Array.isArray(cl.payments) && cl.payments.length > (existing.payments || []).length) {
+                localMap.set(idStr, cl);
+                updated = true;
+              }
+            }
+          });
+          if (updated) {
+            const merged = Array.from(localMap.values());
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            await idbSet('loans', merged);
+            renderDashboard();
+            renderLoansList();
+          }
+        }
+      }
+    } catch(e) {
+      console.log('Background cloud pull skipped:', e);
     }
   }
 
