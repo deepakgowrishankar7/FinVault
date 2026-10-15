@@ -1609,6 +1609,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* PWA Standalone Real App Banner & Button */
+@media all and (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  #pwaInstallBanner,
+  .pwa-install-banner,
+  #pwaInstallModal {
+    display: none !important;
+  }
+}
+
 .pwa-install-banner {
   margin-top: 14px;
   width: 100%;

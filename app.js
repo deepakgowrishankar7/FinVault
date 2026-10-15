@@ -683,19 +683,35 @@
   /* ------------------ PWA Fullscreen Standalone App Installer ------------------ */
   let deferredPrompt = null;
 
-  function setupPWAInstaller() {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                         window.navigator.standalone === true ||
-                         document.referrer.includes('android-app://');
+  function isRunningInApp() {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes('android-app://') ||
+      typeof window.Capacitor !== 'undefined' ||
+      window.isNativeApp === true ||
+      location.protocol === 'capacitor:' ||
+      location.protocol === 'file:' ||
+      location.protocol === 'ionic:' ||
+      location.protocol === 'content:' ||
+      /Capacitor|FinVault|wv|WebView/i.test(navigator.userAgent)
+    );
+  }
 
+  function setupPWAInstaller() {
     const installBanner = document.getElementById('pwaInstallBanner');
     const installBtn = document.getElementById('pwaInstallBtn');
     const installModal = document.getElementById('pwaInstallModal');
     const nativeInstallBtn = document.getElementById('pwaTriggerNativeBtn');
 
-    // If already running inside installed standalone app, hide install banner
-    if (isStandalone) {
-      if (installBanner) installBanner.style.display = 'none';
+    // If already running inside installed standalone app / APK / WebView, completely remove install banner
+    if (isRunningInApp()) {
+      if (installBanner) {
+        installBanner.style.setProperty('display', 'none', 'important');
+        installBanner.remove();
+      }
       return;
     }
 
@@ -703,17 +719,19 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      if (installBanner) installBanner.style.display = 'block';
+      if (!isRunningInApp() && installBanner) {
+        installBanner.style.display = 'block';
+      }
       if (nativeInstallBtn) nativeInstallBtn.style.display = 'inline-flex';
     });
 
-    // Auto-display on mobile browsers after 1s if not standalone
+    // Auto-display on mobile browsers after 1.5s only if NOT installed and NOT in app
     setTimeout(() => {
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isMobile && !isStandalone && installBanner) {
+      if (isMobile && !isRunningInApp() && installBanner && document.body.contains(installBanner)) {
         installBanner.style.display = 'block';
       }
-    }, 1000);
+    }, 1500);
 
     const handleInstallClick = () => {
       if (deferredPrompt) {
