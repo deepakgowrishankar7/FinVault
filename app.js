@@ -475,6 +475,63 @@
     return schedule;
   }
 
+  /**
+   * Determine exact due status (Due Today, Due This Week, Next Due Date)
+   */
+  function getLoanDueInfo(loan) {
+    const fin = getLoanFinancials(loan);
+    if (fin.status === 'paid' || fin.remaining <= 0) {
+      return { isDueToday: false, isDueThisWeek: false, nextDueDate: null, daysDiff: null };
+    }
+
+    const schedule = generateSchedule(loan);
+    const nextItem = schedule.find(s => s.status !== 'paid');
+    if (!nextItem) {
+      return { isDueToday: false, isDueThisWeek: false, nextDueDate: null, daysDiff: null };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const due = new Date(nextItem.dueDate + 'T00:00:00');
+    const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Due today: exactly 0 days difference
+    const isDueToday = diffDays === 0;
+    // Due this week: between 0 and 7 days (or currently overdue)
+    const isDueThisWeek = (diffDays >= 0 && diffDays <= 7) || diffDays < 0;
+
+    return {
+      isDueToday,
+      isDueThisWeek,
+      nextDueDate: nextItem.dueDate,
+      daysDiff: diffDays
+    };
+  }
+
+  function updateFilterBadges() {
+    const loans = loadState();
+    let todayCount = 0;
+    let weekCount = 0;
+
+    loans.forEach(loan => {
+      const due = getLoanDueInfo(loan);
+      if (due.isDueToday) todayCount++;
+      if (due.isDueThisWeek) weekCount++;
+    });
+
+    const bToday = document.getElementById('badgeDueToday');
+    const bWeek = document.getElementById('badgeDueWeek');
+    if (bToday) {
+      bToday.textContent = todayCount;
+      bToday.style.display = todayCount > 0 ? 'inline-flex' : 'none';
+    }
+    if (bWeek) {
+      bWeek.textContent = weekCount;
+      bWeek.style.display = weekCount > 0 ? 'inline-flex' : 'none';
+    }
+  }
+
   /* ------------------ State & Storage Management ------------------ */
 
   function loadState() {
@@ -676,6 +733,7 @@
     setupCloudSync();
     setupSecuritySettingsForm();
     setupUpiQrToggle();
+    setupPhotoUploader();
 
     await initPersistentStorage();
     await checkDualLayerRecovery();
@@ -1965,6 +2023,8 @@
     const loansContainer = document.getElementById('allLoansContainer');
     if (!loansContainer) return;
 
+    updateFilterBadges();
+
     const loans = loadState();
     const query = activeSearch.trim().toLowerCase();
 
@@ -1975,6 +2035,14 @@
       if (activeFilter === 'active' && fin.status === 'paid') return false;
       if (activeFilter === 'paid' && fin.status !== 'paid') return false;
       if (activeFilter === 'overdue' && fin.status !== 'overdue') return false;
+      if (activeFilter === 'today') {
+        const due = getLoanDueInfo(loan);
+        if (!due.isDueToday) return false;
+      }
+      if (activeFilter === 'week') {
+        const due = getLoanDueInfo(loan);
+        if (!due.isDueThisWeek) return false;
+      }
 
       // Search query
       if (query) {
@@ -2013,6 +2081,7 @@
 
   function createLoanCardHTML(loan) {
     const fin = getLoanFinancials(loan);
+    const due = getLoanDueInfo(loan);
     const badgeClass = {
       active: 'badge-active',
       paid: 'badge-paid',
@@ -2021,12 +2090,25 @@
 
     const statusLabel = fin.status === 'paid' ? 'Fully Paid' : fin.status === 'overdue' ? 'Overdue' : 'Active';
 
+    let dueTagHTML = '';
+    if (fin.status !== 'paid') {
+      if (due.isDueToday) {
+        dueTagHTML = `<span class="badge" style="background:rgba(255,59,48,0.15);color:#ff3b30;border:1px solid rgba(255,59,48,0.25);font-size:10px;margin-left:4px;">🚨 DUE TODAY</span>`;
+      } else if (due.isDueThisWeek && due.nextDueDate) {
+        dueTagHTML = `<span class="badge" style="background:rgba(255,149,0,0.12);color:#ff9500;border:1px solid rgba(255,149,0,0.2);font-size:10px;margin-left:4px;">⏰ DUE ${fmtDate(due.nextDueDate)}</span>`;
+      }
+    }
+
     return `
       <div class="loan-card" data-loan-id="${loan.id}">
         <div>
           <div class="loan-card-header">
             <div>
-              <div class="borrower-name">${escapeHtml(loan.borrower)}</div>
+              <div class="borrower-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+                <span>${escapeHtml(loan.borrower)}</span>
+                ${loan.photo ? `<span title="ID Document Attached (Tap to View)" style="font-size:13px;cursor:pointer;" onclick="event.stopPropagation();openImageLightbox('${loan.photo}')">📷</span>` : ''}
+                ${dueTagHTML}
+              </div>
               ${loan.phone ? `<div class="borrower-phone">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 ${escapeHtml(loan.phone)}
@@ -2254,12 +2336,14 @@
         document.getElementById('loanModel').value = loan.model || 'emi';
         document.getElementById('loanStartDate').value = loan.startDate || new Date(loan.created).toISOString().split('T')[0];
         document.getElementById('loanNotes').value = loan.notes || '';
+        setLoanPhotoPreview(loan.photo || '');
         title.textContent = 'Edit Loan Details';
       }
     } else {
       document.getElementById('editLoanId').value = '';
       document.getElementById('loanInterest').value = '12';
       document.getElementById('loanTenure').value = '12';
+      setLoanPhotoPreview('');
       title.textContent = 'Create New Loan';
     }
 
@@ -2283,6 +2367,7 @@
     const model = document.getElementById('loanModel').value || 'emi';
     const startDate = document.getElementById('loanStartDate').value;
     const notes = document.getElementById('loanNotes').value.trim();
+    const photo = (document.getElementById('loanPhotoData') && document.getElementById('loanPhotoData').value) || '';
 
     if (!borrower || principal <= 0 || tenure <= 0) {
       showToast('⚠️ Please enter borrower name, principal (>0), and tenure (>0).');
@@ -2303,7 +2388,8 @@
           tenure,
           model,
           startDate,
-          notes
+          notes,
+          photo
         };
         showToast('✨ Loan details updated successfully');
       }
@@ -2319,6 +2405,7 @@
         startDate: startDate || new Date().toISOString().split('T')[0],
         created: Date.now(),
         notes,
+        photo,
         payments: []
       };
       loans.unshift(newLoan);
@@ -2440,9 +2527,23 @@
         </div>
       </div>
 
+      ${loan.photo ? `
+        <div style="margin: 14px 0; background: var(--bg-tertiary); padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="${loan.photo}" alt="Borrower ID" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1.5px solid var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onclick="openImageLightbox('${loan.photo}')" />
+            <div>
+              <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Borrower ID / Document Attached</div>
+              <div style="font-size: 11.5px; color: var(--text-secondary);">Tap image to inspect full size</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openImageLightbox('${loan.photo}')">🔍 View ID</button>
+        </div>
+      ` : ''}
+
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
         ${fin.remaining > 0 ? `<button class="btn btn-primary" onclick="openPaymentFromDetails('${loan.id}')">+ Record Payment</button>` : ''}
         ${loan.phone ? `<button class="btn btn-whatsapp" onclick="sendWhatsAppReminder('${loan.id}')">💬 WhatsApp Reminder</button>` : ''}
+        <button class="btn btn-secondary" onclick="printLoanStatement('${loan.id}')">🖨️ Print / PDF Slip</button>
         <button class="btn btn-secondary admin-only" onclick="openNewLoanModal('${loan.id}')">Edit Loan</button>
         <button class="btn btn-ghost admin-only" style="color:var(--danger)" onclick="deleteLoan('${loan.id}')">Delete</button>
       </div>
@@ -2629,6 +2730,201 @@
     const payment = (loan.payments || []).find(p => String(p.id) === String(paymentId));
     if (!payment) return;
     openReceiptModal(loan, payment);
+  };
+
+  /* ------------------ Printable Loan Statement & Slip ------------------ */
+
+  window.printLoanStatement = function(loanId) {
+    const loans = loadState();
+    const loan = loans.find(x => String(x.id) === String(loanId));
+    if (!loan) return;
+
+    const fin = getLoanFinancials(loan);
+    const firmName = escapeHtml(getSecuritySettings().firmName || 'FinVault');
+    const modal = document.getElementById('receiptModal');
+    const container = document.getElementById('receiptContent');
+
+    container.innerHTML = `
+      <div class="receipt-card" style="border: 2px solid #222; padding: 22px; border-radius: 12px; background: #fff; color: #111;">
+        <div style="text-align: center; border-bottom: 2px solid #222; padding-bottom: 12px; margin-bottom: 16px;">
+          <div style="font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0071e3;">${firmName.toUpperCase()}</div>
+          <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">Official Loan Statement & Repayment Slip</div>
+          <div style="font-size: 11px; color: #666; margin-top: 4px;">Loan ID: ${loan.id} • Issued: ${fmtDate(loan.startDate || loan.created)}</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 13px;">
+          <div style="background: #f7f9fc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e1e4e8;">
+            <div style="color: #666; font-size: 10.5px; font-weight: 700;">BORROWER DETAILS</div>
+            <div style="font-weight: 800; font-size: 15px; margin-top: 2px;">${escapeHtml(loan.borrower)}</div>
+            <div style="color: #333; margin-top: 2px;">📞 ${escapeHtml(loan.phone || 'N/A')}</div>
+            ${loan.notes ? `<div style="color: #555; font-size: 11px; margin-top: 4px;">📝 ${escapeHtml(loan.notes)}</div>` : ''}
+          </div>
+          <div style="background: #f7f9fc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e1e4e8;">
+            <div style="color: #666; font-size: 10.5px; font-weight: 700;">LOAN TERMS</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+              <span>Principal:</span> <strong>${fmtMoney(fin.principal)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+              <span>Interest:</span> <strong>${loan.interest}% (${(loan.model || 'emi').toUpperCase()})</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+              <span>Tenure:</span> <strong>${loan.tenure} Months</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; margin-bottom: 16px;">
+          <div style="background: #f0f4f8; padding: 10px; border-radius: 8px; border: 1px solid #d0d7de;">
+            <div style="font-size: 10px; font-weight: 700; color: #555;">TOTAL PAYABLE</div>
+            <div style="font-size: 15px; font-weight: 800; margin-top: 2px;">${fmtMoney(fin.totalPayable)}</div>
+          </div>
+          <div style="background: #e6f4ea; padding: 10px; border-radius: 8px; border: 1px solid #b7e1cd;">
+            <div style="font-size: 10px; font-weight: 700; color: #137333;">TOTAL COLLECTED</div>
+            <div style="font-size: 15px; font-weight: 800; color: #137333; margin-top: 2px;">${fmtMoney(fin.totalPaid)}</div>
+          </div>
+          <div style="background: #fce8e6; padding: 10px; border-radius: 8px; border: 1px solid #fad2cf;">
+            <div style="font-size: 10px; font-weight: 700; color: #c5221f;">BALANCE DUE</div>
+            <div style="font-size: 15px; font-weight: 800; color: #c5221f; margin-top: 2px;">${fmtMoney(fin.remaining)}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Itemized Payment Ledger (${(loan.payments || []).length} Payments)</div>
+          ${(loan.payments && loan.payments.length > 0) ? `
+            <table class="statement-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Amount</th>
+                  <th>Collected By</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${loan.payments.slice().reverse().map(p => `
+                  <tr>
+                    <td>${fmtDate(p.date)}</td>
+                    <td>${escapeHtml(p.mode || 'Cash')}</td>
+                    <td style="font-weight: 700; color: #0b8043;">${fmtMoney(p.amount)}</td>
+                    <td>${escapeHtml(p.collectedBy || 'Admin')}</td>
+                    <td>${escapeHtml(p.note || '—')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<div style="font-size: 12px; color: #666; font-style: italic; padding: 8px;">No installments recorded yet.</div>'}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; padding-top: 14px; border-top: 1.5px dashed #bbb;">
+          <div style="font-size: 10px; color: #666; max-width: 240px; line-height: 1.4;">
+            Verified financial record generated by ${firmName}. Zero ledger discrepancy. Printed on ${new Date().toLocaleDateString('en-IN')}.
+          </div>
+          <div style="text-align: center;">
+            <div style="width: 130px; border-bottom: 1.5px solid #222; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Authorized Signature</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="receipt-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end;">
+        <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <button type="button" class="btn btn-secondary" data-close-modal onclick="closeAllModals()">Close</button>
+      </div>
+    `;
+
+    openModal(modal);
+  };
+
+  /* ------------------ Borrower Photo / ID Proof Engine ------------------ */
+
+  function setLoanPhotoPreview(dataUrl) {
+    const hiddenData = document.getElementById('loanPhotoData');
+    const emptyView = document.getElementById('loanPhotoEmptyView');
+    const previewView = document.getElementById('loanPhotoPreviewView');
+    const previewImg = document.getElementById('loanPhotoPreviewImg');
+    if (hiddenData) hiddenData.value = dataUrl || '';
+    if (dataUrl) {
+      if (previewImg) previewImg.src = dataUrl;
+      if (emptyView) emptyView.style.display = 'none';
+      if (previewView) previewView.style.display = 'block';
+    } else {
+      if (previewImg) previewImg.src = '';
+      if (emptyView) emptyView.style.display = 'block';
+      if (previewView) previewView.style.display = 'none';
+    }
+  }
+
+  function setupPhotoUploader() {
+    const dropzone = document.getElementById('loanPhotoUploadArea');
+    const fileInput = document.getElementById('loanPhotoInput');
+    const removeBtn = document.getElementById('removeLoanPhotoBtn');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', (e) => {
+        if (e.target.closest('#removeLoanPhotoBtn')) return;
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files && fileInput.files[0]) {
+          compressImage(fileInput.files[0], (compressedDataUrl) => {
+            setLoanPhotoPreview(compressedDataUrl);
+            showToast('📸 Photo / ID attached and compressed!');
+          });
+        }
+        fileInput.value = '';
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setLoanPhotoPreview('');
+        showToast('🗑️ Photo removed');
+      });
+    }
+  }
+
+  function compressImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 850;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+        callback(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.openImageLightbox = function(imgSrc) {
+    const modal = document.getElementById('imageLightboxModal');
+    const img = document.getElementById('lightboxImage');
+    const dl = document.getElementById('lightboxDownloadBtn');
+    if (modal && img) {
+      img.src = imgSrc;
+      if (dl) dl.href = imgSrc;
+      openModal(modal);
+    }
   };
 
   /* ------------------ Interactive Calculator (Apple Sliders) ------------------ */

@@ -1412,7 +1412,122 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border-bottom: 1px dashed #d0d4da !important;
     color: #1a1a1a !important;
   }
+
+  #receiptModal .statement-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+    margin: 12px 0 !important;
+  }
+
+  #receiptModal .statement-table th {
+    background: #f0f2f5 !important;
+    color: #111 !important;
+    border-bottom: 1.5px solid #333 !important;
+    padding: 6px 8px !important;
+    text-align: left !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #receiptModal .statement-table td {
+    padding: 5px 8px !important;
+    border-bottom: 1px solid #ddd !important;
+  }
 }
+
+/* Filter Pill Counter Badges */
+.pill-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  margin-left: 6px;
+  background: rgba(0, 113, 227, 0.15);
+  color: var(--accent);
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.pill-btn.active .pill-counter {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.pill-btn[data-filter="today"] .pill-counter {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+
+.pill-btn.active[data-filter="today"] .pill-counter {
+  background: #ffffff;
+  color: #ff3b30;
+}
+
+/* Photo & ID Proof Upload Dropzone */
+.photo-upload-dropzone {
+  border: 1.5px dashed var(--border-card);
+  border-radius: var(--radius-md, 14px);
+  padding: 16px;
+  text-align: center;
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.photo-upload-dropzone:hover {
+  border-color: var(--accent);
+  background: rgba(0, 113, 227, 0.04);
+}
+
+.photo-delete-badge {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.photo-delete-badge:hover {
+  background: var(--danger);
+}
+
+/* Fullscreen ID Lightbox */
+#imageLightboxModal .modal-sheet {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  text-align: center;
+  padding: 10px !important;
+  max-width: 92vw !important;
+}
+
+#imageLightboxModal img {
+  max-width: 90vw;
+  max-height: 78vh;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  object-fit: contain;
+  background: #000000;
+}
+
 
 /* Micro Animations */
 @keyframes appleFadeIn {
