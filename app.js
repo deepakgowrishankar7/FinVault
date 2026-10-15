@@ -1413,15 +1413,26 @@
     }
   };
 
-  window.deleteAgent = function(agentId) {
+  window.deleteAgent = async function(agentId) {
     if (currentRole !== 'admin') return;
-    if (confirm('Delete this field agent? They will no longer be able to log in.')) {
-      const sec = getSecuritySettings();
-      sec.agents = (sec.agents || []).filter(x => x.id !== agentId);
-      saveSecuritySettings(sec);
-      renderAgentTable();
-      showToast('Agent deleted');
-    }
+    const sec = getSecuritySettings();
+    const ag = (sec.agents || []).find(x => x.id === agentId);
+    const agentName = ag ? escapeHtml(ag.name) : 'this team member';
+
+    const confirmed = await showInAppConfirm({
+      title: 'Remove Team Member?',
+      message: `Are you sure you want to remove <strong>${agentName}</strong>? They will no longer be able to log into FinVault.`,
+      icon: '👤',
+      confirmText: 'Remove Member',
+      confirmColor: 'var(--danger)'
+    });
+
+    if (!confirmed) return;
+
+    sec.agents = (sec.agents || []).filter(x => x.id !== agentId);
+    saveSecuritySettings(sec);
+    renderAgentTable();
+    showToast(`Team member "${agentName}" removed`);
   };
 
   /* ------------------ Central Cloud Database (Developer Provided) ------------------ */
@@ -2244,12 +2255,22 @@
 
     // Delegated Modal Close (handles any [data-close-modal], .modal-close-btn, and backdrop taps)
     document.addEventListener('click', e => {
-      if (e.target.closest('[data-close-modal]') || e.target.closest('.modal-close-btn')) {
+      const closeBtn = e.target.closest('[data-close-modal]') || e.target.closest('.modal-close-btn');
+      if (closeBtn) {
         e.preventDefault();
+        const parentOverlay = closeBtn.closest('.modal-overlay');
+        if (parentOverlay && (parentOverlay.id === 'imageLightboxModal' || parentOverlay.id === 'inAppConfirmModal')) {
+          closeModal(parentOverlay);
+          return;
+        }
         closeAllModals();
         return;
       }
       if (e.target.classList && e.target.classList.contains('modal-overlay')) {
+        if (e.target.id === 'imageLightboxModal' || e.target.id === 'inAppConfirmModal') {
+          closeModal(e.target);
+          return;
+        }
         closeAllModals();
       }
     });
@@ -2310,6 +2331,83 @@
     document.body.classList.remove('modal-open');
   }
   window.closeAllModals = closeAllModals;
+
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('open');
+    if (!document.querySelector('.modal-overlay.open')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+  window.closeModal = closeModal;
+
+  function showInAppConfirm({ title, message, icon = '🗑️', confirmText = 'Delete', confirmColor = 'var(--danger)' }) {
+    return new Promise(resolve => {
+      const modal = document.getElementById('inAppConfirmModal');
+      const titleEl = document.getElementById('inAppConfirmTitle');
+      const descEl = document.getElementById('inAppConfirmDesc');
+      const iconEl = document.getElementById('inAppConfirmIcon');
+      const confirmBtn = document.getElementById('inAppConfirmActionBtn');
+      const cancelBtn = document.getElementById('inAppConfirmCancelBtn');
+
+      if (!modal || !confirmBtn || !cancelBtn) {
+        resolve(window.confirm(message ? message.replace(/<[^>]*>/g, '') : title));
+        return;
+      }
+
+      if (titleEl) titleEl.textContent = title || 'Confirm Action';
+      if (descEl) descEl.innerHTML = message || 'Are you sure you want to proceed?';
+      if (iconEl) iconEl.textContent = icon;
+      confirmBtn.textContent = confirmText;
+      confirmBtn.style.background = confirmColor;
+
+      let settled = false;
+
+      function onConfirm() {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        closeModal(modal);
+        resolve(true);
+      }
+
+      function onCancel() {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        closeModal(modal);
+        resolve(false);
+      }
+
+      function onBackdrop(e) {
+        if (e.target === modal) {
+          onCancel();
+        }
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onCancel();
+        }
+      }
+
+      function cleanup() {
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+        modal.removeEventListener('click', onBackdrop);
+        window.removeEventListener('keydown', onKeyDown, true);
+      }
+
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+      modal.addEventListener('click', onBackdrop);
+      window.addEventListener('keydown', onKeyDown, true);
+
+      openModal(modal);
+    });
+  }
+  window.showInAppConfirm = showInAppConfirm;
 
   function openNewLoanModal(editId = null) {
     if (currentRole !== 'admin') {
@@ -2627,20 +2725,31 @@
     openPaymentModal(loanId);
   };
 
-  window.deleteLoan = function(loanId) {
+  window.deleteLoan = async function(loanId) {
     if (currentRole !== 'admin') {
       showToast('⚠️ Only Admin can delete loan records');
       return;
     }
-    if (confirm('Are you sure you want to delete this loan record? This action cannot be undone.')) {
-      let loans = loadState();
-      loans = loans.filter(x => String(x.id) !== String(loanId));
-      saveState(loans);
-      closeAllModals();
-      showToast('🗑️ Loan record deleted');
-      renderDashboard();
-      renderLoansList();
-    }
+    const loans = loadState();
+    const loan = loans.find(x => String(x.id) === String(loanId));
+    const borrowerName = loan ? escapeHtml(loan.borrower) : 'this borrower';
+
+    const confirmed = await showInAppConfirm({
+      title: 'Delete Loan Record?',
+      message: `Are you sure you want to permanently delete the loan record for <strong>${borrowerName}</strong>? This action cannot be undone.`,
+      icon: '🗑️',
+      confirmText: 'Delete Loan',
+      confirmColor: 'var(--danger)'
+    });
+
+    if (!confirmed) return;
+
+    let updatedLoans = loans.filter(x => String(x.id) !== String(loanId));
+    saveState(updatedLoans);
+    closeAllModals();
+    showToast(`🗑️ Loan record for "${borrowerName}" deleted`);
+    renderDashboard();
+    renderLoansList();
   };
 
   /* ------------------ Digital Receipt System ------------------ */
@@ -3176,7 +3285,7 @@
             importCsvData(content);
           }
         } catch (err) {
-          alert('Could not parse file. Ensure it is a valid .finvault, .dgsvault, JSON, or CSV export.');
+          showToast('⚠️ Could not parse file. Ensure it is a valid .finvault, .dgsvault, JSON, or CSV export.');
         }
       };
       reader.readAsText(file);
