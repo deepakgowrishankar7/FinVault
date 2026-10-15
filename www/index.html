@@ -899,12 +899,43 @@
       <form id="agentForm">
         <input id="agentEditId" type="hidden"/>
 
-        <div class="form-group">
-          <label for="agentInputRole">Role & Access Level *</label>
-          <select id="agentInputRole" class="form-control">
-            <option value="admin">👑 Co-Admin / Business Partner (Full access to profits, editing & settings)</option>
-            <option value="agent" selected>🏃 Field Collection Agent (Collections only, profits & rates hidden)</option>
-          </select>
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label style="display:block;font-weight:600;font-size:13px;color:var(--text-primary);margin-bottom:6px">
+            Role & Access Level *
+          </label>
+          <input id="agentInputRole" type="hidden" value="agent"/>
+
+          <div class="role-cards-container">
+            <!-- Field Collection Agent (Safe & Collections Only) -->
+            <div id="roleSelectCardAgent" class="role-select-card selected" data-role="agent" role="button" tabindex="0">
+              <div class="card-icon-box">🏃</div>
+              <div class="card-body">
+                <div class="card-title-row">
+                  <span class="card-title">Field Collection Agent</span>
+                  <span class="card-pill">Recommended</span>
+                </div>
+                <p class="card-desc">
+                  Collects repayments & issues receipts. Profit analytics, interest rates & settings are safely hidden.
+                </p>
+              </div>
+              <div class="card-radio-circle"></div>
+            </div>
+
+            <!-- Co-Admin / Business Partner -->
+            <div id="roleSelectCardAdmin" class="role-select-card admin-card" data-role="admin" role="button" tabindex="0">
+              <div class="card-icon-box">👑</div>
+              <div class="card-body">
+                <div class="card-title-row">
+                  <span class="card-title">Co-Admin / Business Partner</span>
+                  <span class="card-pill">Full Access</span>
+                </div>
+                <p class="card-desc">
+                  Full control over dashboard, editing loans, profit analytics, ledger downloads & vault settings.
+                </p>
+              </div>
+              <div class="card-radio-circle"></div>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">

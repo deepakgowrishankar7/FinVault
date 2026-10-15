@@ -1244,6 +1244,43 @@
     const agentModal = document.getElementById('agentModal');
     const agentForm = document.getElementById('agentForm');
 
+    function setRoleSelection(role) {
+      const roleInput = document.getElementById('agentInputRole');
+      if (roleInput) roleInput.value = role;
+      const cardAgent = document.getElementById('roleSelectCardAgent');
+      const cardAdmin = document.getElementById('roleSelectCardAdmin');
+      if (cardAgent && cardAdmin) {
+        if (role === 'admin') {
+          cardAdmin.classList.add('selected');
+          cardAgent.classList.remove('selected');
+        } else {
+          cardAgent.classList.add('selected');
+          cardAdmin.classList.remove('selected');
+        }
+      }
+    }
+
+    const cardAgent = document.getElementById('roleSelectCardAgent');
+    const cardAdmin = document.getElementById('roleSelectCardAdmin');
+    if (cardAgent) {
+      cardAgent.addEventListener('click', () => setRoleSelection('agent'));
+      cardAgent.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setRoleSelection('agent');
+        }
+      });
+    }
+    if (cardAdmin) {
+      cardAdmin.addEventListener('click', () => setRoleSelection('admin'));
+      cardAdmin.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setRoleSelection('admin');
+        }
+      });
+    }
+
     if (openAddBtn && agentModal) {
       openAddBtn.addEventListener('click', () => {
         if (currentRole !== 'admin') {
@@ -1252,8 +1289,7 @@
         }
         agentForm.reset();
         document.getElementById('agentEditId').value = '';
-        const roleSel = document.getElementById('agentInputRole');
-        if (roleSel) roleSel.value = 'agent';
+        setRoleSelection('agent');
         document.getElementById('agentModalTitle').textContent = 'Add Team Member / Co-Admin';
         openModal(agentModal);
       });
@@ -2707,27 +2743,37 @@
           return;
         }
 
-        const headers = ['ID', 'Borrower', 'Phone', 'Principal', 'InterestRate', 'TenureMonths', 'Model', 'TotalPaid', 'StartDate', 'Notes'];
+        const headers = ['ID', 'Borrower', 'Phone', 'Principal', 'InterestRate', 'TenureMonths', 'Model', 'TotalPaid', 'Balance', 'StartDate', 'Notes'];
         const rows = data.map(l => {
           const fin = getLoanFinancials(l);
+          const cleanPhone = (l.phone || '').trim();
+          // Escape strings for Excel formulas so Phone and ID stay as literal text and never convert to scientific notation (e.g. 9.87E+09)
+          const phoneCell = cleanPhone ? `"=""${cleanPhone.replace(/"/g, '""')}"""` : '""';
+          const idCell = `"=""${String(l.id).replace(/"/g, '""')}"""`;
+          const borrowerCell = `"${(l.borrower || '').replace(/"/g, '""')}"`;
+          const notesCell = `"${(l.notes || '').replace(/"/g, '""')}"`;
+          const startDateCell = `"${l.startDate || ''}"`;
+
           return [
-            l.id,
-            `"${(l.borrower || '').replace(/"/g, '""')}"`,
-            `"${l.phone || ''}"`,
+            idCell,
+            borrowerCell,
+            phoneCell,
             l.principal,
             l.interest,
             l.tenure,
             l.model,
             fin.totalPaid,
-            l.startDate,
-            `"${(l.notes || '').replace(/"/g, '""')}"`
+            fin.balance,
+            startDateCell,
+            notesCell
           ].join(',');
         });
 
-        const csv = [headers.join(',')].concat(rows).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
+        // Add UTF-8 BOM (\uFEFF) so Excel opens UTF-8 text and Indian rupee symbols cleanly
+        const csv = '\uFEFF' + [headers.join(',')].concat(rows).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         downloadFile(blob, `FinVault_Loans_${new Date().toISOString().split('T')[0]}.csv`);
-        showToast('📊 CSV spreadsheet exported!');
+        showToast('📊 CSV spreadsheet exported (Excel formatted)!');
       });
     }
 
@@ -2829,17 +2875,53 @@
   }
 
   function importCsvData(content) {
-    const lines = content.split(/\r?\n/).filter(Boolean);
+    // Remove UTF-8 BOM if present
+    const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
+    const lines = cleanContent.split(/\r?\n/).filter(line => line.trim().length > 0);
     if (lines.length < 2) return;
-    const headers = lines.shift().split(',').map(h => h.trim());
+
+    // Helper to parse RFC 4180 CSV line with quoted cells and commas
+    function parseCsvRow(text) {
+      const res = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+          if (inQuotes && text[i + 1] === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (c === ',' && !inQuotes) {
+          res.push(cell);
+          cell = '';
+        } else {
+          cell += c;
+        }
+      }
+      res.push(cell);
+      return res;
+    }
+
+    const headers = parseCsvRow(lines.shift()).map(h => h.trim().replace(/^"|"$/g, ''));
 
     const loans = loadState();
     lines.forEach(line => {
-      const cols = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+      const cols = parseCsvRow(line);
       const item = {};
       headers.forEach((h, i) => {
-        const raw = cols[i] ? cols[i].replace(/^"|"$/g, '') : '';
-        item[h] = isNaN(raw) ? raw : Number(raw);
+        let raw = cols[i] !== undefined ? cols[i].trim() : '';
+        // Strip Excel formula wrapper ="..." or quotes
+        if (raw.startsWith('="') && raw.endsWith('"')) {
+          raw = raw.slice(2, -1);
+        } else if (raw.startsWith('"') && raw.endsWith('"')) {
+          raw = raw.slice(1, -1);
+        } else if (raw.startsWith('=')) {
+          raw = raw.slice(1);
+        }
+        item[h] = (isNaN(raw) || h === 'Phone' || h === 'ID') ? raw : Number(raw);
       });
 
       loans.push({
