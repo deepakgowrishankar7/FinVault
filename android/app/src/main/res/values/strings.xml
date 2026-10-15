@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">FinVault</string>
     <string name="title_activity_main">FinVault</string>
-    <string name="package_name">com.finvault.app</string>
-    <string name="custom_url_scheme">com.finvault.app</string>
+    <string name="package_name">com.dgs.finance</string>
+    <string name="custom_url_scheme">com.dgs.finance</string>
 </resources>

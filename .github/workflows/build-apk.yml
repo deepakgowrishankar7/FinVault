@@ -1,0 +1,83 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build FinVault APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm install
+
+      - name: Build Web Assets & Sync
+        run: node build.js
+
+      - name: Setup Java 21 (LTS)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android || true
+
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK with Gradle
+        working-directory: android
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p release-output
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-output/FinVault.apk
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinVault-Android-APK
+          path: release-output/FinVault.apk
+          retention-days: 30
+
+      - name: Create / Update GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "FinVault Android APK (v1.0.0)"
+          body: |
+            ### 📱 FinVault Android Application
+
+            - **App Name:** FinVault — Smart Loan & Repayment Ledger
+            - **Platform:** Android 7.0+ (Phones & Tablets)
+            - **Architecture:** Offline-First with On-Device AES/IndexedDB Storage
+
+            #### 📥 Quick Installation Instructions:
+            1. Download the **`FinVault.apk`** file below directly on your Android phone.
+            2. Tap the downloaded `.apk` notification or open it from your Files / Downloads app.
+            3. If Android shows a security prompt (*"Install unknown apps"*), tap **Settings** and enable **"Allow from this source"**.
+            4. Tap **Install** and launch FinVault!
+          files: release-output/FinVault.apk
+          draft: false
+          prerelease: false
