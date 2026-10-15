@@ -1714,12 +1714,13 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   cursor: pointer;
-  max-width: 140px;
+  max-width: 150px;
   white-space: nowrap;
   flex-shrink: 1;
   transition: all var(--transition-fast);
@@ -1729,14 +1730,34 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 90px;
+  max-width: 95px;
   display: inline-block;
   vertical-align: middle;
+  color: inherit;
 }
 
 .current-user-tag:hover {
   border-color: var(--accent);
   background: var(--accent-light);
+  color: var(--accent);
+}
+
+[data-theme="dark"] .current-user-tag {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .current-user-tag #roleName {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .current-user-tag:hover {
+  background: rgba(0, 113, 227, 0.3);
+  border-color: var(--accent);
+  color: #ffffff;
 }
 
 /* Mobile Header Refinement: Prevents long user names from pushing + New Loan off-screen */
