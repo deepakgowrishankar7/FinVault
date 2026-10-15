@@ -1199,43 +1199,54 @@
   /* ------------------ Team & Field Agents Management Roster ------------------ */
 
   function renderAgentTable() {
-    const tbody = document.getElementById('agentTableBody');
-    if (!tbody) return;
+    const container = document.getElementById('agentTableBody');
+    if (!container) return;
 
     const sec = getSecuritySettings();
     const agents = sec.agents || [];
 
     if (!agents.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:18px">No team members or co-admins registered yet. Click "+ Add Team Member / Co-Admin" above.</td></tr>`;
+      container.innerHTML = `
+        <div style="text-align:center;padding:26px 16px;color:var(--text-secondary);background:var(--bg-secondary);border:1px dashed var(--border-subtle);border-radius:14px">
+          <div style="font-size:28px;margin-bottom:6px">👥</div>
+          <div style="font-weight:600;font-size:14px;color:var(--text-primary)">No team members registered yet</div>
+          <div style="font-size:12.5px;color:var(--text-secondary);margin-top:4px">Tap "+ Add Team Member / Co-Admin" above to register collection staff or partners.</div>
+        </div>
+      `;
       return;
     }
 
-    tbody.innerHTML = agents.map(ag => `
-      <tr>
-        <td style="font-weight:700">${escapeHtml(ag.name)}</td>
-        <td>
-          <span class="agent-role-badge ${ag.role === 'admin' ? 'admin' : 'agent'}">
-            ${ag.role === 'admin' ? '👑 CO-ADMIN' : '🏃 FIELD AGENT'}
-          </span>
-        </td>
-        <td style="color:var(--text-secondary)">${escapeHtml(ag.phone || '—')}</td>
-        <td>••••</td>
-        <td>
-          <span class="agent-status-badge ${ag.active ? 'active' : 'disabled'}">
-            ${ag.active ? 'ACTIVE' : 'DISABLED'}
-          </span>
-        </td>
-        <td>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost btn-sm" onclick="toggleAgentStatus('${ag.id}')">
-              ${ag.active ? 'Deactivate' : 'Activate'}
-            </button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteAgent('${ag.id}')">
-              Delete
-            </button>
+    container.innerHTML = agents.map(ag => `
+      <div class="team-member-card">
+        <div class="team-member-top">
+          <div class="team-member-avatar ${ag.role === 'admin' ? 'admin' : 'agent'}">
+            ${ag.role === 'admin' ? '👑' : '🏃'}
           </div>
-        </td>
-      </tr>
+          <div class="team-member-identity">
+            <div class="team-member-title-row">
+              <span class="team-member-name">${escapeHtml(ag.name)}</span>
+              <span class="agent-role-pill ${ag.role === 'admin' ? 'admin' : 'agent'}">
+                ${ag.role === 'admin' ? '👑 Co-Admin' : '🏃 Field Agent'}
+              </span>
+              <span class="agent-status-pill ${ag.active ? 'active' : 'disabled'}">
+                ${ag.active ? 'Active' : 'Disabled'}
+              </span>
+            </div>
+            <div class="team-member-meta">
+              ${ag.phone ? `<span class="meta-item">📞 ${escapeHtml(ag.phone)}</span>` : '<span class="meta-item" style="color:var(--text-tertiary)">📞 No phone</span>'}
+              <span class="meta-item">🔒 Passcode: ••••</span>
+            </div>
+          </div>
+        </div>
+        <div class="team-member-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAgentStatus('${ag.id}')">
+            ${ag.active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);font-weight:600" onclick="deleteAgent('${ag.id}')">
+            Delete
+          </button>
+        </div>
+      </div>
     `).join('');
   }
 

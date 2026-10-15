@@ -2012,16 +2012,182 @@ body.role-agent .admin-only {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap !important;
 }
 
 .agent-role-badge.admin {
-  background: var(--accent-light);
-  color: var(--accent);
+  background: rgba(255, 149, 0, 0.14);
+  color: #ff9500;
+  border: 1px solid rgba(255, 149, 0, 0.25);
 }
 
 .agent-role-badge.agent {
-  background: rgba(142, 142, 147, 0.16);
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(0, 113, 227, 0.2);
+}
+
+/* Team & Agent Roster Card Presentation */
+.team-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.team-member-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.team-member-card:hover {
+  border-color: var(--border-card);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.team-member-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-member-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  background: rgba(0, 113, 227, 0.1);
+  border: 1px solid rgba(0, 113, 227, 0.18);
+}
+
+.team-member-avatar.admin {
+  background: rgba(255, 149, 0, 0.12);
+  border-color: rgba(255, 149, 0, 0.25);
+}
+
+.team-member-identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-member-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.team-member-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  word-break: break-word;
+}
+
+.agent-role-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap !important;
+  letter-spacing: 0.2px;
+}
+
+.agent-role-pill.agent {
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(0, 113, 227, 0.2);
+}
+
+.agent-role-pill.admin {
+  background: rgba(255, 149, 0, 0.12);
+  color: #ff9500;
+  border: 1px solid rgba(255, 149, 0, 0.25);
+}
+
+.agent-status-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  white-space: nowrap !important;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.agent-status-pill.active {
+  background: rgba(52, 199, 89, 0.15);
+  color: var(--success);
+}
+
+.agent-status-pill.disabled {
+  background: rgba(142, 142, 147, 0.15);
+  color: var(--text-tertiary);
+}
+
+.team-member-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
   color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.team-member-meta .meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-member-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 600px) {
+  .team-member-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .team-member-actions {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+[data-theme="dark"] .team-member-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .team-member-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .team-member-actions {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Role Selector Cards (Team Management Modal) */
