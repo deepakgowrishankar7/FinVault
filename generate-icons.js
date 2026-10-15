@@ -3,7 +3,7 @@ const path = require('path');
 const sharp = require('sharp');
 
 async function run() {
-  const srcPath = path.join(__dirname, 'logo-source.jpg');
+  const srcPath = path.join(__dirname, 'logo-source.png');
   const srcBuffer = fs.readFileSync(srcPath);
 
   // 1. Generate Root PWA Icons
@@ -51,10 +51,10 @@ async function run() {
   if (fs.existsSync(bgXmlPath)) {
     const bgXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#101012</color>
+    <color name="ic_launcher_background">#06429A</color>
 </resources>\n`;
     fs.writeFileSync(bgXmlPath, bgXml, 'utf8');
-    console.log('Updated ic_launcher_background.xml to #101012');
+    console.log('Updated ic_launcher_background.xml to #06429A');
   }
 
   console.log('All icons generated successfully!');
