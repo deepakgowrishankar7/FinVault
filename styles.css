@@ -2025,4 +2025,23 @@ body.role-agent .admin-only {
   margin-bottom: 14px;
 }
 
+/* Cloud Diagnostics Box Dark Theme */
+[data-theme="dark"] #cloudSyncDetailsBox {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #cloudSyncDetailsBox > div > div {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] #cloudDbState,
+[data-theme="dark"] #cloudDbLatency,
+[data-theme="dark"] #cloudDbRecordsCount,
+[data-theme="dark"] #cloudDbLastSyncTime {
+  color: #ffffff !important;
+}
+
 

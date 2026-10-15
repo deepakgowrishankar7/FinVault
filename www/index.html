@@ -456,10 +456,54 @@
           <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px">
             By default, all your data remains <strong>100% offline and private on this device</strong>. Turn this switch <strong>ON</strong> if you want your loans and repayment ledger automatically backed up and synced to the central cloud database.
           </p>
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button type="button" id="syncNowBtn" class="btn btn-primary btn-sm" style="display:none;">☁️ Sync Now</button>
-            <div id="cloudSyncStatusPill" class="health-pill healthy" style="display:inline-flex;padding:4px 10px;font-size:12px;">
+            <button type="button" id="testCloudPingBtn" class="btn btn-secondary btn-sm" style="display:none;">⚡ Test Connection</button>
+            <div id="cloudSyncStatusPill" class="health-pill" style="display:inline-flex;padding:4px 10px;font-size:12px;">
               🔒 100% On-Device Private Mode
+            </div>
+          </div>
+
+          <!-- Live Connection & Cloud Diagnostic Details Box -->
+          <div id="cloudSyncDetailsBox" style="display:none;margin-top:16px;background:rgba(0,0,0,0.03);border:1px solid var(--border-subtle);border-radius:14px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);">Live Cloud Database Details</span>
+              <span id="cloudPingBadge" style="font-size:11px;font-weight:600;color:var(--text-secondary);">Supabase Project: cpfpmnyipiqdtcnobwoq</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:10px;">
+              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Database Link</div>
+                <div id="cloudDbState" style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                  <span class="status-dot healthy"></span> <span>Checking...</span>
+                </div>
+              </div>
+
+              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Response Latency</div>
+                <div id="cloudDbLatency" style="font-size:13px;font-weight:700;">—</div>
+              </div>
+
+              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Cloud Backed Loans</div>
+                <div id="cloudDbRecordsCount" style="font-size:13px;font-weight:700;">0 loans</div>
+              </div>
+
+              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Last Successful Sync</div>
+                <div id="cloudDbLastSyncTime" style="font-size:13px;font-weight:700;">Never</div>
+              </div>
+            </div>
+
+            <!-- Problem / Error Alert Box (Only shown if error detected) -->
+            <div id="cloudSyncErrorAlert" style="display:none;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--danger);margin-top:8px;">
+              <div style="font-weight:700;margin-bottom:2px;">⚠️ Problem Detected:</div>
+              <div id="cloudSyncErrorMessage" style="line-height:1.4;">Could not reach database.</div>
+            </div>
+
+            <!-- Operational Success Notice -->
+            <div id="cloudSyncSuccessAlert" style="display:none;background:rgba(52,199,89,0.1);border:1px solid rgba(52,199,89,0.25);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--success);margin-top:8px;">
+              ✓ <strong>Connected & Active</strong>: Supabase project is reachable and healthy.
             </div>
           </div>
         </div>

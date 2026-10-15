@@ -1301,12 +1301,161 @@
     key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZnBtbnlpcGlxZHRjbm9id29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMzYwMzcsImV4cCI6MjEwNzYxMjAzN30.KnKEfEWrUFNbvveRnwf9w71-nXULRDKQhrnhYoCrd_w'
   };
 
+  /* ------------------ Live Cloud Database Connection Diagnostics ------------------ */
+  async function testCloudConnection() {
+    const sec = getSecuritySettings();
+    const detailsBox = document.getElementById('cloudSyncDetailsBox');
+    const stateEl = document.getElementById('cloudDbState');
+    const latencyEl = document.getElementById('cloudDbLatency');
+    const countEl = document.getElementById('cloudDbRecordsCount');
+    const syncTimeEl = document.getElementById('cloudDbLastSyncTime');
+    const errorAlert = document.getElementById('cloudSyncErrorAlert');
+    const errorMsg = document.getElementById('cloudSyncErrorMessage');
+    const successAlert = document.getElementById('cloudSyncSuccessAlert');
+    const statusPill = document.getElementById('cloudSyncStatusPill');
+    const pingBtn = document.getElementById('testCloudPingBtn');
+
+    if (!sec.cloudSyncEnabled) {
+      if (detailsBox) detailsBox.style.display = 'none';
+      return { success: false, reason: 'disabled' };
+    }
+
+    if (detailsBox) detailsBox.style.display = 'block';
+
+    if (stateEl) {
+      stateEl.innerHTML = '<span class="status-dot warning"></span> <span style="color:var(--warning);">Connecting...</span>';
+    }
+    if (latencyEl) latencyEl.textContent = 'Measuring...';
+    if (errorAlert) errorAlert.style.display = 'none';
+    if (successAlert) successAlert.style.display = 'none';
+    if (pingBtn) {
+      pingBtn.disabled = true;
+      pingBtn.textContent = '⏳ Testing...';
+    }
+
+    if (!navigator.onLine) {
+      if (stateEl) {
+        stateEl.innerHTML = '<span class="status-dot danger"></span> <span style="color:var(--danger);">Device Offline</span>';
+      }
+      if (latencyEl) latencyEl.textContent = 'No Internet';
+      if (statusPill) {
+        statusPill.innerHTML = '⚠️ Offline (No Internet)';
+        statusPill.className = 'health-pill needs-action';
+      }
+      if (errorAlert) {
+        errorAlert.style.display = 'block';
+        if (errorMsg) errorMsg.textContent = 'Your device is not connected to the internet. All ledger data is safely stored locally on this device and will sync when your internet connection is restored.';
+      }
+      if (pingBtn) {
+        pingBtn.disabled = false;
+        pingBtn.textContent = '⚡ Test Connection';
+      }
+      return { success: false, reason: 'offline' };
+    }
+
+    const t0 = performance.now();
+    try {
+      const res = await fetch(`${CENTRAL_SUPABASE_CONFIG.url}/rest/v1/loans?select=*`, {
+        method: 'GET',
+        headers: {
+          'apikey': CENTRAL_SUPABASE_CONFIG.key,
+          'Authorization': `Bearer ${CENTRAL_SUPABASE_CONFIG.key}`
+        }
+      });
+      const latency = Math.round(performance.now() - t0);
+
+      if (res.ok) {
+        const cloudData = await res.json();
+        const count = Array.isArray(cloudData) ? cloudData.length : 0;
+        const lastSync = localStorage.getItem('finvault_last_cloud_sync') || 'Just now';
+
+        if (stateEl) {
+          stateEl.innerHTML = '<span class="status-dot healthy"></span> <span style="color:var(--success);">Connected & Live</span>';
+        }
+        if (latencyEl) {
+          latencyEl.textContent = `${latency} ms (${latency < 350 ? 'Fast' : 'Normal'})`;
+        }
+        if (countEl) {
+          countEl.textContent = `${count} loan${count === 1 ? '' : 's'} in cloud`;
+        }
+        if (syncTimeEl) {
+          syncTimeEl.textContent = lastSync;
+        }
+        if (statusPill) {
+          statusPill.innerHTML = `🟢 Cloud Connected (${latency}ms)`;
+          statusPill.className = 'health-pill healthy';
+        }
+        if (successAlert) {
+          successAlert.style.display = 'block';
+          successAlert.innerHTML = `✓ <strong>Connected & Active</strong>: Database (Supabase) reachable with ${latency}ms response. ${count} borrower records stored in cloud.`;
+        }
+        if (errorAlert) errorAlert.style.display = 'none';
+        if (pingBtn) {
+          pingBtn.disabled = false;
+          pingBtn.textContent = '⚡ Test Connection';
+        }
+        return { success: true, count, latency };
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        let humanReason = errJson.message || `HTTP ${res.status} ${res.statusText}`;
+        if (res.status === 404 || humanReason.includes('loans')) {
+          humanReason = 'Database connected, but the "loans" table was not found in Supabase. Run the SQL schema script in Supabase.';
+        } else if (res.status === 401 || res.status === 403) {
+          humanReason = 'Authentication Failed: Invalid Supabase anon API Key or Row Level Security (RLS) is blocking read access.';
+        }
+
+        if (stateEl) {
+          stateEl.innerHTML = `<span class="status-dot danger"></span> <span style="color:var(--danger);">Error (${res.status})</span>`;
+        }
+        if (latencyEl) latencyEl.textContent = `${latency} ms`;
+        if (statusPill) {
+          statusPill.innerHTML = `🔴 Cloud Error (${res.status})`;
+          statusPill.className = 'health-pill needs-action';
+        }
+        if (errorAlert) {
+          errorAlert.style.display = 'block';
+          if (errorMsg) errorMsg.textContent = humanReason;
+        }
+        if (pingBtn) {
+          pingBtn.disabled = false;
+          pingBtn.textContent = '⚡ Test Connection';
+        }
+        return { success: false, reason: humanReason };
+      }
+    } catch(err) {
+      const isOffline = !navigator.onLine || (err.message && (err.message.includes('fetch') || err.message.includes('Network')));
+      const failReason = isOffline 
+        ? 'Cannot reach Supabase servers. Verify your internet connection.' 
+        : `Network exception: ${err.message}`;
+
+      if (stateEl) {
+        stateEl.innerHTML = '<span class="status-dot danger"></span> <span style="color:var(--danger);">Disconnected</span>';
+      }
+      if (latencyEl) latencyEl.textContent = 'Timeout / Failed';
+      if (statusPill) {
+        statusPill.innerHTML = '🔴 Cloud Disconnected';
+        statusPill.className = 'health-pill needs-action';
+      }
+      if (errorAlert) {
+        errorAlert.style.display = 'block';
+        if (errorMsg) errorMsg.textContent = failReason;
+      }
+      if (pingBtn) {
+        pingBtn.disabled = false;
+        pingBtn.textContent = '⚡ Test Connection';
+      }
+      return { success: false, reason: failReason };
+    }
+  }
+
   /* ------------------ Cloud Sync Control (User Permission Toggle) ------------------ */
   function setupCloudSync() {
     const toggle = document.getElementById('cloudSyncToggle');
     const toggleLabel = document.getElementById('cloudSyncToggleLabel');
     const statusPill = document.getElementById('cloudSyncStatusPill');
     const syncBtn = document.getElementById('syncNowBtn');
+    const testBtn = document.getElementById('testCloudPingBtn');
+    const detailsBox = document.getElementById('cloudSyncDetailsBox');
 
     const sec = getSecuritySettings();
     const isEnabled = Boolean(sec.cloudSyncEnabled);
@@ -1318,14 +1467,14 @@
         toggleLabel.style.color = enabled ? 'var(--success)' : 'var(--text-secondary)';
       }
       if (statusPill) {
-        statusPill.innerHTML = enabled 
-          ? '☁️ Cloud Sync Active (Connected)' 
-          : '🔒 100% On-Device Private Mode';
-        statusPill.className = enabled ? 'health-pill healthy' : 'health-pill';
+        if (!enabled) {
+          statusPill.innerHTML = '🔒 100% On-Device Private Mode';
+          statusPill.className = 'health-pill';
+        }
       }
-      if (syncBtn) {
-        syncBtn.style.display = enabled ? 'inline-flex' : 'none';
-      }
+      if (syncBtn) syncBtn.style.display = enabled ? 'inline-flex' : 'none';
+      if (testBtn) testBtn.style.display = enabled ? 'inline-flex' : 'none';
+      if (detailsBox) detailsBox.style.display = enabled ? 'block' : 'none';
     }
 
     updateCloudUI(isEnabled);
@@ -1344,7 +1493,7 @@
         updateCloudUI(enabled);
 
         if (enabled) {
-          showToast('☁️ Cloud Backup enabled! Syncing to database...');
+          showToast('☁️ Cloud Backup enabled! Connecting...');
           syncToSupabase(true);
         } else {
           showToast('🔒 Cloud Sync disabled. Data strictly saved on this device.');
@@ -1358,15 +1507,34 @@
       });
     }
 
-    // If cloud sync was enabled by user, fetch updates on startup
+    if (testBtn) {
+      testBtn.addEventListener('click', () => {
+        testCloudConnection().then(res => {
+          if (res.success) {
+            showToast(`🟢 Connected to Supabase! Latency: ${res.latency}ms`);
+          } else {
+            showToast(`⚠️ Connection Notice: ${res.reason}`);
+          }
+        });
+      });
+    }
+
+    // If cloud sync was enabled by user, fetch updates on startup & run diagnostic test
     if (isEnabled) {
       pullFromSupabase();
+      testCloudConnection();
     }
   }
 
   async function syncToSupabase(userInitiated = false) {
     const sec = getSecuritySettings();
     if (!sec.cloudSyncEnabled) return; // Strictly local-only when disabled
+
+    const syncBtn = document.getElementById('syncNowBtn');
+    if (syncBtn) {
+      syncBtn.disabled = true;
+      syncBtn.textContent = '⏳ Syncing...';
+    }
 
     if (userInitiated) showToast('☁️ Syncing with Cloud Database...');
     try {
@@ -1383,6 +1551,8 @@
       });
 
       if (res.ok) {
+        const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' (' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ')';
+        localStorage.setItem('finvault_last_cloud_sync', timeStr);
         if (userInitiated) showToast('✅ Cloud Sync Completed! All loans backed up.');
       } else {
         const errJson = await res.json().catch(() => ({}));
@@ -1400,6 +1570,12 @@
       if (userInitiated) {
         showToast('⚠️ Notice: Could not connect to cloud. Saved safely on local device.');
       }
+    } finally {
+      if (syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.textContent = '☁️ Sync Now';
+      }
+      testCloudConnection();
     }
   }
 
