@@ -2966,23 +2966,57 @@
 
   function setupPhotoUploader() {
     const dropzone = document.getElementById('loanPhotoUploadArea');
-    const fileInput = document.getElementById('loanPhotoInput');
+    const galleryInput = document.getElementById('loanPhotoInput');
+    const cameraInput = document.getElementById('loanPhotoCameraInput');
+    const galleryBtn = document.getElementById('triggerGalleryBtn');
+    const cameraBtn = document.getElementById('triggerCameraBtn');
     const removeBtn = document.getElementById('removeLoanPhotoBtn');
 
-    if (dropzone && fileInput) {
-      dropzone.addEventListener('click', (e) => {
-        if (e.target.closest('#removeLoanPhotoBtn')) return;
-        fileInput.click();
-      });
+    function handleFile(file) {
+      if (file) {
+        compressImage(file, (compressedDataUrl) => {
+          setLoanPhotoPreview(compressedDataUrl);
+          showToast('📸 Photo / ID attached and compressed!');
+        });
+      }
+    }
 
-      fileInput.addEventListener('change', () => {
-        if (fileInput.files && fileInput.files[0]) {
-          compressImage(fileInput.files[0], (compressedDataUrl) => {
-            setLoanPhotoPreview(compressedDataUrl);
-            showToast('📸 Photo / ID attached and compressed!');
-          });
+    if (galleryInput) {
+      galleryInput.addEventListener('change', () => {
+        if (galleryInput.files && galleryInput.files[0]) {
+          handleFile(galleryInput.files[0]);
         }
-        fileInput.value = '';
+        galleryInput.value = '';
+      });
+    }
+
+    if (cameraInput) {
+      cameraInput.addEventListener('change', () => {
+        if (cameraInput.files && cameraInput.files[0]) {
+          handleFile(cameraInput.files[0]);
+        }
+        cameraInput.value = '';
+      });
+    }
+
+    if (galleryBtn) {
+      galleryBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (galleryInput) galleryInput.click();
+      });
+    }
+
+    if (cameraBtn) {
+      cameraBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (cameraInput) cameraInput.click();
+      });
+    }
+
+    if (dropzone) {
+      dropzone.addEventListener('click', (e) => {
+        if (e.target.closest('#removeLoanPhotoBtn') || e.target.closest('button')) return;
+        if (galleryInput) galleryInput.click();
       });
     }
 
