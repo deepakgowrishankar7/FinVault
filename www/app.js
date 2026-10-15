@@ -536,17 +536,53 @@
   function updateBackupHealthUI() {
     const textEl = document.getElementById('vaultHealthText');
     const indicatorEl = document.getElementById('vaultHealthIndicator');
-    if (!textEl || !indicatorEl) return;
 
     const sec = getSecuritySettings();
     const unbacked = Number(sec.unbackedChanges) || 0;
 
-    if (unbacked >= 5) {
-      indicatorEl.className = 'health-pill warning';
-      textEl.textContent = `Backup Recommended (${unbacked} new changes)`;
-    } else {
-      indicatorEl.className = 'health-pill healthy';
-      textEl.textContent = 'Dual-Layer Vault: 100% Protected (IndexedDB + LocalStorage)';
+    if (textEl && indicatorEl) {
+      if (unbacked >= 5) {
+        indicatorEl.className = 'health-pill warning';
+        textEl.textContent = `Backup Recommended (${unbacked} new changes)`;
+      } else {
+        indicatorEl.className = 'health-pill healthy';
+        textEl.textContent = 'Dual-Layer Vault: 100% Protected (IndexedDB + LocalStorage)';
+      }
+    }
+
+    // Live Storage Architecture Panel
+    const loans = loadState();
+    const payloadBytes = JSON.stringify(loans).length;
+    const isCloud = Boolean(sec.cloudSyncEnabled);
+
+    const activePill = document.getElementById('activeStoragePill');
+    const engineEl = document.getElementById('primaryStorageEngine');
+    const locationEl = document.getElementById('primaryStorageLocation');
+    const payloadEl = document.getElementById('primaryStoragePayload');
+    const cloudMirrorEl = document.getElementById('cloudMirrorStatus');
+
+    if (activePill) {
+      activePill.textContent = isCloud ? '☁️ Dual Hybrid (Device + Cloud)' : '🔒 100% On-Device Mode';
+      activePill.className = isCloud ? 'health-pill healthy' : 'health-pill';
+    }
+    if (engineEl) {
+      engineEl.textContent = isCloud 
+        ? 'IndexedDB + Supabase PostgreSQL' 
+        : 'IndexedDB (finvault-db) + WebStorage';
+    }
+    if (locationEl) {
+      locationEl.textContent = isCloud 
+        ? 'Local Device + Supabase Cloud' 
+        : 'Private Device Sandbox (Offline)';
+    }
+    if (payloadEl) {
+      const kbSize = (payloadBytes / 1024).toFixed(1);
+      payloadEl.textContent = `${loans.length} Borrower Account${loans.length === 1 ? '' : 's'} (~${kbSize} KB)`;
+    }
+    if (cloudMirrorEl) {
+      cloudMirrorEl.innerHTML = isCloud 
+        ? '<span style="color:var(--success);">● Active (Table: public.loans)</span>' 
+        : '<span style="color:var(--text-secondary);">○ Inactive (100% Local Only)</span>';
     }
   }
 
@@ -644,7 +680,7 @@
     setupModals();
     setupCalculator();
     setupExportImport();
-    setupSampleDataLoader();
+    setupDangerZone();
     setupLockScreen();
     setupWizardModal();
     setupRecoveryModal();
@@ -1477,7 +1513,29 @@
       if (detailsBox) detailsBox.style.display = enabled ? 'block' : 'none';
     }
 
-    updateCloudUI(isEnabled);
+    const onboardModal = document.getElementById('cloudSyncOnboardModal');
+    const confirmOnboardBtn = document.getElementById('confirmCloudSyncModalBtn');
+    const cancelOnboardBtn = document.getElementById('cancelCloudSyncModalBtn');
+    const loanCountText = document.getElementById('cloudOnboardLoanCountText');
+
+    function activateCloudSync() {
+      const currentSec = getSecuritySettings();
+      currentSec.cloudSyncEnabled = true;
+      saveSecuritySettings(currentSec);
+      updateCloudUI(true);
+      updateBackupHealthUI();
+      showToast('☁️ Cloud Backup enabled! Syncing past records to database...');
+      syncToSupabase(true);
+    }
+
+    function deactivateCloudSync() {
+      const currentSec = getSecuritySettings();
+      currentSec.cloudSyncEnabled = false;
+      saveSecuritySettings(currentSec);
+      updateCloudUI(false);
+      updateBackupHealthUI();
+      showToast('🔒 Cloud Sync disabled. Data strictly saved on this device.');
+    }
 
     if (toggle) {
       toggle.addEventListener('change', () => {
@@ -1487,17 +1545,36 @@
           return;
         }
         const enabled = toggle.checked;
-        const currentSec = getSecuritySettings();
-        currentSec.cloudSyncEnabled = enabled;
-        saveSecuritySettings(currentSec);
-        updateCloudUI(enabled);
 
         if (enabled) {
-          showToast('☁️ Cloud Backup enabled! Connecting...');
-          syncToSupabase(true);
+          // Revert toggle visually until confirmed in modal
+          toggle.checked = false;
+          const loans = loadState();
+          if (loanCountText) {
+            loanCountText.innerHTML = `You have <strong>${loans.length} borrower account(s)</strong> stored locally. Enabling cloud sync will immediately upload and back up all these past records to the central database (<code>public.loans</code>).`;
+          }
+          if (onboardModal) {
+            openModal(onboardModal);
+            return;
+          }
+          activateCloudSync();
         } else {
-          showToast('🔒 Cloud Sync disabled. Data strictly saved on this device.');
+          deactivateCloudSync();
         }
+      });
+    }
+
+    if (confirmOnboardBtn) {
+      confirmOnboardBtn.addEventListener('click', () => {
+        closeAllModals();
+        activateCloudSync();
+      });
+    }
+
+    if (cancelOnboardBtn) {
+      cancelOnboardBtn.addEventListener('click', () => {
+        closeAllModals();
+        if (toggle) toggle.checked = false;
       });
     }
 
@@ -2575,8 +2652,8 @@
         const loans = loadState();
         const settings = getSecuritySettings();
         const vaultData = {
-          schema: 'dgs_vault_v3',
-          format: 'encrypted_dgsvault',
+          schema: 'finvault_pro_v1',
+          format: 'encrypted_finvault',
           exportedAt: new Date().toISOString(),
           firmName: settings.firmName || 'FinVault',
           loansCount: loans.length,
@@ -2593,16 +2670,16 @@
         };
 
         const serialized = JSON.stringify(vaultData, null, 2);
-        const encodedVault = 'DGSVAULT:' + btoa(unescape(encodeURIComponent(serialized)));
+        const encodedVault = 'FINVAULT:' + btoa(unescape(encodeURIComponent(serialized)));
         const blob = new Blob([encodedVault], { type: 'application/octet-stream' });
         const dateStr = new Date().toISOString().split('T')[0];
-        downloadFile(blob, `DGS_Finance_Vault_${dateStr}.dgsvault`);
+        downloadFile(blob, `FinVault_Backup_${dateStr}.finvault`);
 
         settings.lastBackupDate = new Date().toISOString();
         settings.unbackedChanges = 0;
         saveSecuritySettings(settings);
         updateBackupHealthUI();
-        showToast('🛡️ Complete .dgsvault backup created & downloaded!');
+        showToast('🛡️ Complete .finvault backup created & downloaded!');
       });
     }
 
@@ -2610,7 +2687,7 @@
       exportJsonBtn.addEventListener('click', () => {
         const data = loadState();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        downloadFile(blob, `DGS_Finance_Backup_${new Date().toISOString().split('T')[0]}.json`);
+        downloadFile(blob, `FinVault_Backup_${new Date().toISOString().split('T')[0]}.json`);
         showToast('📦 Complete JSON backup downloaded!');
       });
     }
@@ -2642,7 +2719,7 @@
 
         const csv = [headers.join(',')].concat(rows).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
-        downloadFile(blob, `DGS_Loans_${new Date().toISOString().split('T')[0]}.csv`);
+        downloadFile(blob, `FinVault_Loans_${new Date().toISOString().split('T')[0]}.csv`);
         showToast('📊 CSV spreadsheet exported!');
       });
     }
@@ -2655,19 +2732,19 @@
           const content = ev.target.result;
           const fileName = file.name.toLowerCase();
 
-          if (fileName.endsWith('.dgsvault')) {
+          if (fileName.endsWith('.finvault') || fileName.endsWith('.dgsvault')) {
             let jsonText = content.trim();
-            if (jsonText.startsWith('DGSVAULT:')) {
+            if (jsonText.startsWith('FINVAULT:') || jsonText.startsWith('DGSVAULT:')) {
               try {
-                const b64 = jsonText.slice(9);
+                const b64 = jsonText.slice(jsonText.indexOf(':') + 1);
                 jsonText = decodeURIComponent(escape(atob(b64)));
               } catch (err) {
-                showToast('⚠️ Could not decode encrypted .dgsvault file');
+                showToast('⚠️ Could not decode encrypted vault file');
                 return;
               }
             }
             const parsed = JSON.parse(jsonText);
-            if (parsed.schema === 'dgs_vault_v3' || (parsed.loans && Array.isArray(parsed.loans))) {
+            if (parsed.schema === 'finvault_pro_v1' || parsed.schema === 'dgs_vault_v3' || (parsed.loans && Array.isArray(parsed.loans))) {
               const loanList = parsed.loans || [];
               saveState(loanList);
               await idbSet('loans', loanList);
@@ -2683,12 +2760,12 @@
               const wizardModal = document.getElementById('setupWizardModal');
               if (wizardModal) wizardModal.classList.add('hidden');
 
-              showToast(`🎉 Vault loaded from Device 1! Restored ${loanList.length} loans & admin credentials.`);
+              showToast(`🎉 FinVault loaded! Restored ${loanList.length} loans & admin credentials.`);
               renderDashboard();
               renderLoansList();
               updateBackupHealthUI();
             } else {
-              showToast('⚠️ Unrecognized .dgsvault schema format');
+              showToast('⚠️ Unrecognized .finvault schema format');
             }
           } else if (fileName.endsWith('.json')) {
             const parsed = JSON.parse(content);
@@ -2714,7 +2791,7 @@
             importCsvData(content);
           }
         } catch (err) {
-          alert('Could not parse file. Ensure it is a valid .dgsvault, JSON, or CSV export.');
+          alert('Could not parse file. Ensure it is a valid .finvault, .dgsvault, JSON, or CSV export.');
         }
       };
       reader.readAsText(file);
@@ -2790,33 +2867,118 @@
     URL.revokeObjectURL(url);
   }
 
-  /* ------------------ Sample Demo Data Loader ------------------ */
+  /* ------------------ Danger Zone Management (PIN-Protected) ------------------ */
 
-  function setupSampleDataLoader() {
-    const loadSampleBtn = document.getElementById('loadSampleDataBtn');
+  function setupDangerZone() {
     const clearDataBtn = document.getElementById('clearDataBtn');
+    const wipeCloudBtn = document.getElementById('wipeCloudDbBtn');
+    const factoryResetBtn = document.getElementById('factoryResetAllBtn');
 
-    if (loadSampleBtn) {
-      loadSampleBtn.addEventListener('click', () => {
-        if (confirm('Load sample demonstration loans? This will let you test all features immediately.')) {
-          saveState(SAMPLE_LOANS);
-          showToast('🚀 Sample data loaded!');
-          renderDashboard();
-          renderLoansList();
-          if (window.switchAppTab) window.switchAppTab('overview');
-        }
-      });
+    const modal = document.getElementById('dangerConfirmModal');
+    const titleEl = document.getElementById('dangerConfirmTitle');
+    const descEl = document.getElementById('dangerConfirmDesc');
+    const pinInput = document.getElementById('dangerAdminPinInput');
+    const pinError = document.getElementById('dangerPinError');
+    const confirmBtn = document.getElementById('executeDangerActionBtn');
+
+    let pendingAction = null; // 'local' | 'cloud' | 'factory'
+
+    function promptDangerAction(action, title, description) {
+      if (currentRole !== 'admin') {
+        showToast('⚠️ Only Admin can perform database wipe actions');
+        return;
+      }
+      pendingAction = action;
+      if (titleEl) titleEl.textContent = title;
+      if (descEl) descEl.textContent = description;
+      if (pinInput) {
+        pinInput.value = '';
+        if (pinError) pinError.style.display = 'none';
+      }
+      if (modal) openModal(modal);
     }
 
     if (clearDataBtn) {
-      clearDataBtn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to delete all stored loans and data? Make sure you have exported a backup.')) {
-          localStorage.removeItem(STORAGE_KEY);
-          await idbSet('loans', []);
-          showToast('🧹 All data cleared');
+      clearDataBtn.addEventListener('click', () => {
+        promptDangerAction(
+          'local',
+          '🧹 Clear Local Device Storage Only',
+          'This will permanently delete all borrower loans and payment ledgers stored on this phone/computer. Central cloud database will remain untouched.'
+        );
+      });
+    }
+
+    if (wipeCloudBtn) {
+      wipeCloudBtn.addEventListener('click', () => {
+        promptDangerAction(
+          'cloud',
+          '☁️ Wipe Cloud Database (Supabase)',
+          'This will permanently purge all loans and ledgers from the central Supabase database (table: public.loans). Local device records will remain safe.'
+        );
+      });
+    }
+
+    if (factoryResetBtn) {
+      factoryResetBtn.addEventListener('click', () => {
+        promptDangerAction(
+          'factory',
+          '⚠️ Full Factory Reset (Local + Cloud)',
+          'CAUTION: This will permanently purge ALL borrower records from BOTH your local device storage and the central Supabase cloud database. This cannot be undone.'
+        );
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', async () => {
+        const sec = getSecuritySettings();
+        const correctPin = String(sec.adminPin || '1234');
+        const enteredPin = String(pinInput ? pinInput.value : '').trim();
+
+        if (enteredPin !== correctPin) {
+          if (pinError) pinError.style.display = 'block';
+          return;
+        }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '⏳ Processing...';
+
+        try {
+          if (pendingAction === 'local' || pendingAction === 'factory') {
+            localStorage.removeItem(STORAGE_KEY);
+            await idbSet('loans', []);
+          }
+
+          if (pendingAction === 'cloud' || pendingAction === 'factory') {
+            await fetch(`${CENTRAL_SUPABASE_CONFIG.url}/rest/v1/loans?id=not.is.null`, {
+              method: 'DELETE',
+              headers: {
+                'apikey': CENTRAL_SUPABASE_CONFIG.key,
+                'Authorization': `Bearer ${CENTRAL_SUPABASE_CONFIG.key}`
+              }
+            });
+            localStorage.removeItem('finvault_last_cloud_sync');
+          }
+
+          closeAllModals();
+
+          if (pendingAction === 'local') {
+            showToast('🧹 Local device storage cleared successfully.');
+          } else if (pendingAction === 'cloud') {
+            showToast('☁️ Central cloud database wiped clean (0 loans).');
+          } else if (pendingAction === 'factory') {
+            showToast('⚠️ Factory reset completed! Both device and cloud database cleared.');
+          }
+
           renderDashboard();
           renderLoansList();
           updateBackupHealthUI();
+          if (typeof testCloudConnection === 'function') testCloudConnection();
+        } catch(err) {
+          showToast('⚠️ Error during database wipe: ' + err.message);
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm & Delete';
+          pendingAction = null;
         }
       });
     }

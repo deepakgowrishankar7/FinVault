@@ -2044,4 +2044,14 @@ body.role-agent .admin-only {
   color: #ffffff !important;
 }
 
+/* Storage Architecture Card Dark Theme */
+[data-theme="dark"] #vaultStorageDetailsCard {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #vaultStorageDetailsCard strong {
+  color: #ffffff !important;
+}
+
 
