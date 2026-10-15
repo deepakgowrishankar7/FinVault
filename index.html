@@ -559,14 +559,14 @@
           <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
             Manage or erase stored records. These actions cannot be undone unless you have downloaded an encrypted .finvault backup.
           </p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button id="clearDataBtn" class="btn btn-ghost" style="color:var(--danger);border:1px solid rgba(255,59,48,0.3)">
+          <div style="display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;">
+            <button id="clearDataBtn" class="btn btn-ghost" style="width:100%;justify-content:center;color:var(--danger);border:1px solid rgba(255,59,48,0.3);padding:11px 16px;font-size:13px;box-sizing:border-box;">
               🧹 Clear Local Device Storage Only
             </button>
-            <button id="wipeCloudDbBtn" class="btn btn-ghost" style="color:var(--danger);border:1px solid rgba(255,59,48,0.3)">
+            <button id="wipeCloudDbBtn" class="btn btn-ghost" style="width:100%;justify-content:center;color:var(--danger);border:1px solid rgba(255,59,48,0.3);padding:11px 16px;font-size:13px;box-sizing:border-box;">
               ☁️ Wipe Cloud Database (Supabase)
             </button>
-            <button id="factoryResetAllBtn" class="btn" style="background:rgba(255,59,48,0.12);color:var(--danger);border:1px solid rgba(255,59,48,0.35);font-weight:600">
+            <button id="factoryResetAllBtn" class="btn" style="width:100%;justify-content:center;background:rgba(255,59,48,0.12);color:var(--danger);border:1px solid rgba(255,59,48,0.35);font-weight:600;padding:11px 16px;font-size:13px;box-sizing:border-box;">
               ⚠️ Complete Factory Reset (Local + Cloud)
             </button>
           </div>
