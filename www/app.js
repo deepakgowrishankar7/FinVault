@@ -32,8 +32,10 @@
   let currentAgent = null; // active agent object
   let isUnlocked = false;
   let enteredPin = '';
+  let cachedSettings = null;
 
   function getSecuritySettings() {
+    if (cachedSettings) return cachedSettings;
     try {
       const stored = localStorage.getItem(SETTINGS_KEY);
       if (stored) {
@@ -47,13 +49,16 @@
             saveSecuritySettings(settings);
           }
         }
+        cachedSettings = settings;
         return settings;
       }
     } catch(e) {}
-    return { ...DEFAULT_SECURITY, agents: [] };
+    cachedSettings = { ...DEFAULT_SECURITY, agents: [] };
+    return cachedSettings;
   }
 
   function saveSecuritySettings(settings) {
+    cachedSettings = settings;
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       idbSet('security', settings);
@@ -129,10 +134,13 @@
       // If localStorage is empty/missing but IndexedDB holds the vault, restore it!
       if ((!localLoans || (Array.isArray(localLoans) && localLoans.length === 0)) && idbLoans && Array.isArray(idbLoans) && idbLoans.length > 0) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(idbLoans));
+        stateCache = idbLoans;
         showToast('🛡️ Auto-restored loan vault from IndexedDB mirror!');
-      } else if (localLoans && Array.isArray(localLoans) && localLoans.length > 0 && (!idbLoans || !idbLoans.length)) {
-        // Initial mirror of existing local storage into IndexedDB
-        await idbSet('loans', localLoans);
+      } else if (localLoans && Array.isArray(localLoans) && localLoans.length > 0) {
+        stateCache = localLoans;
+        if (!idbLoans || !idbLoans.length) {
+          await idbSet('loans', localLoans);
+        }
       }
 
       // Sync security credentials
@@ -145,8 +153,12 @@
       const idbSec = await idbGet('security');
       if ((!localSec || !localSec.isRegistered) && idbSec && idbSec.isRegistered) {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(idbSec));
-      } else if (localSec && localSec.isRegistered && (!idbSec || !idbSec.isRegistered)) {
-        await idbSet('security', localSec);
+        cachedSettings = idbSec;
+      } else if (localSec && localSec.isRegistered) {
+        cachedSettings = localSec;
+        if (!idbSec || !idbSec.isRegistered) {
+          await idbSet('security', localSec);
+        }
       }
     } catch (err) {
       console.warn('Dual-layer vault recovery check:', err);
@@ -532,12 +544,18 @@
     }
   }
 
-  /* ------------------ State & Storage Management ------------------ */
+  /* ------------------ State & Storage Management (60+ FPS In-Memory Cache) ------------------ */
+
+  let stateCache = null;
 
   function loadState() {
+    if (stateCache && Array.isArray(stateCache)) return stateCache;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        stateCache = JSON.parse(raw);
+        return stateCache;
+      }
     } catch (e) {
       console.warn('Failed to parse state:', e);
     }
@@ -567,10 +585,12 @@
       }
     } catch (e) {}
 
-    return [];
+    stateCache = [];
+    return stateCache;
   }
 
   function saveState(loans) {
+    stateCache = loans;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(loans));
       idbSet('loans', loans);
@@ -730,13 +750,16 @@
     setupWizardModal();
     setupRecoveryModal();
     setupAgentManager();
+
+    // Verify OS persistent storage and restore mirrored credentials/loans first
+    await initPersistentStorage();
+    await checkDualLayerRecovery();
+
+    // Initialize Cloud Sync & Security Settings with verified credentials
     setupCloudSync();
     setupSecuritySettingsForm();
     setupUpiQrToggle();
     setupPhotoUploader();
-
-    await initPersistentStorage();
-    await checkDualLayerRecovery();
     updateBackupHealthUI();
 
     renderDashboard();
@@ -862,12 +885,12 @@
     });
   }
 
-  /* ------------------ Viewport Stability & Mobile Zoom Protection ------------------ */
+  /* ------------------ Viewport Stability & Mobile Touch Performance ------------------ */
   function setupViewportStability() {
     ['gesturestart', 'gesturechange', 'gestureend'].forEach((evt) => {
       document.addEventListener(evt, (e) => {
-        e.preventDefault();
-      }, { passive: false });
+        try { e.preventDefault(); } catch(err) {}
+      }, { passive: true });
     });
   }
 
@@ -1505,6 +1528,17 @@
       const latency = Math.round(performance.now() - t0);
 
       if (res.ok) {
+        // Strict guard: if user turned off cloud sync while request was running, do not update UI
+        const currentSecCheck = getSecuritySettings();
+        if (!currentSecCheck.cloudSyncEnabled) {
+          if (detailsBox) detailsBox.style.display = 'none';
+          if (statusPill) {
+            statusPill.innerHTML = '🔒 100% On-Device Private Mode';
+            statusPill.className = 'health-pill';
+          }
+          return { success: false, reason: 'disabled' };
+        }
+
         const cloudData = await res.json();
         const count = Array.isArray(cloudData) ? cloudData.length : 0;
         const lastSync = localStorage.getItem('finvault_last_cloud_sync') || 'Just now';
@@ -1512,8 +1546,9 @@
         if (stateEl) {
           stateEl.innerHTML = '<span class="status-dot healthy"></span> <span style="color:var(--success);">Connected & Live</span>';
         }
+        const latencyLabel = latency < 350 ? 'Fast' : (latency < 1000 ? 'Moderate' : 'Slow');
         if (latencyEl) {
-          latencyEl.textContent = `${latency} ms (${latency < 350 ? 'Fast' : 'Normal'})`;
+          latencyEl.textContent = `${latency} ms (${latencyLabel})`;
         }
         if (countEl) {
           countEl.textContent = `${count} loan${count === 1 ? '' : 's'} in cloud`;
@@ -1527,7 +1562,8 @@
         }
         if (successAlert) {
           successAlert.style.display = 'block';
-          successAlert.innerHTML = `✓ <strong>Connected & Active</strong>: Database (Supabase) reachable with ${latency}ms response. ${count} borrower records stored in cloud.`;
+          const recordWord = count === 1 ? 'record' : 'records';
+          successAlert.innerHTML = `✓ <strong>Connected & Active</strong>: Database (Supabase) reachable with ${latency}ms response. ${count} borrower ${recordWord} stored in cloud.`;
         }
         if (errorAlert) errorAlert.style.display = 'none';
         if (pingBtn) {
@@ -1638,6 +1674,11 @@
       saveSecuritySettings(currentSec);
       updateCloudUI(false);
       updateBackupHealthUI();
+      if (detailsBox) detailsBox.style.display = 'none';
+      if (statusPill) {
+        statusPill.innerHTML = '🔒 100% On-Device Private Mode';
+        statusPill.className = 'health-pill';
+      }
       showToast('🔒 Cloud Sync disabled. Data strictly saved on this device.');
     }
 
@@ -1700,10 +1741,15 @@
       });
     }
 
-    // If cloud sync was enabled by user, fetch updates on startup & run diagnostic test
+    // If cloud sync was enabled by user, fetch updates on startup & run diagnostic test deferred so startup is 60+ FPS
     if (isEnabled) {
-      pullFromSupabase();
-      testCloudConnection();
+      setTimeout(() => {
+        const secNow = getSecuritySettings();
+        if (secNow.cloudSyncEnabled) {
+          pullFromSupabase();
+          testCloudConnection();
+        }
+      }, 1000);
     }
   }
 
@@ -1855,8 +1901,9 @@
         return;
       }
 
+      const latestSec = getSecuritySettings();
       saveSecuritySettings({
-        ...current,
+        ...latestSec,
         adminPin: aPin,
         ownerUpiId: upi,
         securityQuestion: q,
@@ -2752,7 +2799,79 @@
     renderLoansList();
   };
 
-  /* ------------------ Digital Receipt System ------------------ */
+  /* ------------------ Digital Receipt & Printing System (Android & Web) ------------------ */
+
+  function triggerPrint(docTitle) {
+    if (window.AndroidNativeApp && typeof window.AndroidNativeApp.printDocument === 'function') {
+      window.AndroidNativeApp.printDocument(docTitle || 'FinVault_Document');
+      return;
+    }
+    window.print();
+  }
+  window.triggerPrint = triggerPrint;
+
+  window.shareReceiptWhatsApp = function(loanId, paymentId) {
+    const loans = loadState();
+    const loan = loans.find(x => String(x.id) === String(loanId));
+    if (!loan) return;
+    const payment = (loan.payments || []).find(p => String(p.id) === String(paymentId));
+    if (!payment) return;
+    if (!loan.phone) {
+      showToast('⚠️ No phone number saved for this borrower');
+      return;
+    }
+
+    const fin = getLoanFinancials(loan);
+    const firm = getSecuritySettings().firmName || 'FinVault';
+    const cleanPhone = loan.phone.replace(/[^0-9]/g, '');
+    const intlPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+
+    const msg = `*${firm.toUpperCase()} — PAYMENT RECEIPT*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *Borrower:* ${loan.borrower}\n` +
+      `💳 *Loan ID:* #${loan.id}\n` +
+      `📅 *Date:* ${fmtDate(payment.date)}\n` +
+      `💵 *Amount Received:* ${fmtMoney(payment.amount)}\n` +
+      `🔄 *Payment Mode:* ${payment.mode || 'Cash'}\n` +
+      `💰 *Total Repaid:* ${fmtMoney(fin.totalPaid)}\n` +
+      `📉 *Remaining Balance:* ${fmtMoney(fin.remaining)}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `_Thank you for your payment! Official digital ledger record._`;
+
+    const url = `https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
+  window.shareStatementWhatsApp = function(loanId) {
+    const loans = loadState();
+    const loan = loans.find(x => String(x.id) === String(loanId));
+    if (!loan) return;
+    if (!loan.phone) {
+      showToast('⚠️ No phone number saved for this borrower');
+      return;
+    }
+
+    const fin = getLoanFinancials(loan);
+    const firm = getSecuritySettings().firmName || 'FinVault';
+    const cleanPhone = loan.phone.replace(/[^0-9]/g, '');
+    const intlPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+
+    const msg = `*${firm.toUpperCase()} — LOAN STATEMENT*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *Borrower:* ${loan.borrower}\n` +
+      `💳 *Loan ID:* #${loan.id}\n` +
+      `📅 *Start Date:* ${fmtDate(loan.startDate || loan.created)}\n` +
+      `💰 *Principal:* ${fmtMoney(fin.principal)}\n` +
+      `📈 *Interest Rate:* ${loan.interest}% (${(loan.model || 'emi').toUpperCase()})\n` +
+      `💵 *Total Payable:* ${fmtMoney(fin.totalPayable)}\n` +
+      `✅ *Total Repaid:* ${fmtMoney(fin.totalPaid)}\n` +
+      `🚨 *Balance Due:* ${fmtMoney(fin.remaining)}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `_Official statement issued by ${firm}._`;
+
+    const url = `https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
 
   function openReceiptModal(loan, payment) {
     const modal = document.getElementById('receiptModal');
@@ -2823,8 +2942,9 @@
         </div>
       </div>
 
-      <div class="receipt-actions" style="display:flex; gap: 10px; margin-top: 18px; justify-content: flex-end;">
-        <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <div class="receipt-actions" style="display:flex; gap: 10px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap;">
+        ${loan.phone ? `<button type="button" class="btn btn-whatsapp" onclick="shareReceiptWhatsApp('${loan.id}', '${payment.id}')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right:4px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>WhatsApp Slip</button>` : ''}
+        <button class="btn btn-primary" onclick="triggerPrint('FinVault_Receipt_${payment.id || loan.id}')">🖨️ Print / Save PDF</button>
         <button class="btn btn-secondary" data-close-modal onclick="closeAllModals()">Close</button>
       </div>
     `;
@@ -2936,8 +3056,9 @@
         </div>
       </div>
 
-      <div class="receipt-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end;">
-        <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <div class="receipt-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap;">
+        ${loan.phone ? `<button type="button" class="btn btn-whatsapp" onclick="shareStatementWhatsApp('${loan.id}')"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right:4px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>WhatsApp Statement</button>` : ''}
+        <button type="button" class="btn btn-primary" onclick="triggerPrint('FinVault_Statement_${loan.id}')">🖨️ Print / Save as PDF</button>
         <button type="button" class="btn btn-secondary" data-close-modal onclick="closeAllModals()">Close</button>
       </div>
     `;
@@ -3420,15 +3541,66 @@
     renderLoansList();
   }
 
-  function downloadFile(blob, filename) {
+  async function downloadFile(blob, filename) {
+    // 1. Android Native Bridge (Capacitor APK): Save directly to Android's public Downloads directory
+    if (window.AndroidNativeApp && typeof window.AndroidNativeApp.saveFileToDownloads === 'function') {
+      try {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          try {
+            const base64data = (reader.result || '').split(',')[1];
+            if (base64data) {
+              const ok = window.AndroidNativeApp.saveFileToDownloads(base64data, filename, blob.type || 'application/octet-stream');
+              if (ok) {
+                showToast(`💾 Saved "${filename}" to your phone's Downloads folder!`);
+                return;
+              }
+            }
+          } catch(e) {
+            console.warn('Native download bridge error, falling back:', e);
+          }
+        };
+        reader.readAsDataURL(blob);
+        return;
+      } catch (err) {
+        console.warn('Native bridge error:', err);
+      }
+    }
+
+    // 2. Mobile Web Share API: Allows saving to Files, Drive, WhatsApp, etc.
+    const isMobile = /Android|iPhone|iPad|iPod|Capacitor/i.test(navigator.userAgent);
+    if (isMobile && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: filename,
+            text: `FinVault Export: ${filename}`
+          });
+          showToast(`📤 File shared / saved successfully!`);
+          return;
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('Web Share failed, falling back to anchor:', err);
+        } else {
+          return; // User dismissed share sheet
+        }
+      }
+    }
+
+    // 3. Desktop & Standard Web Browser Fallback
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      if (a.parentNode) document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1500);
   }
 
   /* ------------------ Danger Zone Management (PIN-Protected) ------------------ */

@@ -96,7 +96,6 @@ html {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -184,7 +183,7 @@ body.modal-open {
   }
 }
 
-/* Ambient Subtle Apple Mesh Gradients */
+/* Ambient Subtle Apple Mesh Gradients (Hardware Accelerated for 60+ FPS) */
 .ambient-glow {
   position: fixed;
   top: -150px;
@@ -192,10 +191,11 @@ body.modal-open {
   width: 550px;
   height: 550px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.12) 0%, rgba(var(--accent-rgb), 0) 70%);
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.08) 0%, rgba(var(--accent-rgb), 0.03) 40%, transparent 70%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(40px);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .ambient-glow-2 {
@@ -205,10 +205,11 @@ body.modal-open {
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(175, 82, 222, 0.08) 0%, rgba(175, 82, 222, 0) 70%);
+  background: radial-gradient(circle, rgba(175, 82, 222, 0.06) 0%, rgba(175, 82, 222, 0.02) 40%, transparent 70%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(50px);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 /* App Container */
@@ -420,10 +421,10 @@ body.modal-open {
   background: #20BD5A;
 }
 
-/* Dynamic Notification Pill (Apple Island Style) */
+/* Dynamic Notification Pill (Apple Island Style - Safe Area Padded) */
 .toast-container {
   position: fixed;
-  top: 18px;
+  top: max(16px, env(safe-area-inset-top, 16px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -434,7 +435,7 @@ body.modal-open {
   align-items: center;
   width: 100%;
   max-width: 440px;
-  padding: 0 14px;
+  padding: 10px 14px 0 14px;
   box-sizing: border-box;
 }
 
@@ -1965,16 +1966,16 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
     flex-shrink: 0;
   }
   .current-user-tag {
-    max-width: 105px;
+    max-width: 130px;
     padding: 4px 8px;
     font-size: 11.5px;
   }
   .current-user-tag #roleName {
-    max-width: 65px;
+    max-width: 88px;
   }
   #newLoanBtn {
     padding: 7px 11px;
-    font-size: 12.5px;
+    font-size: 12px;
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -1983,6 +1984,40 @@ button, .btn, .role-segment-btn, .numpad-btn, .nav-tab-btn, .bottom-tab, .pill-b
     height: 32px;
     padding: 0;
     flex-shrink: 0;
+  }
+
+  /* Make Form Rows full width on mobile so UPI ID and security fields never clip */
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Completely remove grey vertical scrollbar line on mobile */
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  * {
+    scrollbar-width: none !important;
+  }
+
+  /* Mobile 60 FPS Blur Reduction & Hardware Acceleration Layers */
+  .top-nav,
+  .bottom-nav,
+  .modal-overlay,
+  .lock-screen-overlay {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .top-nav,
+  .bottom-nav,
+  .loan-card,
+  .modal-sheet,
+  .lock-container {
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 }
 
