@@ -20,9 +20,9 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg"/>
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(console.error);
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
   </script>

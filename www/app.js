@@ -1616,6 +1616,21 @@
     if (userInitiated) showToast('☁️ Syncing with Cloud Database...');
     try {
       const loans = loadState();
+      // Map loans to match Supabase schema (maps 'interest' to 'rate', ensures numeric id)
+      const mappedLoans = loans.map(l => ({
+        id: Number(l.id) || Date.now(),
+        borrower: String(l.borrower || ''),
+        phone: String(l.phone || ''),
+        principal: Number(l.principal) || 0,
+        rate: Number(l.interest !== undefined ? l.interest : (l.rate !== undefined ? l.rate : 12)),
+        tenure: Number(l.tenure) || 12,
+        model: String(l.model || 'emi'),
+        startDate: String(l.startDate || new Date().toISOString().split('T')[0]),
+        created: Number(l.created) || Date.now(),
+        notes: String(l.notes || ''),
+        payments: Array.isArray(l.payments) ? l.payments : []
+      }));
+
       const res = await fetch(`${CENTRAL_SUPABASE_CONFIG.url}/rest/v1/loans`, {
         method: 'POST',
         headers: {
@@ -1624,13 +1639,13 @@
           'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates'
         },
-        body: JSON.stringify(loans)
+        body: JSON.stringify(mappedLoans)
       });
 
       if (res.ok) {
         const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' (' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ')';
         localStorage.setItem('finvault_last_cloud_sync', timeStr);
-        if (userInitiated) showToast('✅ Cloud Sync Completed! All loans backed up.');
+        if (userInitiated) showToast(`✅ Cloud Sync Completed! ${mappedLoans.length} loan(s) backed up.`);
       } else {
         const errJson = await res.json().catch(() => ({}));
         console.warn('Supabase sync status:', res.status, errJson);
@@ -1674,14 +1689,18 @@
           const localMap = new Map(localLoans.map(l => [String(l.id), l]));
           let updated = false;
           cloudLoans.forEach(cl => {
-            const idStr = String(cl.id);
+            const mapped = {
+              ...cl,
+              interest: Number(cl.interest !== undefined ? cl.interest : (cl.rate !== undefined ? cl.rate : 12))
+            };
+            const idStr = String(mapped.id);
             if (!localMap.has(idStr)) {
-              localMap.set(idStr, cl);
+              localMap.set(idStr, mapped);
               updated = true;
             } else {
               const existing = localMap.get(idStr);
-              if (cl.payments && Array.isArray(cl.payments) && cl.payments.length > (existing.payments || []).length) {
-                localMap.set(idStr, cl);
+              if (mapped.payments && Array.isArray(mapped.payments) && mapped.payments.length > (existing.payments || []).length) {
+                localMap.set(idStr, mapped);
                 updated = true;
               }
             }
