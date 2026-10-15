@@ -40,6 +40,9 @@ jobs:
       - name: Grant Execute Permission to Gradlew
         run: chmod +x android/gradlew
 
+      - name: Accept Android SDK Licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Build Debug APK with Gradle
         working-directory: android
         run: ./gradlew assembleDebug --stacktrace
