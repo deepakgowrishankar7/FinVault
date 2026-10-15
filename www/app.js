@@ -630,6 +630,7 @@
     renderDashboard();
     renderLoansList();
     setupPWAInstaller();
+    setupViewportStability();
 
     // Check initial URL hash
     const hash = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -728,6 +729,15 @@
       if (installBanner) installBanner.style.display = 'none';
       closeAllModals();
       deferredPrompt = null;
+    });
+  }
+
+  /* ------------------ Viewport Stability & Mobile Zoom Protection ------------------ */
+  function setupViewportStability() {
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((evt) => {
+      document.addEventListener(evt, (e) => {
+        e.preventDefault();
+      }, { passive: false });
     });
   }
 
