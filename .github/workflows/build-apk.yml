@@ -29,7 +29,7 @@ jobs:
         run: node build.js
 
       - name: Setup Java 21 (LTS)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -47,7 +47,21 @@ jobs:
 
       - name: Build Debug APK with Gradle
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee ../gradle_output.log
+
+      - name: Post Build Logs on Failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOG_CONTENT=$(tail -n 80 gradle_output.log)
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+            -f body="### ❌ Gradle Build Failure Details:
+          \`\`\`text
+          $LOG_CONTENT
+          \`\`\`" || true
 
 
       - name: Prepare APK Output
