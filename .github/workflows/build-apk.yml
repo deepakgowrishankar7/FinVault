@@ -45,7 +45,15 @@ jobs:
 
       - name: Build Debug APK with Gradle
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          ./gradlew assembleDebug --stacktrace > ../gradle-build.log 2>&1 || (echo "=== GRADLE ERROR OUTPUT ===" && cat ../gradle-build.log | tail -n 120 && exit 1)
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
 
       - name: Prepare APK Output
         run: |
