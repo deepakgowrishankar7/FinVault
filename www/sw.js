@@ -1,5 +1,5 @@
 // FinVault Service Worker (Offline Support)
-const CACHE_NAME = 'finvault-v3';
+const CACHE_NAME = 'finvault-v4';
 const ASSETS = [
   './',
   './index.html',

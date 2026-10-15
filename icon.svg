@@ -1,46 +1,125 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="fvBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0062D2"/>
-      <stop offset="60%" stop-color="#0071E3"/>
-      <stop offset="100%" stop-color="#5E5CE6"/>
+    <!-- Obsidian Background Gradient -->
+    <radialGradient id="obsidianBg" cx="30%" cy="25%" r="85%">
+      <stop offset="0%" stop-color="#1E2330"/>
+      <stop offset="50%" stop-color="#10141D"/>
+      <stop offset="100%" stop-color="#06080C"/>
+    </radialGradient>
+
+    <!-- Metallic Gold Gradient (Primary Face) -->
+    <linearGradient id="goldFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5C0"/>
+      <stop offset="25%" stop-color="#F3CE65"/>
+      <stop offset="50%" stop-color="#E1B334"/>
+      <stop offset="75%" stop-color="#FDE88F"/>
+      <stop offset="100%" stop-color="#B8860B"/>
     </linearGradient>
-    <linearGradient id="fvDial" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#30D158"/>
-      <stop offset="100%" stop-color="#00C7BE"/>
+
+    <!-- Deep Bevel Gold Gradient (Shading & Depth) -->
+    <linearGradient id="goldDark" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#805300"/>
+      <stop offset="40%" stop-color="#A6730E"/>
+      <stop offset="70%" stop-color="#E5BC48"/>
+      <stop offset="100%" stop-color="#664200"/>
     </linearGradient>
-    <linearGradient id="fvGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+
+    <!-- Rim Accent Gradient -->
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2A3" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#D4AF37" stop-opacity="0.3"/>
+      <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#996515" stop-opacity="0.2"/>
     </linearGradient>
-    <filter id="fvShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.32"/>
+
+    <!-- Radial Gold Glow Filter -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#E5BC48" flood-opacity="0.28"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+
+    <!-- Subtle Drop Shadow for Inner Details -->
+    <filter id="innerDrop" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.55"/>
     </filter>
   </defs>
 
-  <!-- Squircle Base -->
-  <rect width="512" height="512" rx="124" fill="url(#fvBg)"/>
-  <rect width="510" height="510" x="1" y="1" rx="123" fill="none" stroke="url(#fvGlow)" stroke-width="2"/>
+  <!-- Obsidian Base Squircle -->
+  <rect width="512" height="512" rx="124" fill="url(#obsidianBg)"/>
+  
+  <!-- Outer Gold Rim Inset -->
+  <rect width="506" height="506" x="3" y="3" rx="121" fill="none" stroke="url(#goldRim)" stroke-width="2.5"/>
 
-  <!-- Vault Shield Outer Ring -->
-  <g filter="url(#fvShadow)">
-    <circle cx="256" cy="256" r="160" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="12"/>
-    <circle cx="256" cy="256" r="160" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="12" stroke-dasharray="16 32"/>
+  <!-- Subtle Radial Inner Glow Accent -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="rgba(243, 206, 101, 0.06)" stroke-width="36"/>
 
-    <!-- Geometric Vault Monogram (F + Safe Door Combination) -->
-    <!-- Vertical Pillar -->
-    <rect x="176" y="146" width="38" height="220" rx="12" fill="#FFFFFF"/>
-    
-    <!-- Top Horizontal Bar & Middle Bar -->
-    <path d="M176 158 C176 151.4 181.4 146 188 146 L332 146 C338.6 146 344 151.4 344 158 L344 186 C344 192.6 338.6 198 332 198 L214 198 L214 238 L308 238 C314.6 238 320 243.4 320 250 L320 278 C320 284.6 314.6 290 308 290 L214 290 L214 354 C214 360.6 208.6 366 202 366 L188 366 C181.4 366 176 360.6 176 354 Z" fill="#FFFFFF"/>
+  <g filter="url(#goldGlow)">
+    <!-- Heavy Vault Outer Gear Ring -->
+    <circle cx="256" cy="256" r="156" fill="none" stroke="url(#goldDark)" stroke-width="14"/>
+    <circle cx="256" cy="256" r="156" fill="none" stroke="url(#goldFace)" stroke-width="8" stroke-dasharray="14 26"/>
 
-    <!-- Vault Central Combination Wheel Accent -->
-    <circle cx="280" cy="264" r="38" fill="#0071E3" stroke="#FFFFFF" stroke-width="8"/>
-    <circle cx="280" cy="264" r="22" fill="url(#fvDial)"/>
-    <circle cx="280" cy="264" r="9" fill="#FFFFFF"/>
-    <line x1="280" y1="232" x2="280" y2="238" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-    <line x1="280" y1="290" x2="280" y2="296" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-    <line x1="248" y1="264" x2="254" y2="264" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-    <line x1="306" y1="264" x2="312" y2="264" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <!-- 8 Heavy Vault Door Radial Locking Lugs -->
+    <g fill="url(#goldFace)" filter="url(#innerDrop)">
+      <rect x="250" y="80" width="12" height="20" rx="3"/>
+      <rect x="250" y="412" width="12" height="20" rx="3"/>
+      <rect x="80" y="250" width="20" height="12" rx="3"/>
+      <rect x="412" y="250" width="20" height="12" rx="3"/>
+      <!-- Diagonal Lugs -->
+      <rect x="134" y="134" width="16" height="16" rx="3" transform="rotate(45 142 142)"/>
+      <rect x="362" y="134" width="16" height="16" rx="3" transform="rotate(45 370 142)"/>
+      <rect x="134" y="362" width="16" height="16" rx="3" transform="rotate(45 142 370)"/>
+      <rect x="362" y="362" width="16" height="16" rx="3" transform="rotate(45 370 370)"/>
+    </g>
+
+    <!-- Concentric Inner Vault Track -->
+    <circle cx="256" cy="256" r="132" fill="none" stroke="url(#goldRim)" stroke-width="2.5" opacity="0.6"/>
+
+    <!-- Bold Sculpted Monogram "F" in Brushed Gold -->
+    <!-- Vertical Pillar with Bevel -->
+    <path d="M 172 152 
+             C 172 143 179 136 188 136 
+             L 218 136 
+             C 227 136 234 143 234 152 
+             L 234 360 
+             C 234 369 227 376 218 376 
+             L 188 376 
+             C 179 376 172 369 172 360 
+             Z" 
+          fill="url(#goldFace)" filter="url(#innerDrop)"/>
+
+    <!-- Top Horizontal Beam -->
+    <path d="M 218 136 
+             L 336 136 
+             C 345 136 352 143 352 152 
+             L 352 182 
+             C 352 191 345 198 336 198 
+             L 234 198 
+             L 234 136 
+             Z" 
+          fill="url(#goldFace)" filter="url(#innerDrop)"/>
+
+    <!-- Middle Horizontal Beam (Fintech Vault Arm) -->
+    <path d="M 218 236 
+             L 308 236 
+             C 317 236 324 243 324 252 
+             L 324 280 
+             C 324 289 317 296 308 296 
+             L 234 296 
+             L 234 236 
+             Z" 
+          fill="url(#goldFace)" filter="url(#innerDrop)"/>
+
+    <!-- Central Precision Vault Combination Dial (Integrated into Monogram) -->
+    <circle cx="292" cy="266" r="36" fill="#0C0F17" stroke="url(#goldFace)" stroke-width="6" filter="url(#innerDrop)"/>
+    <circle cx="292" cy="266" r="24" fill="url(#goldDark)"/>
+    <circle cx="292" cy="266" r="16" fill="url(#goldFace)"/>
+    <circle cx="292" cy="266" r="7" fill="#0C0F17"/>
+    <circle cx="292" cy="266" r="3" fill="#FFF5C0"/>
+
+    <!-- Micro Dial Tick Marks -->
+    <line x1="292" y1="234" x2="292" y2="240" stroke="url(#goldFace)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="292" y1="292" x2="292" y2="298" stroke="url(#goldFace)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="260" y1="266" x2="266" y2="266" stroke="url(#goldFace)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="318" y1="266" x2="324" y2="266" stroke="url(#goldFace)" stroke-width="3" stroke-linecap="round"/>
   </g>
 </svg>
