@@ -4,6 +4,9 @@
   "description": "> **Apple-Inspired Smart Loan, EMI & Repayment Ledger Manager**   > Built for Mobile (iOS & Android) and Modern Web Browsers with 100% On-Device Privacy, Dual-Layer Storage Protection, Multi-User Team Roster, and Optional Private Cloud Sync.",
   "main": "app.js",
   "scripts": {
+    "build": "node build.js",
+    "sync": "node build.js && npx cap sync android",
+    "open": "npx cap open android",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

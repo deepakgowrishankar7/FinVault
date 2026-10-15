@@ -29,3 +29,15 @@ files.forEach(file => {
 });
 
 console.log('Build complete! www/ ready for Capacitor.');
+
+const androidPublicDir = path.join(__dirname, 'android', 'app', 'src', 'main', 'assets', 'public');
+if (fs.existsSync(androidPublicDir)) {
+  files.forEach(file => {
+    const src = path.join(__dirname, file);
+    const dest = path.join(androidPublicDir, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dest);
+    }
+  });
+  console.log('Synchronized web assets to android/app/src/main/assets/public!');
+}
