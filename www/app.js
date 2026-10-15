@@ -295,28 +295,43 @@
     return modules;
   }
 
-  function renderOfflineUpiQr(canvas, upiString) {
-    if (!canvas) return;
+  function renderOfflineUpiQr(container, upiString) {
+    if (!container) return;
     try {
-      const matrix = generateQRCodeMatrix(upiString);
-      const ctx = canvas.getContext('2d');
-      const size = matrix.length;
-      canvas.width = 180;
-      canvas.height = 180;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 180, 180);
-
-      const cellSize = 180 / size;
-      ctx.fillStyle = '#000000';
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          if (matrix[r][c]) {
-            ctx.fillRect(Math.round(c * cellSize), Math.round(r * cellSize), Math.ceil(cellSize), Math.ceil(cellSize));
+      container.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(container, {
+          text: upiString,
+          width: 180,
+          height: 180,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        // Fallback using internal generator
+        const matrix = generateQRCodeMatrix(upiString);
+        const canvas = document.createElement('canvas');
+        const size = matrix.length;
+        canvas.width = 180;
+        canvas.height = 180;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 180, 180);
+        const cellSize = 180 / size;
+        ctx.fillStyle = '#000000';
+        for (let r = 0; r < size; r++) {
+          for (let c = 0; c < size; c++) {
+            if (matrix[r][c]) {
+              ctx.fillRect(Math.round(c * cellSize), Math.round(r * cellSize), Math.ceil(cellSize), Math.ceil(cellSize));
+            }
           }
         }
+        container.appendChild(canvas);
       }
     } catch(err) {
       console.warn('QR render error:', err);
+      container.innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:12px;text-align:center;">Unable to display QR code</div>';
     }
   }
 
@@ -1463,8 +1478,9 @@
   function setupUpiQrToggle() {
     const toggleBtn = document.getElementById('toggleUpiQrBtn');
     const qrSection = document.getElementById('upiQrSection');
-    const qrCanvas = document.getElementById('upiQrCanvas');
+    const qrContainer = document.getElementById('upiQrContainer');
     const upiBadge = document.getElementById('upiIdBadge');
+    const directLink = document.getElementById('upiDirectPayLink');
     const amountInput = document.getElementById('payAmount');
 
     if (!toggleBtn || !qrSection) return;
@@ -1475,10 +1491,11 @@
         const amt = Number(amountInput.value) || 0;
         const settings = getSecuritySettings();
         const ownerUpi = settings.ownerUpiId || 'owner@okhdfcbank';
-        const upiString = `upi://pay?pa=${encodeURIComponent(ownerUpi)}&pn=DGS%20Finance&am=${amt}&cu=INR`;
+        const upiString = `upi://pay?pa=${encodeURIComponent(ownerUpi)}&pn=FinVault%20Finance&am=${amt}&cu=INR`;
 
-        renderOfflineUpiQr(qrCanvas, upiString);
+        renderOfflineUpiQr(qrContainer, upiString);
         if (upiBadge) upiBadge.textContent = `UPI: ${ownerUpi} (₹${amt.toLocaleString('en-IN')})`;
+        if (directLink) directLink.href = upiString;
         qrSection.classList.remove('hidden');
         toggleBtn.textContent = '❌ Hide UPI QR Code';
       } else {

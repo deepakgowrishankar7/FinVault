@@ -9,6 +9,7 @@ if (!fs.existsSync(outDir)) {
 const files = [
   'index.html',
   'styles.css',
+  'qrcode.min.js',
   'app.js',
   'manifest.json',
   'sw.js',

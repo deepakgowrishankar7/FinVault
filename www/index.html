@@ -632,11 +632,14 @@
             📷 Show UPI QR Code to Borrower (GPay/PhonePe)
           </button>
           <div id="upiQrSection" class="upi-qr-card hidden">
-            <div style="font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:0.5px">Scan & Pay</div>
-            <canvas id="upiQrCanvas" class="upi-qr-canvas"></canvas>
+            <div style="font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:0.5px">Scan to Pay via Any UPI App</div>
+            <div id="upiQrContainer" style="display:flex;justify-content:center;align-items:center;margin:12px auto;background:#ffffff;padding:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);width:fit-content;min-height:180px;"></div>
             <div>
               <span id="upiIdBadge" class="upi-id-badge">UPI: lender@dgs</span>
             </div>
+            <a id="upiDirectPayLink" href="#" class="btn btn-primary btn-sm" style="display:inline-flex;width:100%;justify-content:center;align-items:center;gap:6px;text-decoration:none;margin-top:12px;font-weight:600;padding:10px 14px;">
+              <span>📱 Open in GPay / PhonePe / Paytm</span>
+            </a>
           </div>
         </div>
 
@@ -977,6 +980,7 @@
     </button>
   </nav>
 
+  <script src="qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

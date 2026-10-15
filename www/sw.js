@@ -1,9 +1,10 @@
 // FinVault Service Worker (Offline Support)
-const CACHE_NAME = 'finvault-v2';
+const CACHE_NAME = 'finvault-v3';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './qrcode.min.js',
   './app.js',
   './manifest.json',
   './icon.svg',
