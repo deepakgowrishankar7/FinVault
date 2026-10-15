@@ -1510,12 +1510,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Fullscreen ID Lightbox */
-#imageLightboxModal {
+#imageLightboxModal.modal-overlay {
   z-index: 2500 !important;
   background: rgba(0, 0, 0, 0.92) !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 16px !important;
+}
+
+#imageLightboxModal.modal-overlay.open {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 #imageLightboxModal .modal-sheet {
@@ -1528,6 +1534,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   max-height: 90vh !important;
   transform: scale(0.95) !important;
   border-radius: 14px !important;
+  width: auto !important;
 }
 
 #imageLightboxModal.open .modal-sheet {
