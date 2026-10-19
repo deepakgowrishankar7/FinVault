@@ -30,31 +30,72 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Scaffold Official Flutter Android Runner
-        run: |
-          echo "Generating official Flutter 3.29 Android runner template..."
-          flutter create --org com.finvault --project-name finvault --platforms android /tmp/runner_template
-
-          echo "Syncing official Gradle wrapper and build scripts..."
-          mkdir -p mobile/android/gradle
-          cp -r /tmp/runner_template/android/gradle/* mobile/android/gradle/
-          cp /tmp/runner_template/android/gradlew mobile/android/
-          cp /tmp/runner_template/android/gradlew.bat mobile/android/
-
-          # Clean any existing build files to avoid .gradle vs .gradle.kts conflicts
-          rm -f mobile/android/settings.gradle*
-          rm -f mobile/android/build.gradle*
-          rm -f mobile/android/app/build.gradle*
-
-          cp /tmp/runner_template/android/settings.gradle* mobile/android/
-          cp /tmp/runner_template/android/build.gradle* mobile/android/
-          cp /tmp/runner_template/android/app/build.gradle* mobile/android/app/
-
-          chmod +x mobile/android/gradlew
-
-      - name: Get Flutter Packages
+      - name: Configure Flutter Android Platform
         working-directory: mobile
-        run: flutter pub get
+        run: |
+          echo "Configuring Flutter Android platform for mobile project..."
+          flutter create . --org com.finvault --project-name finvault --platforms android
+
+          # Ensure gradlew has execute permission
+          chmod +x android/gradlew || true
+
+      - name: Restore Custom Android Manifest & Assets
+        working-directory: mobile
+        run: |
+          # Ensure INTERNET & query intents in AndroidManifest.xml
+          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+              
+              <application
+                  android:label="FinVault"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:taskAffinity=""
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <meta-data
+                        android:name="io.flutter.embedding.android.NormalTheme"
+                        android:resource="@style/NormalTheme"
+                        />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2" />
+              </application>
+              <queries>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW" />
+                      <data android:scheme="https" />
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW" />
+                      <data android:scheme="whatsapp" />
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW" />
+                      <data android:scheme="upi" />
+                  </intent>
+              </queries>
+          </manifest>
+          EOF
+
+      - name: Get Flutter Packages & Analyze
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings || true
 
       - name: Build Android Release APK
         working-directory: mobile
@@ -62,11 +103,17 @@ jobs:
           set -o pipefail
           flutter build apk --release -v 2>&1 | tee ../flutter_build.log
 
-      - name: Print Build Logs on Failure
+      - name: Post Failure Log to Commit Comment
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "==== LAST 120 LINES OF FLUTTER BUILD LOG ===="
-          tail -n 120 flutter_build.log || true
+          LOG_CONTENT=$(tail -n 100 flutter_build.log)
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+            -f body="### ❌ Flutter Build Failure Details:
+          \`\`\`text
+          $LOG_CONTENT
+          \`\`\`" || true
 
       - name: Prepare APK Output
         run: |

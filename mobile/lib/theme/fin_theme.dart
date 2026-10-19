@@ -44,7 +44,6 @@ class FinTheme {
         primary: primary,
         secondary: accentCyan,
         surface: cardLight,
-        background: bgLight,
         error: danger,
       ),
       appBarTheme: const AppBarTheme(
@@ -112,7 +111,6 @@ class FinTheme {
         primary: primary,
         secondary: accentCyan,
         surface: cardDark,
-        background: bgDark,
         error: danger,
       ),
       appBarTheme: const AppBarTheme(
