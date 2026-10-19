@@ -55,24 +55,25 @@ jobs:
           # Add WhatsApp and UPI query schemes inside <queries>
           sed -i '/<\/queries>/i \        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="whatsapp"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="upi"\/>\n        <\/intent>' android/app/src/main/AndroidManifest.xml || true
 
-      - name: Get Flutter Packages & Analyze
+      - name: Get Flutter Packages & Verify Assets
         working-directory: mobile
         run: |
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings || true
+          flutter build bundle -v
 
       - name: Build Android Release APK
         working-directory: mobile
         run: |
           set -o pipefail
-          flutter build apk --release -v 2>&1 | tee ../flutter_build.log
+          flutter build apk --release --no-tree-shake-icons -v 2>&1 | tee ../flutter_build.log
 
       - name: Post Failure Log to Commit Comment
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ERROR_SNIPPET=$(grep -B 2 -A 40 "FAILURE: Build failed" flutter_build.log || grep -B 2 -A 40 "What went wrong" flutter_build.log || tail -n 80 flutter_build.log)
+          ERROR_SNIPPET=$(grep -B 60 "FAILURE: Build failed" flutter_build.log | tail -n 60 || tail -n 80 flutter_build.log)
           gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
             -f body="### ❌ Build Failure Details:
           \`\`\`text
