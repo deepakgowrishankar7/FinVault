@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'models/user_role.dart';
+import 'services/storage_service.dart';
 import 'theme/fin_theme.dart';
 import 'views/auth/passcode_screen.dart';
+import 'views/auth/setup_wizard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,11 +19,15 @@ void main() async {
     ),
   );
 
-  runApp(const FinVaultApp());
+  final settings = await StorageService.getSettings();
+
+  runApp(FinVaultApp(initialSettings: settings));
 }
 
 class FinVaultApp extends StatelessWidget {
-  const FinVaultApp({super.key});
+  final SecuritySettings initialSettings;
+
+  const FinVaultApp({super.key, required this.initialSettings});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +37,7 @@ class FinVaultApp extends StatelessWidget {
       theme: FinTheme.lightTheme,
       darkTheme: FinTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const PasscodeScreen(),
+      home: initialSettings.isRegistered ? const PasscodeScreen() : const SetupWizardScreen(),
     );
   }
 }

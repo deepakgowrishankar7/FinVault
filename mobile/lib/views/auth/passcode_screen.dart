@@ -3,6 +3,7 @@ import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/fin_theme.dart';
 import '../dashboard/dashboard_screen.dart';
+import 'setup_wizard_screen.dart';
 
 class PasscodeScreen extends StatefulWidget {
   const PasscodeScreen({super.key});
@@ -27,6 +28,14 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
 
   Future<void> _loadSettings() async {
     final s = await StorageService.getSettings();
+    if (!s.isRegistered) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const SetupWizardScreen()),
+      );
+      return;
+    }
     setState(() {
       _settings = s;
       _isLoading = false;

@@ -51,7 +51,7 @@ class SecuritySettings {
   final bool cloudSyncEnabled;
 
   SecuritySettings({
-    this.isRegistered = true,
+    this.isRegistered = false,
     this.firmName = 'FinVault',
     this.adminName = 'Admin',
     this.adminPin = '1234',
@@ -75,7 +75,7 @@ class SecuritySettings {
     }
 
     return SecuritySettings(
-      isRegistered: json['isRegistered'] ?? true,
+      isRegistered: json['isRegistered'] ?? false,
       firmName: json['firmName']?.toString() ?? 'FinVault',
       adminName: json['adminName']?.toString() ?? 'Admin',
       adminPin: json['adminPin']?.toString() ?? '1234',

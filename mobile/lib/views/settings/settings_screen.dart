@@ -235,6 +235,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             const SizedBox(height: 18),
+
+            _buildSectionHeader("Data Backup & Portability"),
+            _buildTile(
+              icon: Icons.shield_outlined,
+              title: "Export FinVault Snapshot (.finvault)",
+              subtitle: "Encrypted complete vault for cross-device transfer",
+              trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
+              onTap: () async {
+                final path = await StorageService.exportVaultFile();
+                if (path != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("🛡️ Complete .finvault backup generated and shared!"),
+                      backgroundColor: FinTheme.success,
+                    ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.table_view_outlined,
+              title: "Export Excel Spreadsheet (.csv)",
+              subtitle: "Formatted CSV spreadsheet with headers & UTF-8 BOM",
+              trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
+              onTap: () async {
+                final path = await StorageService.exportCsvFile();
+                if (path != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("📊 CSV spreadsheet exported!"),
+                      backgroundColor: FinTheme.success,
+                    ),
+                  );
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("⚠️ No loan data to export"),
+                      backgroundColor: FinTheme.danger,
+                    ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.data_object,
+              title: "Export Raw Backup (.json)",
+              subtitle: "Raw JSON backup of all loans & settings",
+              trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
+              onTap: () async {
+                final path = await StorageService.exportJsonFile();
+                if (path != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("📦 Complete JSON backup exported!"),
+                      backgroundColor: FinTheme.success,
+                    ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.restore_page_outlined,
+              title: "Restore from File (.finvault / .json / .csv)",
+              subtitle: "Import loans and recover credentials from backup",
+              trailing: const Icon(Icons.file_upload_outlined, size: 18, color: FinTheme.primary),
+              onTap: () async {
+                final result = await StorageService.pickAndRestoreFile();
+                if (!mounted) return;
+                if (result.success) {
+                  final updated = await StorageService.getSettings();
+                  setState(() => _settings = updated);
+                  widget.onSettingsChanged(updated);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("🎉 ${result.message}"),
+                      backgroundColor: FinTheme.success,
+                    ),
+                  );
+                } else if (result.message != "No file selected") {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("⚠️ ${result.message}"),
+                      backgroundColor: FinTheme.danger,
+                    ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+
+            const SizedBox(height: 18),
           ],
 
           _buildSectionHeader("Live Web Application"),
@@ -256,7 +350,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildTile(
             icon: Icons.info_outline,
             title: "Version",
-            subtitle: "FinVault Native 2.0.0 (Flutter 60-120 FPS)",
+            subtitle: "FinVault Native 2.0.0",
             isDark: isDark,
           ),
 
