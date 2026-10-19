@@ -253,7 +253,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  widget.role == UserRole.admin ? "👑 Master Admin" : "🏃 ${widget.agent?.name ?? 'Agent'}",
+                                  widget.role == UserRole.admin ? "👑 ${_t('master_admin')}" : "🏃 ${widget.agent?.name ?? _t('field_agent')}",
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -279,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.cloud_sync, color: FinTheme.primary),
-                          tooltip: "Cloud Sync",
+                          tooltip: _t('cloud_sync'),
                         ),
                       IconButton(
                         onPressed: () {
@@ -289,7 +289,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           );
                         },
                         icon: const Icon(Icons.lock_outline, color: FinTheme.danger),
-                        tooltip: "Lock Vault",
+                        tooltip: _t('lock_vault'),
                       ),
                     ],
                   ),
@@ -327,15 +327,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _buildKpiCard(
                       title: _t('total_principal'),
                       amount: _currency.format(totalPrincipal),
-                      subtitle: "Initial Principal",
+                      subtitle: _t('initial_principal'),
                       icon: Icons.outbox,
                       color: FinTheme.primary,
                       isDark: isDark,
                     ),
                     _buildKpiCard(
-                      title: "Net Interest Profit",
+                      title: _t('net_interest_profit'),
                       amount: _currency.format(totalInterest),
-                      subtitle: "Projected Profit",
+                      subtitle: _t('projected_profit'),
                       icon: Icons.trending_up,
                       color: FinTheme.purple,
                       isDark: isDark,
@@ -362,8 +362,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Portfolio Recovery Rate",
+                        Text(
+                          _t('portfolio_recovery_rate'),
                           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                         ),
                         Text(
@@ -391,14 +391,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Recovered: ${_currency.format(totalCollected)}",
+                          "${_t('recovered')}: ${_currency.format(totalCollected)}",
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
                           ),
                         ),
                         Text(
-                          "Goal: ${_currency.format(totalPayable)}",
+                          "${_t('goal')}: ${_currency.format(totalPayable)}",
                           style: TextStyle(
                             fontSize: 11,
                             color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
@@ -450,7 +450,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                       },
                       icon: const Icon(Icons.qr_code, size: 18, color: FinTheme.primary),
-                      label: const Text("Show UPI QR", style: TextStyle(color: FinTheme.primary)),
+                      label: Text(_t('show_upi_qr'), style: const TextStyle(color: FinTheme.primary)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: FinTheme.primary, width: 1.2),
                         padding: const EdgeInsets.symmetric(vertical: 13),
@@ -469,13 +469,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Active Loans",
+                  Text(
+                    _t('active_loans'),
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.3),
                   ),
                   TextButton(
                     onPressed: () => setState(() => _currentIndex = 1),
-                    child: const Text("View All", style: TextStyle(color: FinTheme.primary)),
+                    child: Text(_t('view_all'), style: const TextStyle(color: FinTheme.primary)),
                   ),
                 ],
               ),
@@ -490,8 +490,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Icon(Icons.check_circle_outline, size: 48, color: FinTheme.success.withOpacity(0.5)),
                       const SizedBox(height: 10),
-                      const Text(
-                        "No pending loans. All settled!",
+                      Text(
+                        _t('no_pending_loans'),
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ],

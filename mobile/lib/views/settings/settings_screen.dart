@@ -28,6 +28,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String _t(String key) => AppLocale.tr(key, _settings.language);
   late SecuritySettings _settings;
 
   @override
@@ -57,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           ElevatedButton(
             onPressed: () async {
               final updated = _settings.copyWith(
@@ -84,16 +85,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Change Master PIN", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(_t('change_master_pin'), style: TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: pinCtrl,
           keyboardType: TextInputType.number,
           maxLength: 4,
           obscureText: true,
-          decoration: const InputDecoration(labelText: "New 4-Digit Passcode", prefixIcon: Icon(Icons.lock)),
+          decoration: const InputDecoration(labelText: _t('master_admin_pin'), prefixIcon: Icon(Icons.lock)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
           ElevatedButton(
             onPressed: () async {
               if (pinCtrl.text.trim().length != 4) {
@@ -111,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            child: const Text("Update PIN"),
+            child: Text(_t('confirm')),
           ),
         ],
       ),
@@ -124,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Settings & Vault Security"),
+        title: Text(_t('settings_vault_security')),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -160,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "Owner: ${_settings.adminName} • ${_settings.ownerUpiId}",
+                          "${_t('owner_prefix')}: ${_settings.adminName} • ${_settings.ownerUpiId}",
                           style: TextStyle(fontSize: 12, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary),
                         ),
                       ],
@@ -179,18 +180,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 18),
 
           if (widget.role == UserRole.admin) ...[
-            _buildSectionHeader("Security & Passcode"),
+            _buildSectionHeader(_t('sec_security_passcode')),
             _buildTile(
               icon: Icons.pin,
-              title: "Change Master PIN",
-              subtitle: "Update your 4-digit admin security passcode",
+              title: _t('change_master_pin'),
+              subtitle: _t('change_pin_desc'),
               onTap: _changeAdminPin,
               isDark: isDark,
             ),
             _buildTile(
               icon: Icons.group,
-              title: "Staff & Field Agents",
-              subtitle: "${_settings.agents.length} Agent(s) Configured",
+              title: _t('staff_field_agents'),
+              subtitle: "${_settings.agents.length} ${_t('agents_configured')}",
               onTap: () {
                 Navigator.push(
                   context,
@@ -210,11 +211,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 18),
 
-            _buildSectionHeader("Cloud Synchronization"),
+            _buildSectionHeader(_t('sec_cloud_sync')),
             _buildTile(
               icon: Icons.cloud_outlined,
-              title: "Central Cloud Sync (Supabase)",
-              subtitle: _settings.cloudSyncEnabled ? "Connected & Active (Project: cpfpmnyipiqdtcnobwoq)" : "Disabled (Offline Mode)",
+              title: _t('central_cloud_sync'),
+              subtitle: _settings.cloudSyncEnabled ? "${_t('connected_active')} (Project: cpfpmnyipiqdtcnobwoq)" : _t('disabled_offline'),
               trailing: _settings.cloudSyncEnabled
                   ? const Icon(Icons.check_circle, color: FinTheme.success, size: 20)
                   : const Icon(Icons.chevron_right),
@@ -237,11 +238,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 18),
 
-            _buildSectionHeader("Data Backup & Portability"),
+            _buildSectionHeader(_t('sec_backup_portability')),
             _buildTile(
               icon: Icons.shield_outlined,
-              title: "Export FinVault Snapshot (.finvault)",
-              subtitle: "Encrypted complete vault for cross-device transfer",
+              title: _t('export_snapshot'),
+              subtitle: _t('export_snapshot_desc'),
               trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
               onTap: () async {
                 final path = await StorageService.exportVaultFile();
@@ -258,8 +259,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildTile(
               icon: Icons.table_view_outlined,
-              title: "Export Excel Spreadsheet (.csv)",
-              subtitle: "Formatted CSV spreadsheet with headers & UTF-8 BOM",
+              title: _t('export_csv'),
+              subtitle: _t('export_csv_desc'),
               trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
               onTap: () async {
                 final path = await StorageService.exportCsvFile();
@@ -283,8 +284,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildTile(
               icon: Icons.data_object,
-              title: "Export Raw Backup (.json)",
-              subtitle: "Raw JSON backup of all loans & settings",
+              title: _t('export_json'),
+              subtitle: _t('export_json_desc'),
               trailing: const Icon(Icons.share, size: 18, color: FinTheme.primary),
               onTap: () async {
                 final path = await StorageService.exportJsonFile();
@@ -301,8 +302,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildTile(
               icon: Icons.restore_page_outlined,
-              title: "Restore from File (.finvault / .json / .csv)",
-              subtitle: "Import loans and recover credentials from backup",
+              title: _t('restore_file'),
+              subtitle: _t('restore_file_desc'),
               trailing: const Icon(Icons.file_upload_outlined, size: 18, color: FinTheme.primary),
               onTap: () async {
                 final result = await StorageService.pickAndRestoreFile();
@@ -372,10 +373,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 18),
 
-          _buildSectionHeader("Live Web Application"),
+          _buildSectionHeader(_t('sec_live_web')),
           _buildTile(
             icon: Icons.open_in_browser,
-            title: "FinVault Web App",
+            title: _t('finvault_web_app'),
             subtitle: "https://deepakgowrishankar7.github.io/FinVault/",
             onTap: () => launchUrl(
               Uri.parse("https://deepakgowrishankar7.github.io/FinVault/"),
@@ -387,17 +388,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 18),
 
-          _buildSectionHeader("App Information"),
+          _buildSectionHeader(_t('sec_app_info')),
           _buildTile(
             icon: Icons.info_outline,
-            title: "Version",
+            title: _t('version'),
             subtitle: "FinVault Native 2.0.0",
             isDark: isDark,
           ),
           if (_settings.vaultId.isNotEmpty)
             _buildTile(
               icon: Icons.fingerprint,
-              title: "Vault Unique ID",
+              title: _t('vault_unique_id'),
               subtitle: _settings.vaultId,
               isDark: isDark,
             ),
@@ -415,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
               icon: const Icon(Icons.lock, color: FinTheme.danger),
-              label: const Text("Lock Vault & Log Out", style: TextStyle(color: FinTheme.danger, fontWeight: FontWeight.bold)),
+              label: Text(_t('lock_vault_logout'), style: TextStyle(color: FinTheme.danger, fontWeight: FontWeight.bold)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: FinTheme.danger),
                 padding: const EdgeInsets.symmetric(vertical: 14),
