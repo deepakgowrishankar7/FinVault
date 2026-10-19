@@ -102,8 +102,6 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         name: 'Field Agent',
         phone: '',
         pin: _enteredPin,
-        isActive: true,
-        created: DateTime.now().millisecondsSinceEpoch,
       );
 
       Navigator.pushReplacement(
@@ -211,8 +209,6 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                 name: name,
                 phone: '',
                 pin: pin,
-                isActive: true,
-                created: DateTime.now().millisecondsSinceEpoch,
               );
 
               final current = _settings ?? await StorageService.getSettings();

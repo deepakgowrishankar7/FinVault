@@ -102,12 +102,15 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path release-output
-          $releasePath = "mobile/build/windows/x64/runner/Release"
-          if (-not (Test-Path $releasePath)) {
-            $releasePath = "mobile/build/windows/runner/Release"
+          $foundExe = Get-ChildItem -Path "mobile/build" -Filter "*.exe" -Recurse | Select-Object -First 1
+          if ($foundExe) {
+            $releasePath = $foundExe.DirectoryName
+            Write-Host "Packaging Windows release from: $releasePath"
+            Compress-Archive -Path "$releasePath/*" -DestinationPath release-output/FinVault-Windows.zip -Force
+          } else {
+            Write-Error "Could not locate built Windows executable in mobile/build"
+            exit 1
           }
-          Write-Host "Packaging Windows release from: $releasePath"
-          Compress-Archive -Path "$releasePath/*" -DestinationPath release-output/FinVault-Windows.zip -Force
 
       - name: Upload Windows App Artifact
         uses: actions/upload-artifact@v4
