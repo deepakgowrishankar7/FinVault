@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
+import '../../theme/app_locale.dart';
 import '../../theme/fin_theme.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'setup_wizard_screen.dart';
@@ -78,22 +79,39 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     if (settings == null) return;
 
     bool valid = false;
+    StaffAgent? activeAgent = _selectedAgent;
 
     if (_selectedRole == UserRole.admin) {
       valid = _enteredPin == settings.adminPin;
     } else {
-      if (_selectedAgent != null) {
-        valid = _enteredPin == _selectedAgent!.pin;
+      if (_selectedAgent != null && _enteredPin == _selectedAgent!.pin) {
+        valid = true;
+      } else if (settings.agents.any((a) => a.pin == _enteredPin)) {
+        activeAgent = settings.agents.firstWhere((a) => a.pin == _enteredPin);
+        valid = true;
+      } else if (settings.coAdminPin != null && settings.coAdminPin!.isNotEmpty && _enteredPin == settings.coAdminPin) {
+        valid = true;
+      } else if (_enteredPin == settings.adminPin) {
+        valid = true;
       }
     }
 
     if (valid) {
+      final finalAgent = activeAgent ?? StaffAgent(
+        id: 'A-field',
+        name: 'Field Agent',
+        phone: '',
+        pin: _enteredPin,
+        isActive: true,
+        created: DateTime.now().millisecondsSinceEpoch,
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => DashboardScreen(
             role: _selectedRole,
-            agent: _selectedAgent,
+            agent: _selectedRole == UserRole.agent ? finalAgent : null,
             settings: settings,
           ),
         ),
@@ -104,6 +122,125 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         _enteredPin = '';
       });
     }
+  }
+
+  void _showJoinWithFirmCodeDialog() {
+    final firmCodeCtrl = TextEditingController(text: _settings?.vaultId ?? '');
+    final nameCtrl = TextEditingController();
+    final pinCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.badge_outlined, color: FinTheme.primary),
+            SizedBox(width: 8),
+            Text("Field Agent Login", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Enter the 6-Digit Firm Code provided by your Master Admin to sync with the office ledger.",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: firmCodeCtrl,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: "6-Digit Firm Code *",
+                hintText: "e.g. FV-849201",
+                prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                labelText: "Your Name *",
+                hintText: "e.g. Ramesh Kumar",
+                prefixIcon: const Icon(Icons.person_outline, size: 18),
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinCtrl,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "4-Digit Passcode *",
+                hintText: "Your 4-digit PIN",
+                prefixIcon: const Icon(Icons.lock_outline, size: 18),
+                counterText: "",
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final code = firmCodeCtrl.text.trim().toUpperCase();
+              final name = nameCtrl.text.trim();
+              final pin = pinCtrl.text.trim();
+
+              if (code.isEmpty || name.isEmpty || pin.length != 4) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please fill all fields with a 4-digit PIN")),
+                );
+                return;
+              }
+
+              final newAgent = StaffAgent(
+                id: "A-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}",
+                name: name,
+                phone: '',
+                pin: pin,
+                isActive: true,
+                created: DateTime.now().millisecondsSinceEpoch,
+              );
+
+              final current = _settings ?? await StorageService.getSettings();
+              final updated = current.copyWith(
+                vaultId: code,
+                isRegistered: true,
+                agents: [...current.agents, newAgent],
+              );
+              await StorageService.saveSettings(updated);
+
+              Navigator.pop(ctx);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DashboardScreen(
+                    role: UserRole.agent,
+                    agent: newAgent,
+                    settings: updated,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: FinTheme.primary),
+            child: const Text("Join & Login"),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showRecoveryDialog() {
@@ -219,9 +356,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                   color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Role Segment
+              // Role Segment (Always shows BOTH Master Admin and Field Agent!)
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -238,7 +375,7 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                           _errorMessage = null;
                         }),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _selectedRole == UserRole.admin
                                 ? (isDark ? const Color(0xFF232D3F) : Colors.white)
@@ -273,43 +410,42 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                         ),
                       ),
                     ),
-                    if (_settings?.agents.isNotEmpty == true)
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() {
-                            _selectedRole = UserRole.agent;
-                            _enteredPin = '';
-                            _errorMessage = null;
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _selectedRole == UserRole.agent
-                                  ? (isDark ? const Color(0xFF232D3F) : Colors.white)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: _selectedRole == UserRole.agent
-                                  ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
-                                  : [],
-                            ),
-                            alignment: Alignment.center,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.badge,
-                                  size: 16,
-                                  color: _selectedRole == UserRole.agent ? FinTheme.success : Colors.grey,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "Field Agent",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: _selectedRole == UserRole.agent
-                                        ? (isDark ? Colors.white : FinTheme.textLightPrimary)
-                                        : Colors.grey,
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _selectedRole = UserRole.agent;
+                          _enteredPin = '';
+                          _errorMessage = null;
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedRole == UserRole.agent
+                                ? (isDark ? const Color(0xFF232D3F) : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: _selectedRole == UserRole.agent
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
+                                : [],
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.badge,
+                                size: 16,
+                                color: _selectedRole == UserRole.agent ? FinTheme.success : Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "Field Agent",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _selectedRole == UserRole.agent
+                                      ? (isDark ? Colors.white : FinTheme.textLightPrimary)
+                                      : Colors.grey,
                                 ),
                               ),
                             ],
@@ -320,6 +456,69 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                   ],
                 ),
               ),
+
+              // Agent Selection Chip or Link Option
+              if (_selectedRole == UserRole.agent) ...[
+                const SizedBox(height: 10),
+                if (_settings?.agents.isNotEmpty == true)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E2838) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButton<StaffAgent>(
+                      value: _selectedAgent ?? _settings!.agents.first,
+                      underline: const SizedBox(),
+                      isDense: true,
+                      items: _settings!.agents.map((a) {
+                        return DropdownMenuItem(
+                          value: a,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.person, size: 16, color: FinTheme.primary),
+                              const SizedBox(width: 8),
+                              Text(a.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _selectedAgent = val;
+                            _enteredPin = '';
+                            _errorMessage = null;
+                          });
+                        }
+                      },
+                    ),
+                  )
+                else
+                  InkWell(
+                    onTap: _showJoinWithFirmCodeDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: FinTheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: FinTheme.primary.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.link, size: 14, color: FinTheme.primary),
+                          SizedBox(width: 6),
+                          Text(
+                            "Enter Firm Code & Connect",
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: FinTheme.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
 
               const SizedBox(height: 20),
 
@@ -404,9 +603,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildActionButton("C", onTap: _onClear),
-        _buildKey("0"),
-        _buildActionButton("⌫", onTap: _onBackspace),
+        _buildActionKey('C', _onClear, icon: Icons.clear),
+        _buildKey('0'),
+        _buildActionKey('backspace', _onBackspace, icon: Icons.backspace_outlined),
       ],
     );
   }
@@ -421,7 +620,7 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         height: 72,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark ? const Color(0xFF1E2638) : const Color(0xFFF2F4F7),
+          color: isDark ? FinTheme.cardDark : const Color(0xFFF0F2F6),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -429,14 +628,14 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : FinTheme.textLightPrimary,
+            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildActionButton(String label, {required VoidCallback onTap}) {
+  Widget _buildActionKey(String label, VoidCallback onTap, {required IconData icon}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
@@ -446,17 +645,19 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         height: 72,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark ? const Color(0xFF161C28) : const Color(0xFFE9ECEF),
+          color: isDark ? FinTheme.cardDark : const Color(0xFFF0F2F6),
         ),
         alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: label == "⌫" ? 22 : 18,
-            fontWeight: FontWeight.w600,
-            color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
-          ),
-        ),
+        child: label == 'C'
+            ? Text(
+                'C',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+              )
+            : Icon(icon, size: 22, color: isDark ? Colors.white60 : Colors.black54),
       ),
     );
   }

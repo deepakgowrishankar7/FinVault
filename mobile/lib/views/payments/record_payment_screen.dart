@@ -146,7 +146,7 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(ctx);
                       PdfService.printPaymentVoucher(
@@ -156,9 +156,17 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
                       );
                       Navigator.pop(context, true);
                     },
-                    icon: const Icon(Icons.print, size: 18),
-                    label: const Text("Print Slip"),
-                    style: ElevatedButton.styleFrom(backgroundColor: FinTheme.primary),
+                    icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
+                    label: const Text(
+                      "Print Receipt",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FinTheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -173,9 +181,17 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
                       );
                       Navigator.pop(context, true);
                     },
-                    icon: const Icon(Icons.share, size: 18),
-                    label: const Text("WhatsApp"),
-                    style: ElevatedButton.styleFrom(backgroundColor: FinTheme.success),
+                    icon: const Icon(Icons.share, size: 18, color: Colors.white),
+                    label: const Text(
+                      "WhatsApp",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FinTheme.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
               ],
