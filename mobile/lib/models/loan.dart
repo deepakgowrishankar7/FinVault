@@ -77,9 +77,26 @@ class Loan {
     return (totalPayable / months).roundToDouble();
   }
 
+  // Calculate Rupee Interest (₹ per ₹100 per month, e.g. ₹2 vaddi on 1 Lakh = ₹2000/mo)
+  static double calcRupeeRate(double p, double rupeeRatePer100, int months) {
+    if (p <= 0 || months <= 0) return 0;
+    final monthlyInterest = (p / 100) * rupeeRatePer100;
+    final totalInterest = monthlyInterest * months;
+    final totalPayable = p + totalInterest;
+    return (totalPayable / months).roundToDouble();
+  }
+
+  // Monthly Interest Only for Rupee Vaddi (pure interest without principal split)
+  static double calcRupeeMonthlyInterest(double p, double rupeeRatePer100) {
+    if (p <= 0) return 0;
+    return (p / 100) * rupeeRatePer100;
+  }
+
   double get monthlyInstallment {
     if (model == 'emi') {
       return calcEmi(principal, interest, tenure);
+    } else if (model == 'rupee') {
+      return calcRupeeRate(principal, interest, tenure);
     } else {
       return calcSimple(principal, interest, tenure);
     }
@@ -88,6 +105,9 @@ class Loan {
   double get totalPayable {
     if (model == 'emi') {
       return monthlyInstallment * tenure;
+    } else if (model == 'rupee') {
+      final monthlyInterest = (principal / 100) * interest;
+      return (principal + (monthlyInterest * tenure)).roundToDouble();
     } else {
       final totalInterest = principal * (interest / 100) * (tenure / 12);
       return (principal + totalInterest).roundToDouble();
@@ -153,6 +173,10 @@ class Loan {
 
       if (model == 'emi') {
         intVal = balance * r;
+        prinVal = emiVal - intVal;
+        balance = max(0.0, balance - prinVal);
+      } else if (model == 'rupee') {
+        intVal = (principal / 100) * interest;
         prinVal = emiVal - intVal;
         balance = max(0.0, balance - prinVal);
       } else {

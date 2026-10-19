@@ -40,7 +40,9 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   }
 
   double get _monthlyInstallment {
-    if (_model == 'emi') {
+    if (_model == 'rupee') {
+      return Loan.calcRupeeRate(_principal, _interestRate, _tenure);
+    } else if (_model == 'emi') {
       return Loan.calcEmi(_principal, _interestRate, _tenure);
     } else {
       return Loan.calcSimple(_principal, _interestRate, _tenure);
@@ -48,8 +50,11 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   }
 
   double get _totalPayable {
-    if (_model == 'emi') {
-      return _monthlyInstallment * _tenure;
+    if (_model == 'rupee') {
+      final monthlyInterest = Loan.calcRupeeMonthlyInterest(_principal, _interestRate);
+      return (_principal + (monthlyInterest * _tenure)).roundToDouble();
+    } else if (_model == 'emi') {
+      return (_monthlyInstallment * _tenure).roundToDouble();
     } else {
       final totalInterest = _principal * (_interestRate / 100) * (_tenure / 12);
       return (_principal + totalInterest).roundToDouble();
@@ -233,9 +238,21 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     items: const [
                       DropdownMenuItem(value: 'emi', child: Text("Reducing Balance (Standard Bank EMI)")),
                       DropdownMenuItem(value: 'simple', child: Text("Simple / Flat Interest (Fixed Monthly)")),
+                      DropdownMenuItem(value: 'rupee', child: Text("Rupee Interest (₹ per ₹100/mo - రూపాయి వడ్డీ)")),
                     ],
                     onChanged: (val) {
-                      if (val != null) setState(() => _model = val);
+                      if (val != null) {
+                        setState(() {
+                          _model = val;
+                          if (val == 'rupee' && _interestRate > 10.0) {
+                            _interestRate = 2.0;
+                            _rateCtrl.text = "2.0";
+                          } else if (val != 'rupee' && _interestRate <= 5.0) {
+                            _interestRate = 12.0;
+                            _rateCtrl.text = "12.0";
+                          }
+                        });
+                      }
                     },
                   ),
 
@@ -276,22 +293,27 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2. Interest Rate Control
+                  // 2. Interest Rate Control (Dynamic for Rupee vs % p.a.)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Interest Rate (% per annum)", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       Text(
-                        "${_interestRate.toStringAsFixed(1)}% p.a.",
+                        _model == 'rupee' ? "Rupee Rate (₹ per ₹100 / month)" : "Interest Rate (% per annum)",
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      Text(
+                        _model == 'rupee'
+                            ? "₹${_interestRate.toStringAsFixed(1)} vaddi / mo"
+                            : "${_interestRate.toStringAsFixed(1)}% p.a.",
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: FinTheme.primary),
                       ),
                     ],
                   ),
                   Slider(
-                    value: _interestRate,
-                    min: 1.0,
-                    max: 36.0,
-                    divisions: 70,
+                    value: _model == 'rupee' ? _interestRate.clamp(0.5, 10.0) : _interestRate.clamp(1.0, 36.0),
+                    min: _model == 'rupee' ? 0.5 : 1.0,
+                    max: _model == 'rupee' ? 10.0 : 36.0,
+                    divisions: _model == 'rupee' ? 19 : 70,
                     activeColor: FinTheme.primary,
                     onChanged: (val) {
                       setState(() {
@@ -302,11 +324,17 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text("1%", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text("18%", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text("36%", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
+                    children: _model == 'rupee'
+                        ? const [
+                            Text("₹0.50 (50 paise)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("₹2.00 (₹2 vaddi)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("₹10.00 (₹10 vaddi)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          ]
+                        : const [
+                            Text("1%", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("18%", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("36%", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
                   ),
 
                   const SizedBox(height: 16),

@@ -87,7 +87,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
   int get _currentTenure => int.tryParse(_tenureCtrl.text) ?? 0;
 
   double get _computedMonthly {
-    if (_model == 'emi') {
+    if (_model == 'rupee') {
+      return Loan.calcRupeeRate(_currentPrincipal, _currentInterest, _currentTenure);
+    } else if (_model == 'emi') {
       return Loan.calcEmi(_currentPrincipal, _currentInterest, _currentTenure);
     } else {
       return Loan.calcSimple(_currentPrincipal, _currentInterest, _currentTenure);
@@ -95,8 +97,11 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
   }
 
   double get _computedTotalPayable {
-    if (_model == 'emi') {
-      return _computedMonthly * _currentTenure;
+    if (_model == 'rupee') {
+      final monthlyInterest = Loan.calcRupeeMonthlyInterest(_currentPrincipal, _currentInterest);
+      return (_currentPrincipal + (monthlyInterest * _currentTenure)).roundToDouble();
+    } else if (_model == 'emi') {
+      return (_computedMonthly * _currentTenure).roundToDouble();
     } else {
       final interest = _currentPrincipal * (_currentInterest / 100) * (_currentTenure / 12);
       return (_currentPrincipal + interest).roundToDouble();
@@ -348,8 +353,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                       controller: _interestCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: "${_t('interest_rate')} *",
-                        prefixIcon: const Icon(Icons.percent),
+                        labelText: _model == 'rupee' ? "Vaddi (₹/₹100/mo) *" : "${_t('interest_rate')} *",
+                        hintText: _model == 'rupee' ? "e.g. 2 for ₹2 vaddi" : "e.g. 12",
+                        prefixIcon: Icon(_model == 'rupee' ? Icons.currency_rupee : Icons.percent),
                         filled: true,
                         fillColor: isDark ? FinTheme.cardDark : Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -384,34 +390,34 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
 
               const SizedBox(height: 18),
 
-              // Premium Loan Model Selection Chips
+              // Premium Loan Model Selection (3 Options)
               Text(
                 _t('loan_type').toUpperCase(),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildModelOption(
-                      id: 'emi',
-                      title: _t('reducing_emi'),
-                      subtitle: 'Bank Standard reducing balance',
-                      icon: Icons.trending_down,
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildModelOption(
-                      id: 'simple',
-                      title: _t('flat_simple'),
-                      subtitle: 'Fixed flat interest per month',
-                      icon: Icons.horizontal_rule,
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
+              _buildModelOption(
+                id: 'emi',
+                title: _t('reducing_emi'),
+                subtitle: 'Bank Standard reducing balance calculation',
+                icon: Icons.trending_down,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _buildModelOption(
+                id: 'simple',
+                title: _t('flat_simple'),
+                subtitle: 'Fixed flat interest per month/year',
+                icon: Icons.horizontal_rule,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _buildModelOption(
+                id: 'rupee',
+                title: _t('rupee_rate'),
+                subtitle: _t('rupee_rate_hint'),
+                icon: Icons.currency_rupee,
+                isDark: isDark,
               ),
 
               const SizedBox(height: 18),

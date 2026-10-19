@@ -50,6 +50,9 @@ class SecuritySettings {
   final String supabaseUrl;
   final String supabaseKey;
   final bool cloudSyncEnabled;
+  final bool useCustomCloud;
+  final String customSupabaseUrl;
+  final String customSupabaseKey;
   final String language; // 'en', 'te', 'hi', 'ta', 'kn'
 
   SecuritySettings({
@@ -66,6 +69,9 @@ class SecuritySettings {
     this.supabaseUrl = '',
     this.supabaseKey = '',
     this.cloudSyncEnabled = false,
+    this.useCustomCloud = false,
+    this.customSupabaseUrl = '',
+    this.customSupabaseKey = '',
     this.language = 'en',
   });
 
@@ -92,6 +98,9 @@ class SecuritySettings {
       supabaseUrl: json['supabaseUrl']?.toString() ?? '',
       supabaseKey: json['supabaseKey']?.toString() ?? '',
       cloudSyncEnabled: json['cloudSyncEnabled'] ?? false,
+      useCustomCloud: json['useCustomCloud'] ?? false,
+      customSupabaseUrl: json['customSupabaseUrl']?.toString() ?? '',
+      customSupabaseKey: json['customSupabaseKey']?.toString() ?? '',
       language: json['language']?.toString() ?? 'en',
     );
   }
@@ -111,6 +120,9 @@ class SecuritySettings {
       'supabaseUrl': supabaseUrl,
       'supabaseKey': supabaseKey,
       'cloudSyncEnabled': cloudSyncEnabled,
+      'useCustomCloud': useCustomCloud,
+      'customSupabaseUrl': customSupabaseUrl,
+      'customSupabaseKey': customSupabaseKey,
       'language': language,
     };
   }
@@ -129,6 +141,9 @@ class SecuritySettings {
     String? supabaseUrl,
     String? supabaseKey,
     bool? cloudSyncEnabled,
+    bool? useCustomCloud,
+    String? customSupabaseUrl,
+    String? customSupabaseKey,
     String? language,
   }) {
     return SecuritySettings(
@@ -145,6 +160,9 @@ class SecuritySettings {
       supabaseUrl: supabaseUrl ?? this.supabaseUrl,
       supabaseKey: supabaseKey ?? this.supabaseKey,
       cloudSyncEnabled: cloudSyncEnabled ?? this.cloudSyncEnabled,
+      useCustomCloud: useCustomCloud ?? this.useCustomCloud,
+      customSupabaseUrl: customSupabaseUrl ?? this.customSupabaseUrl,
+      customSupabaseKey: customSupabaseKey ?? this.customSupabaseKey,
       language: language ?? this.language,
     );
   }

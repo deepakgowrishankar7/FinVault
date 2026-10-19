@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
+import '../../theme/app_locale.dart';
 import '../../theme/fin_theme.dart';
 
 class CloudSyncScreen extends StatefulWidget {
@@ -20,34 +21,55 @@ class CloudSyncScreen extends StatefulWidget {
 
 class _CloudSyncScreenState extends State<CloudSyncScreen> {
   late bool _enabled;
+  late bool _useCustomCloud;
+  late TextEditingController _customUrlCtrl;
+  late TextEditingController _customKeyCtrl;
+
   bool _isSyncing = false;
+  bool _isTestingConnection = false;
   String _statusMessage = 'Checking connection...';
   bool _isHealthy = false;
   int _cloudCount = 0;
+  String? _testResult;
+  bool _testSuccess = false;
+
+  String get _lang => widget.settings.language;
+  String _t(String key) => AppLocale.tr(key, _lang);
 
   @override
   void initState() {
     super.initState();
     _enabled = widget.settings.cloudSyncEnabled;
+    _useCustomCloud = widget.settings.useCustomCloud;
+    _customUrlCtrl = TextEditingController(text: widget.settings.customSupabaseUrl);
+    _customKeyCtrl = TextEditingController(text: widget.settings.customSupabaseKey);
     _checkHealth();
+  }
+
+  @override
+  void dispose() {
+    _customUrlCtrl.dispose();
+    _customKeyCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _checkHealth() async {
     setState(() => _isSyncing = true);
-    final connected = await SupabaseService.init();
+    final connected = await SupabaseService.init(settings: widget.settings);
     if (connected) {
       final remoteLoans = await SupabaseService.pullLoans(widget.settings.vaultId);
       setState(() {
         _isHealthy = true;
         _isSyncing = false;
         _cloudCount = remoteLoans?.length ?? 0;
-        _statusMessage = "Connected & Active • Private partition (Vault: ${widget.settings.vaultId.isEmpty ? 'Offline' : widget.settings.vaultId})";
+        final target = _useCustomCloud ? "Your Own Supabase" : "Central Cloud (Vault: ${widget.settings.vaultId})";
+        _statusMessage = "Connected & Active on $target";
       });
     } else {
       setState(() {
         _isHealthy = false;
         _isSyncing = false;
-        _statusMessage = "Unable to connect to central database. Running in 100% offline private mode.";
+        _statusMessage = "Unable to connect to cloud database. Operating in 100% offline local mode.";
       });
     }
   }
@@ -63,14 +85,67 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
     }
   }
 
+  Future<void> _selectCloudMode(bool useCustom) async {
+    setState(() {
+      _useCustomCloud = useCustom;
+      _testResult = null;
+    });
+
+    final updated = widget.settings.copyWith(
+      useCustomCloud: useCustom,
+    );
+    await StorageService.saveSettings(updated);
+    widget.onSettingsUpdated(updated);
+    _checkHealth();
+  }
+
+  Future<void> _testAndSaveCustomCredentials() async {
+    final url = _customUrlCtrl.text.trim();
+    final key = _customKeyCtrl.text.trim();
+
+    if (url.isEmpty || key.isEmpty) {
+      setState(() {
+        _testResult = "Please provide both Supabase URL and Anon Key";
+        _testSuccess = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isTestingConnection = true;
+      _testResult = null;
+    });
+
+    final ok = await SupabaseService.testConnection(url, key);
+    setState(() {
+      _isTestingConnection = false;
+      _testSuccess = ok;
+      _testResult = ok
+          ? _t('connection_success')
+          : _t('connection_failed');
+    });
+
+    if (ok) {
+      final updated = widget.settings.copyWith(
+        useCustomCloud: true,
+        customSupabaseUrl: url,
+        customSupabaseKey: key,
+      );
+      await StorageService.saveSettings(updated);
+      widget.onSettingsUpdated(updated);
+      await SupabaseService.init(settings: updated);
+      _checkHealth();
+    }
+  }
+
   Future<void> _syncNow() async {
     setState(() => _isSyncing = true);
-    final connected = await SupabaseService.init();
+    final connected = await SupabaseService.init(settings: widget.settings);
     if (!connected) {
       setState(() {
         _isSyncing = false;
         _isHealthy = false;
-        _statusMessage = "Failed to connect to central cloud database.";
+        _statusMessage = "Failed to connect to the selected database.";
       });
       return;
     }
@@ -99,13 +174,13 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
         _cloudCount = localLoans.length;
         _isHealthy = true;
         _isSyncing = false;
-        _statusMessage = "Pushed ${localLoans.length} loans to your private cloud partition!";
+        _statusMessage = "Pushed ${localLoans.length} loans to cloud database!";
       });
     } else {
       setState(() {
         _isHealthy = true;
         _isSyncing = false;
-        _statusMessage = "Connected to private partition (Vault: $vaultId). 0 loans.";
+        _statusMessage = "Connected to database partition (Vault: $vaultId). 0 loans.";
       });
     }
 
@@ -125,7 +200,7 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cloud Backup & Sync"),
+        title: Text(_t('cloud_sync')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -139,7 +214,45 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Switch Card
+            // 1. 100% Offline Local Storage Default Guarantee Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: FinTheme.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
+                border: Border.all(color: FinTheme.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.shield_outlined, color: FinTheme.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "100% Offline Local Storage (Primary)",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: FinTheme.primary),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _t('offline_local_note'),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // 2. Cloud Sync Activation Toggle Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -156,15 +269,16 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "☁️ Central Cloud Database",
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                            "☁️ Cloud Synchronization",
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Project: cpfpmnyipiqdtcnobwoq",
+                            _enabled ? "Real-time sync active" : "Disabled (Offline Only)",
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+                              fontWeight: FontWeight.w600,
+                              color: _enabled ? FinTheme.success : Colors.grey,
                             ),
                           ),
                         ],
@@ -176,11 +290,11 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
                       ),
                     ],
                   ),
-                  const Divider(height: 24),
+                  const Divider(height: 20),
                   Text(
                     _enabled
-                        ? "Central cloud sync is active. Your loans and repayment ledgers automatically back up and sync across Web and Android in real-time."
-                        : "Cloud sync is disabled. All borrower identities and loans live 100% private and offline on this device.",
+                        ? "Cloud sync is enabled. Your loans and repayment entries automatically sync across devices."
+                        : "Cloud sync is turned off. All loan ledgers are stored strictly offline on this mobile device.",
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
@@ -193,7 +307,232 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
 
             const SizedBox(height: 18),
 
-            // Live Diagnostic Status Card
+            // 3. Dual Database Options Selection Card
+            Text(
+              "DATABASE STORAGE PROVIDER".toUpperCase(),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 0.8),
+            ),
+            const SizedBox(height: 8),
+
+            // Choice A: Central FinVault Cloud (Default)
+            GestureDetector(
+              onTap: () => _selectCloudMode(false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: !_useCustomCloud
+                      ? FinTheme.primary.withOpacity(0.10)
+                      : (isDark ? FinTheme.cardDark : Colors.white),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: !_useCustomCloud ? FinTheme.primary : (isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                    width: !_useCustomCloud ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      !_useCustomCloud ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: !_useCustomCloud ? FinTheme.primary : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                _t('central_cloud'),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: !_useCustomCloud ? FinTheme.primary : null,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: FinTheme.primary.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "Default",
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: FinTheme.primary),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Zero setup. Isolated by your unique Firm Code: ${widget.settings.vaultId}",
+                            style: TextStyle(fontSize: 11, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Choice B: Custom Database (Own Supabase)
+            GestureDetector(
+              onTap: () => _selectCloudMode(true),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _useCustomCloud
+                      ? FinTheme.primary.withOpacity(0.10)
+                      : (isDark ? FinTheme.cardDark : Colors.white),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _useCustomCloud ? FinTheme.primary : (isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                    width: _useCustomCloud ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _useCustomCloud ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: _useCustomCloud ? FinTheme.primary : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _t('custom_cloud'),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _useCustomCloud ? FinTheme.primary : null,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Connect your personal Supabase project URL & Anon Key",
+                            style: TextStyle(fontSize: 11, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Custom Supabase Inputs Card (Visible when Custom is chosen)
+            if (_useCustomCloud) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? FinTheme.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: FinTheme.primary.withOpacity(0.4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _t('supabase_url'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _customUrlCtrl,
+                      decoration: InputDecoration(
+                        hintText: "https://xyzcompany.supabase.co",
+                        prefixIcon: const Icon(Icons.link, size: 18),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF1E2838) : const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _t('supabase_key'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _customKeyCtrl,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        hintText: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        prefixIcon: const Icon(Icons.vpn_key_outlined, size: 18),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF1E2838) : const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    if (_testResult != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _testSuccess ? FinTheme.success.withOpacity(0.12) : FinTheme.danger.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _testSuccess ? Icons.check_circle : Icons.error_outline,
+                              size: 16,
+                              color: _testSuccess ? FinTheme.success : FinTheme.danger,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _testResult!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _testSuccess ? FinTheme.success : FinTheme.danger,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isTestingConnection ? null : _testAndSaveCustomCredentials,
+                        icon: _isTestingConnection
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.cloud_done, size: 18),
+                        label: Text(
+                          _isTestingConnection ? "Testing Connection..." : _t('test_connection'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FinTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 18),
+
+            // 4. Live Diagnostic Status Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -253,7 +592,7 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
 
             const SizedBox(height: 24),
 
-            // Sync Now Button
+            // 5. Sync Now Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/loan.dart';
+import '../models/user_role.dart';
 
 class SupabaseService {
   // Central Supabase credentials matching the web app
@@ -7,34 +8,49 @@ class SupabaseService {
   static const String defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZnBtbnlpcGlxZHRjbm9id29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMzYwMzcsImV4cCI6MjEwNzYxMjAzN30.KnKEfEWrUFNbvveRnwf9w71-nXULRDKQhrnhYoCrd_w';
 
   static SupabaseClient? _client;
-  static bool _isInitialized = false;
+  static String? _currentUrl;
+  static String? _currentKey;
 
-  static Future<bool> init({String? url, String? anonKey}) async {
-    final targetUrl = (url != null && url.trim().isNotEmpty) ? url.trim() : defaultUrl;
-    final targetKey = (anonKey != null && anonKey.trim().isNotEmpty) ? anonKey.trim() : defaultKey;
+  static Future<bool> init({String? url, String? anonKey, SecuritySettings? settings}) async {
+    String targetUrl = defaultUrl;
+    String targetKey = defaultKey;
+
+    if (settings != null && settings.useCustomCloud && settings.customSupabaseUrl.isNotEmpty && settings.customSupabaseKey.isNotEmpty) {
+      targetUrl = settings.customSupabaseUrl.trim();
+      targetKey = settings.customSupabaseKey.trim();
+    } else if (url != null && url.trim().isNotEmpty && anonKey != null && anonKey.trim().isNotEmpty) {
+      targetUrl = url.trim();
+      targetKey = anonKey.trim();
+    }
 
     try {
-      if (!_isInitialized) {
-        await Supabase.initialize(
-          url: targetUrl,
-          anonKey: targetKey,
-        );
-        _isInitialized = true;
+      if (_client == null || _currentUrl != targetUrl || _currentKey != targetKey) {
+        _client = SupabaseClient(targetUrl, targetKey);
+        _currentUrl = targetUrl;
+        _currentKey = targetKey;
       }
-      _client = Supabase.instance.client;
       return true;
     } catch (_) {
-      try {
-        _client = Supabase.instance.client;
-        _isInitialized = true;
-        return true;
-      } catch (e) {
-        return false;
-      }
+      return false;
     }
   }
 
-  static bool get isConfigured => _client != null || _isInitialized;
+  static Future<bool> testConnection(String url, String anonKey) async {
+    try {
+      if (url.trim().isEmpty || anonKey.trim().isEmpty) return false;
+      final testClient = SupabaseClient(url.trim(), anonKey.trim());
+      await testClient.from('loans').select().limit(1);
+      return true;
+    } catch (e) {
+      final err = e.toString().toLowerCase();
+      if (err.contains("relation") || err.contains("table") || err.contains("column") || err.contains("not found")) {
+        return true;
+      }
+      return false;
+    }
+  }
+
+  static bool get isConfigured => _client != null;
 
   /// Pull ONLY loans belonging to this specific vault ID
   static Future<List<Loan>?> pullLoans(String vaultId) async {

@@ -278,9 +278,13 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                       child: Column(
                         children: [
                           _buildDetailRow("Principal Amount", _currency.format(loan.principal), isDark),
-                          const Divider(height: 16),
-                          _buildDetailRow("Annual Interest Rate", "${loan.interest}% (${loan.model == 'emi' ? 'Reducing EMI' : 'Flat Simple'})", isDark),
-                          const Divider(height: 16),
+                          _buildDetailRow(
+                            loan.model == 'rupee' ? "Rupee Interest (Vaddi)" : "Interest Rate",
+                            loan.model == 'rupee'
+                                ? "₹${loan.interest} per ₹100/mo (రూపాయి వడ్డీ)"
+                                : "${loan.interest}% (${loan.model == 'emi' ? 'Reducing EMI' : 'Flat Simple'})",
+                            isDark,
+                          ),
                           _buildDetailRow("Tenure / Duration", "${loan.tenure} Months", isDark),
                           const Divider(height: 16),
                           _buildDetailRow("Monthly Installment", _currency.format(loan.monthlyInstallment), isDark, highlight: true),
