@@ -71,11 +71,14 @@ jobs:
   # Job 2: Build Windows Desktop Laptop App (.exe & dependencies)
   build-windows:
     name: Build Windows Laptop App (.exe)
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup MSVC C++ Environment
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -124,17 +127,19 @@ jobs:
     name: Publish Release (Mobile APK & Laptop App)
     needs: [build-android, build-windows]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: always() && github.ref == 'refs/heads/main'
 
     steps:
       - name: Download Android Artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: FinVault-Android-APK
           path: release-files
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: FinVault-Windows-Laptop-App
           path: release-files
