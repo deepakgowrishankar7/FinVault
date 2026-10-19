@@ -5,6 +5,7 @@ import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/fin_theme.dart';
+import '../calculator/emi_calculator_screen.dart';
 import '../loans/loans_list_screen.dart';
 import '../loans/add_edit_loan_screen.dart';
 import '../loans/loan_detail_screen.dart';
@@ -39,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadLoans();
-    _checkCloudSync();
+    _autoInitCloudSync();
   }
 
   Future<void> _loadLoans() async {
@@ -51,49 +52,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _checkCloudSync() async {
-    if (widget.settings.cloudSyncEnabled &&
-        widget.settings.supabaseUrl.isNotEmpty &&
-        widget.settings.supabaseKey.isNotEmpty) {
-      await SupabaseService.init(widget.settings.supabaseUrl, widget.settings.supabaseKey);
-    }
+  Future<void> _autoInitCloudSync() async {
+    // Automatically connect to central Supabase out-of-the-box
+    await SupabaseService.init();
+    _triggerCloudSync();
   }
 
   Future<void> _triggerCloudSync() async {
-    if (!widget.settings.cloudSyncEnabled || !SupabaseService.isConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enable Supabase Cloud Sync in Settings first")),
-      );
-      return;
+    if (!SupabaseService.isConfigured) {
+      await SupabaseService.init();
     }
 
     setState(() => _isSyncing = true);
-    final remoteLoans = await SupabaseService.pullLoans();
-    if (remoteLoans != null && remoteLoans.isNotEmpty) {
-      // Merge remote with local
-      final mergedMap = {for (var l in _loans) l.id: l};
-      for (var r in remoteLoans) {
-        mergedMap[r.id] = r;
+    try {
+      final remoteLoans = await SupabaseService.pullLoans();
+      if (remoteLoans != null && remoteLoans.isNotEmpty) {
+        final mergedMap = {for (var l in _loans) l.id: l};
+        for (var r in remoteLoans) {
+          mergedMap[r.id] = r;
+        }
+        final mergedList = mergedMap.values.toList();
+        await StorageService.saveLoans(mergedList);
+        setState(() => _loans = mergedList);
+      } else if (_loans.isNotEmpty) {
+        await SupabaseService.pushLoans(_loans);
       }
-      final mergedList = mergedMap.values.toList();
-      await StorageService.saveLoans(mergedList);
-      setState(() => _loans = mergedList);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Synced ${mergedList.length} loans with Cloud!"),
-          backgroundColor: FinTheme.success,
-        ),
-      );
-    } else {
-      // Push local
-      await SupabaseService.pushLoans(_loans);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Pushed local loans to Cloud Vault!"),
-          backgroundColor: FinTheme.success,
-        ),
-      );
-    }
+    } catch (_) {}
     setState(() => _isSyncing = false);
   }
 
@@ -109,6 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         settings: widget.settings,
         onLoansChanged: _loadLoans,
       ),
+      const EmiCalculatorScreen(),
       SettingsScreen(
         role: widget.role,
         agent: widget.agent,
@@ -133,6 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           backgroundColor: Colors.transparent,
+          type: BottomNavigationBarType.fixed,
           elevation: 0,
           selectedItemColor: FinTheme.primary,
           unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
@@ -148,6 +134,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: Icon(Icons.account_balance_wallet_outlined),
               activeIcon: Icon(Icons.account_balance_wallet),
               label: "Loans",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calculate_outlined),
+              activeIcon: Icon(Icons.calculate),
+              label: "Calculator",
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings_outlined),

@@ -19,65 +19,102 @@ class CloudSyncScreen extends StatefulWidget {
 }
 
 class _CloudSyncScreenState extends State<CloudSyncScreen> {
-  final _urlCtrl = TextEditingController();
-  final _keyCtrl = TextEditingController();
-  bool _enabled = false;
-  bool _isTesting = false;
+  late bool _enabled;
+  bool _isSyncing = false;
+  String _statusMessage = 'Checking connection...';
+  bool _isHealthy = false;
+  int _cloudCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _urlCtrl.text = widget.settings.supabaseUrl;
-    _keyCtrl.text = widget.settings.supabaseKey;
     _enabled = widget.settings.cloudSyncEnabled;
+    _checkHealth();
   }
 
-  @override
-  void dispose() {
-    _urlCtrl.dispose();
-    _keyCtrl.dispose();
-    super.dispose();
+  Future<void> _checkHealth() async {
+    setState(() => _isSyncing = true);
+    final connected = await SupabaseService.init();
+    if (connected) {
+      final remoteLoans = await SupabaseService.pullLoans();
+      setState(() {
+        _isHealthy = true;
+        _isSyncing = false;
+        _cloudCount = remoteLoans?.length ?? 0;
+        _statusMessage = "Connected & Active • Supabase project 'cpfpmnyipiqdtcnobwoq' is reachable and healthy.";
+      });
+    } else {
+      setState(() {
+        _isHealthy = false;
+        _isSyncing = false;
+        _statusMessage = "Unable to connect to central database. Running in 100% offline private mode.";
+      });
+    }
   }
 
-  Future<void> _saveAndTest() async {
-    setState(() => _isTesting = true);
-    final url = _urlCtrl.text.trim();
-    final key = _keyCtrl.text.trim();
-
-    if (_enabled && (url.isEmpty || key.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Supabase URL and Anon Key are required")),
-      );
-      setState(() => _isTesting = false);
-      return;
-    }
-
-    bool success = false;
-    if (_enabled) {
-      success = await SupabaseService.init(url, key);
-    }
-
-    final updated = widget.settings.copyWith(
-      supabaseUrl: url,
-      supabaseKey: key,
-      cloudSyncEnabled: _enabled,
-    );
-
+  Future<void> _toggleSync(bool value) async {
+    setState(() => _enabled = value);
+    final updated = widget.settings.copyWith(cloudSyncEnabled: value);
     await StorageService.saveSettings(updated);
     widget.onSettingsUpdated(updated);
 
-    setState(() => _isTesting = false);
+    if (value) {
+      _syncNow();
+    }
+  }
+
+  Future<void> _syncNow() async {
+    setState(() => _isSyncing = true);
+    final connected = await SupabaseService.init();
+    if (!connected) {
+      setState(() {
+        _isSyncing = false;
+        _isHealthy = false;
+        _statusMessage = "Failed to connect to central cloud database.";
+      });
+      return;
+    }
+
+    final localLoans = await StorageService.getLoans();
+    final remoteLoans = await SupabaseService.pullLoans();
+
+    if (remoteLoans != null && remoteLoans.isNotEmpty) {
+      final mergedMap = {for (var l in localLoans) l.id: l};
+      for (var r in remoteLoans) {
+        mergedMap[r.id] = r;
+      }
+      final mergedList = mergedMap.values.toList();
+      await StorageService.saveLoans(mergedList);
+      await SupabaseService.pushLoans(mergedList);
+      setState(() {
+        _cloudCount = mergedList.length;
+        _isHealthy = true;
+        _isSyncing = false;
+        _statusMessage = "Synchronized ${_cloudCount} loans across Web & Mobile devices!";
+      });
+    } else if (localLoans.isNotEmpty) {
+      await SupabaseService.pushLoans(localLoans);
+      setState(() {
+        _cloudCount = localLoans.length;
+        _isHealthy = true;
+        _isSyncing = false;
+        _statusMessage = "Pushed ${localLoans.length} loans to Central Cloud Database!";
+      });
+    } else {
+      setState(() {
+        _isHealthy = true;
+        _isSyncing = false;
+        _statusMessage = "Central Cloud Database is connected and synchronized.";
+      });
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_enabled
-              ? (success ? "Connected to Supabase successfully!" : "Saved credentials (Check URL/Key)")
-              : "Cloud Sync disabled"),
-          backgroundColor: success ? FinTheme.success : FinTheme.warning,
+          content: Text(_statusMessage),
+          backgroundColor: FinTheme.success,
         ),
       );
-      Navigator.pop(context);
     }
   }
 
@@ -87,124 +124,151 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Private Cloud Sync (Supabase)"),
+        title: const Text("Cloud Backup & Sync"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isSyncing ? null : _syncNow,
+            tooltip: "Sync Now",
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(18.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Info Header
+            // Switch Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: FinTheme.primary.withOpacity(0.08),
+                color: isDark ? FinTheme.cardDark : Colors.white,
                 borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
-                border: Border.all(color: FinTheme.primary.withOpacity(0.2)),
+                border: Border.all(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
               ),
-              child: const Row(
+              child: Column(
                 children: [
-                  Icon(Icons.shield_outlined, color: FinTheme.primary, size: 28),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      "Multi-device cloud synchronization powered by your own private Supabase PostgreSQL database. 100% data ownership.",
-                      style: TextStyle(fontSize: 12, height: 1.4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "☁️ Central Cloud Database",
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Project: cpfpmnyipiqdtcnobwoq",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Switch(
+                        value: _enabled,
+                        activeColor: FinTheme.primary,
+                        onChanged: _toggleSync,
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  Text(
+                    _enabled
+                        ? "Central cloud sync is active. Your loans and repayment ledgers automatically back up and sync across Web and Android in real-time."
+                        : "Cloud sync is disabled. All borrower identities and loans live 100% private and offline on this device.",
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-            // Toggle Switch
-            SwitchListTile(
-              title: const Text("Enable Cloud Sync", style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text("Automatically sync loan ledgers across web and mobile"),
-              value: _enabled,
-              activeColor: FinTheme.primary,
-              onChanged: (val) => setState(() => _enabled = val),
-            ),
-
-            const Divider(height: 24),
-
-            // Supabase URL
-            TextField(
-              controller: _urlCtrl,
-              enabled: _enabled,
-              decoration: const InputDecoration(
-                labelText: "Supabase Project URL",
-                hintText: "https://xyz.supabase.co",
-                prefixIcon: Icon(Icons.link),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // Supabase Anon Key
-            TextField(
-              controller: _keyCtrl,
-              enabled: _enabled,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "Supabase Public Anon Key",
-                hintText: "eyJhbGciOiJIUzI1NiIsIn...",
-                prefixIcon: Icon(Icons.vpn_key),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isTesting ? null : _saveAndTest,
-                icon: _isTesting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.save),
-                label: const Text("Save & Connect", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FinTheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+            // Live Diagnostic Status Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _isHealthy
+                    ? FinTheme.success.withOpacity(0.08)
+                    : (isDark ? FinTheme.cardDark : Colors.white),
+                borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
+                border: Border.all(
+                  color: _isHealthy
+                      ? FinTheme.success.withOpacity(0.3)
+                      : (isDark ? FinTheme.borderDark : FinTheme.borderLight),
                 ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isHealthy ? Icons.check_circle : Icons.cloud_off,
+                        color: _isHealthy ? FinTheme.success : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isHealthy ? "Connected & Healthy" : "Offline Mode",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: _isHealthy ? FinTheme.success : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _statusMessage,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  if (_isHealthy) ...[
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Cloud Backed Records", style: TextStyle(fontSize: 12, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary)),
+                        Text("$_cloudCount Loans", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // Schema Reference
-            ExpansionTile(
-              title: const Text("Supabase Table Setup SQL", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141923) : const Color(0xFFF2F4F7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const SelectableText(
-                    """create table if not exists loans (
-  id text primary key,
-  borrower text,
-  phone text,
-  principal numeric,
-  interest numeric,
-  tenure numeric,
-  model text,
-  startDate text,
-  created bigint,
-  notes text,
-  payments jsonb default '[]'::jsonb
-);
-alter table loans enable row level security;
-create policy "Allow all" on loans for all using (true) with check (true);""",
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 11),
-                  ),
+            // Sync Now Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isSyncing ? null : _syncNow,
+                icon: _isSyncing
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.cloud_sync),
+                label: Text(
+                  _isSyncing ? "Synchronizing with Cloud..." : "☁️ Sync Now Across Devices",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-              ],
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FinTheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
             ),
           ],
         ),

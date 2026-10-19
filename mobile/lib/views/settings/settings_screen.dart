@@ -212,8 +212,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSectionHeader("Cloud Synchronization"),
             _buildTile(
               icon: Icons.cloud_outlined,
-              title: "Private Supabase Cloud Sync",
-              subtitle: _settings.cloudSyncEnabled ? "Connected & Active" : "Disabled (Offline Mode)",
+              title: "Central Cloud Sync (Supabase)",
+              subtitle: _settings.cloudSyncEnabled ? "Connected & Active (Project: cpfpmnyipiqdtcnobwoq)" : "Disabled (Offline Mode)",
               trailing: _settings.cloudSyncEnabled
                   ? const Icon(Icons.check_circle, color: FinTheme.success, size: 20)
                   : const Icon(Icons.chevron_right),

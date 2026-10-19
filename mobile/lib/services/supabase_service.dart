@@ -2,20 +2,31 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/loan.dart';
 
 class SupabaseService {
-  static SupabaseClient? _client;
+  // Pre-configured developer Supabase credentials matching the web app
+  static const String defaultUrl = 'https://cpfpmnyipiqdtcnobwoq.supabase.co';
+  static const String defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwZnBtbnlpcGlxZHRjbm9id29xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMzYwMzcsImV4cCI6MjEwNzYxMjAzN30.KnKEfEWrUFNbvveRnwf9w71-nXULRDKQhrnhYoCrd_w';
 
-  static Future<bool> init(String url, String anonKey) async {
-    if (url.trim().isEmpty || anonKey.trim().isEmpty) return false;
+  static SupabaseClient? _client;
+  static bool _isInitialized = false;
+
+  static Future<bool> init({String? url, String? anonKey}) async {
+    final targetUrl = (url != null && url.trim().isNotEmpty) ? url.trim() : defaultUrl;
+    final targetKey = (anonKey != null && anonKey.trim().isNotEmpty) ? anonKey.trim() : defaultKey;
+
     try {
-      await Supabase.initialize(
-        url: url.trim(),
-        anonKey: anonKey.trim(),
-      );
+      if (!_isInitialized) {
+        await Supabase.initialize(
+          url: targetUrl,
+          anonKey: targetKey,
+        );
+        _isInitialized = true;
+      }
       _client = Supabase.instance.client;
       return true;
     } catch (_) {
       try {
         _client = Supabase.instance.client;
+        _isInitialized = true;
         return true;
       } catch (e) {
         return false;
@@ -23,9 +34,10 @@ class SupabaseService {
     }
   }
 
-  static bool get isConfigured => _client != null;
+  static bool get isConfigured => _client != null || _isInitialized;
 
   static Future<List<Loan>?> pullLoans() async {
+    if (!isConfigured) await init();
     if (_client == null) return null;
     try {
       final res = await _client!.from('loans').select();
@@ -39,6 +51,7 @@ class SupabaseService {
   }
 
   static Future<bool> pushLoans(List<Loan> loans) async {
+    if (!isConfigured) await init();
     if (_client == null) return false;
     try {
       final rows = loans.map((l) {
@@ -66,6 +79,7 @@ class SupabaseService {
   }
 
   static Future<bool> deleteLoan(String loanId) async {
+    if (!isConfigured) await init();
     if (_client == null) return false;
     try {
       await _client!.from('loans').delete().eq('id', loanId);

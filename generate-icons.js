@@ -53,7 +53,7 @@ async function run() {
     const bgXmlPath = path.join(bgXmlDir, 'ic_launcher_background.xml');
     const bgXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#0071E3</color>
 </resources>\n`;
     fs.writeFileSync(bgXmlPath, bgXml, 'utf8');
   }
