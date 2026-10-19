@@ -212,18 +212,10 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
       position: relative;
     }
-    .download-card.primary {
-      background: linear-gradient(145deg, #0071E3 0%, #0056B3 100%);
-      border-color: #0071E3;
-      color: #FFFFFF;
-      box-shadow: 0 10px 30px rgba(0, 113, 227, 0.35);
-    }
     .download-card:hover {
       transform: translateY(-4px);
+      border-color: #CBD5E1;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
-    }
-    .download-card.primary:hover {
-      box-shadow: 0 16px 40px rgba(0, 113, 227, 0.45);
     }
     .dl-icon {
       width: 54px;
@@ -236,10 +228,6 @@
       background: #F1F5F9;
       color: #0F172A;
       flex-shrink: 0;
-    }
-    .download-card.primary .dl-icon {
-      background: rgba(255, 255, 255, 0.2);
-      color: #FFFFFF;
     }
     .dl-content h3 {
       font-size: 18px;
@@ -259,10 +247,6 @@
       border-radius: 6px;
       background: rgba(0, 113, 227, 0.1);
       color: var(--primary);
-    }
-    .download-card.primary .dl-badge {
-      background: rgba(255, 255, 255, 0.25);
-      color: #FFFFFF;
     }
 
     /* Highlights Bar */
@@ -619,7 +603,7 @@
       <!-- Dual Download Hub -->
       <div class="download-grid" id="download">
         <!-- 1. Android Mobile APK -->
-        <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" class="download-card primary">
+        <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" class="download-card">
           <div class="dl-icon">📱</div>
           <div class="dl-content">
             <h3>Download Mobile APK</h3>
