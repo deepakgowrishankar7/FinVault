@@ -36,60 +36,24 @@ jobs:
           echo "Configuring Flutter Android platform for mobile project..."
           flutter create . --org com.finvault --project-name finvault --platforms android
 
+          # Configure release build to use debug signing key so APK is signed & installable
+          if [ -f "android/app/build.gradle.kts" ]; then
+            sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig = signingConfigs.getByName("debug")\n        }/' android/app/build.gradle.kts || true
+          elif [ -f "android/app/build.gradle" ]; then
+            sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig signingConfigs.debug\n        }/' android/app/build.gradle || true
+          fi
+
           # Ensure gradlew has execute permission
           chmod +x android/gradlew || true
 
-      - name: Restore Custom Android Manifest & Assets
+      - name: Inject Internet & Query Permissions into Manifest
         working-directory: mobile
         run: |
-          # Ensure INTERNET & query intents in AndroidManifest.xml
-          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-              
-              <application
-                  android:label="FinVault"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:taskAffinity=""
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                        android:name="io.flutter.embedding.android.NormalTheme"
-                        android:resource="@style/NormalTheme"
-                        />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-              <queries>
-                  <intent>
-                      <action android:name="android.intent.action.VIEW" />
-                      <data android:scheme="https" />
-                  </intent>
-                  <intent>
-                      <action android:name="android.intent.action.VIEW" />
-                      <data android:scheme="whatsapp" />
-                  </intent>
-                  <intent>
-                      <action android:name="android.intent.action.VIEW" />
-                      <data android:scheme="upi" />
-                  </intent>
-              </queries>
-          </manifest>
-          EOF
+          # Add INTERNET and ACCESS_NETWORK_STATE permissions before <application>
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' android/app/src/main/AndroidManifest.xml || true
+          
+          # Add WhatsApp and UPI query schemes inside <queries>
+          sed -i '/<\/queries>/i \        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="whatsapp"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="upi"\/>\n        <\/intent>' android/app/src/main/AndroidManifest.xml || true
 
       - name: Get Flutter Packages & Analyze
         working-directory: mobile
@@ -108,11 +72,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LOG_CONTENT=$(tail -n 100 flutter_build.log)
+          ERROR_SNIPPET=$(grep -B 2 -A 40 "FAILURE: Build failed" flutter_build.log || grep -B 2 -A 40 "What went wrong" flutter_build.log || tail -n 80 flutter_build.log)
           gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
-            -f body="### ❌ Flutter Build Failure Details:
+            -f body="### ❌ Build Failure Details:
           \`\`\`text
-          $LOG_CONTENT
+          $ERROR_SNIPPET
           \`\`\`" || true
 
       - name: Prepare APK Output
