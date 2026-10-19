@@ -37,7 +37,6 @@ class FinVaultApp extends StatelessWidget {
       valueListenable: AppLocale.currentLangNotifier,
       builder: (context, lang, child) {
         return MaterialApp(
-          key: ValueKey(lang),
           title: 'FinVault',
           debugShowCheckedModeBanner: false,
           theme: FinTheme.lightTheme,

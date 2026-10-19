@@ -233,6 +233,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     }
   }
 
+  String _t(String key) => AppLocale.tr(key, _selectedLang);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -270,7 +272,12 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                         );
                       }).toList(),
                       onChanged: (val) {
-                        if (val != null) setState(() => _selectedLang = val);
+                        if (val != null) {
+                          setState(() {
+                            _selectedLang = val;
+                            AppLocale.currentLang = val;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -301,14 +308,14 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
               const SizedBox(height: 14),
 
               // Welcome Title
-              const Text(
-                "Welcome to FinVault",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+              Text(
+                _t('welcome_to_finvault'),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                "Smart Loan, EMI & Repayment Ledger",
+                _t('welcome_sub'),
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
@@ -348,7 +355,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               Icon(Icons.admin_panel_settings, size: 16, color: _onboardingMode == 0 ? Colors.white : Colors.grey),
                               const SizedBox(width: 6),
                               Text(
-                                "👑 Master Admin",
+                                "👑 ${_t('master_admin')}",
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -380,7 +387,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               Icon(Icons.badge, size: 16, color: _onboardingMode == 1 ? Colors.white : Colors.grey),
                               const SizedBox(width: 6),
                               Text(
-                                "🏃 Field Agent",
+                                "🏃 ${_t('field_agent')}",
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -413,14 +420,14 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        "Already using FinVault on another device?",
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      Text(
+                        _t('already_using_finvault'),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Transfer your complete vault (.finvault, .json, or .csv) in 1 click.",
+                        _t('transfer_vault_sub'),
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
@@ -440,7 +447,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                                 )
                               : const Icon(Icons.file_download_outlined, color: FinTheme.primary, size: 18),
                           label: Text(
-                            _isRestoring ? "Restoring Vault..." : "Transfer Vault (.finvault)",
+                            _isRestoring ? _t('restoring_vault') : _t('transfer_vault_btn'),
                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -463,7 +470,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        "OR REGISTER NEW FIRM",
+                        _t('or_register_new_firm'),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -486,8 +493,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       TextFormField(
                         controller: _firmNameController,
                         decoration: InputDecoration(
-                          labelText: "Firm / Business Name *",
-                          hintText: "e.g. FinVault Lending Co.",
+                          labelText: _t('firm_business_name'),
+                          hintText: _t('firm_name_hint'),
                           prefixIcon: const Icon(Icons.business_outlined),
                           filled: true,
                           fillColor: isDark ? FinTheme.cardDark : Colors.white,
@@ -500,8 +507,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       TextFormField(
                         controller: _adminNameController,
                         decoration: InputDecoration(
-                          labelText: "Admin Full Name *",
-                          hintText: "e.g. Dhanasekar",
+                          labelText: _t('admin_full_name'),
+                          hintText: _t('admin_name_hint'),
                           prefixIcon: const Icon(Icons.person_outline),
                           filled: true,
                           fillColor: isDark ? FinTheme.cardDark : Colors.white,
@@ -520,7 +527,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               maxLength: 4,
                               obscureText: _obscurePin,
                               decoration: InputDecoration(
-                                labelText: "Master PIN (4 Digits) *",
+                                labelText: _t('master_admin_pin'),
                                 hintText: "e.g. 7845",
                                 counterText: "",
                                 prefixIcon: const Icon(Icons.lock_outline),
@@ -548,7 +555,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               maxLength: 4,
                               obscureText: _obscureConfirm,
                               decoration: InputDecoration(
-                                labelText: "Confirm PIN *",
+                                labelText: _t('confirm_admin_pin'),
                                 hintText: "Confirm 4 digits",
                                 counterText: "",
                                 prefixIcon: const Icon(Icons.lock_reset),
@@ -575,8 +582,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       TextFormField(
                         controller: _questionController,
                         decoration: InputDecoration(
-                          labelText: "Security Recovery Question *",
-                          hintText: "e.g. City where business was started?",
+                          labelText: _t('security_question'),
+                          hintText: _t('security_question_hint'),
                           prefixIcon: const Icon(Icons.help_outline),
                           filled: true,
                           fillColor: isDark ? FinTheme.cardDark : Colors.white,
@@ -589,8 +596,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       TextFormField(
                         controller: _answerController,
                         decoration: InputDecoration(
-                          labelText: "Secret Recovery Answer *",
-                          hintText: "Answer to reset PIN if forgotten",
+                          labelText: _t('security_answer'),
+                          hintText: _t('security_answer_hint'),
                           prefixIcon: const Icon(Icons.key_outlined),
                           filled: true,
                           fillColor: isDark ? FinTheme.cardDark : Colors.white,
@@ -603,8 +610,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       TextFormField(
                         controller: _upiController,
                         decoration: InputDecoration(
-                          labelText: "Owner UPI ID (for QR code payments)",
-                          hintText: "e.g. yourname@okhdfcbank",
+                          labelText: _t('owner_upi_id'),
+                          hintText: _t('owner_upi_hint'),
                           prefixIcon: const Icon(Icons.qr_code_2),
                           filled: true,
                           fillColor: isDark ? FinTheme.cardDark : Colors.white,
@@ -624,9 +631,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 2,
                           ),
-                          child: const Text(
-                            "✨ Complete Registration & Generate Firm Code",
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          child: Text(
+                            _t('complete_reg_btn'),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -659,17 +667,17 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               child: const Icon(Icons.badge, color: FinTheme.success, size: 24),
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Field Agent Sign In",
-                                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                    _t('field_agent_signin'),
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                                   ),
                                   Text(
-                                    "Connect to your business firm",
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    _t('connect_to_firm_sub'),
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                                   ),
                                 ],
                               ),
@@ -677,9 +685,9 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          "Ask your Master Admin for your Firm Code (e.g. FV-849201) and your 4-digit Agent Passcode.",
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        Text(
+                          _t('agent_instructions'),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         const SizedBox(height: 20),
 
@@ -688,8 +696,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                           controller: _agentVaultCodeCtrl,
                           textCapitalization: TextCapitalization.characters,
                           decoration: InputDecoration(
-                            labelText: "Admin Firm Code *",
-                            hintText: "e.g. FV-849201",
+                            labelText: _t('admin_firm_code'),
+                            hintText: _t('firm_code_hint'),
                             prefixIcon: const Icon(Icons.vpn_key_outlined, color: FinTheme.primary),
                             filled: true,
                             fillColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF8FAFC),
@@ -707,7 +715,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                           maxLength: 4,
                           obscureText: _obscureAgentPin,
                           decoration: InputDecoration(
-                            labelText: "Your 4-Digit Agent PIN *",
+                            labelText: _t('your_agent_pin'),
                             hintText: "e.g. 5678",
                             counterText: "",
                             prefixIcon: const Icon(Icons.lock_outline, color: FinTheme.success),
@@ -735,7 +743,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                 : const Icon(Icons.login),
                             label: Text(
-                              _isConnectingAgent ? "Connecting to Firm..." : "Join Firm & Start Collections",
+                              _isConnectingAgent ? _t('connecting_firm') : _t('join_firm_btn'),
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                             ),
                             style: ElevatedButton.styleFrom(
