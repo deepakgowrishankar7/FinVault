@@ -79,7 +79,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
     super.dispose();
   }
 
-  String get _currentLang => widget.settings?.language ?? 'en';
+  String get _currentLang => widget.settings?.language ?? AppLocale.currentLang;
   String _t(String key) => AppLocale.tr(key, _currentLang);
 
   double get _currentPrincipal => double.tryParse(_principalCtrl.text) ?? 0.0;
@@ -88,7 +88,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
 
   double get _computedMonthly {
     if (_model == 'rupee') {
-      return Loan.calcRupeeRate(_currentPrincipal, _currentInterest, _currentTenure);
+      return Loan.calcRupeeMonthlyInterest(_currentPrincipal, _currentInterest);
     } else if (_model == 'emi') {
       return Loan.calcEmi(_currentPrincipal, _currentInterest, _currentTenure);
     } else {
@@ -106,6 +106,17 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
       final interest = _currentPrincipal * (_currentInterest / 100) * (_currentTenure / 12);
       return (_currentPrincipal + interest).roundToDouble();
     }
+  }
+
+  void _selectModel(String id) {
+    setState(() {
+      _model = id;
+      if (id == 'rupee' && (_interestCtrl.text == '12' || (double.tryParse(_interestCtrl.text) ?? 0) > 10)) {
+        _interestCtrl.text = '2';
+      } else if (id != 'rupee' && (double.tryParse(_interestCtrl.text) ?? 0) <= 5) {
+        _interestCtrl.text = '12';
+      }
+    });
   }
 
   double get _computedTotalInterest => (_computedTotalPayable - _currentPrincipal).clamp(0.0, double.infinity);
@@ -221,7 +232,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                 child: Column(
                   children: [
                     Text(
-                      _t('monthly_emi').toUpperCase(),
+                      (_model == 'rupee' ? _t('monthly_interest') : _t('monthly_emi')).toUpperCase(),
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 0.8),
                     ),
                     const SizedBox(height: 6),
@@ -235,7 +246,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                       children: [
                         Column(
                           children: [
-                            const Text("Total Payable", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                            Text(_t('total_payable'), style: const TextStyle(fontSize: 11, color: Colors.white70)),
                             const SizedBox(height: 2),
                             Text(_currency.format(_computedTotalPayable), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                           ],
@@ -243,7 +254,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                         Container(width: 1, height: 26, color: Colors.white24),
                         Column(
                           children: [
-                            const Text("Total Interest", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                            Text(_t('total_interest'), style: const TextStyle(fontSize: 11, color: Colors.white70)),
                             const SizedBox(height: 2),
                             Text(_currency.format(_computedTotalInterest), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                           ],
@@ -399,7 +410,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
               _buildModelOption(
                 id: 'emi',
                 title: _t('reducing_emi'),
-                subtitle: 'Bank Standard reducing balance calculation',
+                subtitle: _t('reducing_emi_sub'),
                 icon: Icons.trending_down,
                 isDark: isDark,
               ),
@@ -407,7 +418,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
               _buildModelOption(
                 id: 'simple',
                 title: _t('flat_simple'),
-                subtitle: 'Fixed flat interest per month/year',
+                subtitle: _t('flat_simple_sub'),
                 icon: Icons.horizontal_rule,
                 isDark: isDark,
               ),
@@ -415,14 +426,14 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
               _buildModelOption(
                 id: 'rupee',
                 title: _t('rupee_rate'),
-                subtitle: _t('rupee_rate_hint'),
+                subtitle: _t('rupee_rate_sub'),
                 icon: Icons.currency_rupee,
                 isDark: isDark,
               ),
 
               const SizedBox(height: 18),
 
-              // Document Proof Attachments Card (Single, Multiple, or None)
+              // Document Proof Attachments Card (Zero Overflow Guaranteed)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -434,23 +445,39 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.folder_shared_outlined, size: 20, color: FinTheme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              _t('proof_docs'),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                          ],
+                        const Icon(Icons.folder_shared_outlined, size: 20, color: FinTheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _t('proof_docs'),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        TextButton.icon(
-                          onPressed: _pickDocuments,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: Text(_t('add_proof'), style: const TextStyle(fontSize: 12)),
-                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: _pickDocuments,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: FinTheme.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.add, size: 14, color: FinTheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _t('add_proof'),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: FinTheme.primary),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -578,7 +605,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
   }) {
     final isSelected = _model == id;
     return GestureDetector(
-      onTap: () => setState(() => _model = id),
+      onTap: () => _selectModel(id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(12),

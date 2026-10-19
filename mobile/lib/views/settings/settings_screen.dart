@@ -332,17 +332,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 18),
           ],
 
-          _buildSectionHeader("Language & Preferences"),
+          _buildSectionHeader(AppLocale.tr('language')),
           _buildTile(
             icon: Icons.language,
-            title: "App Language (భాష / भाषा / மொழி)",
+            title: AppLocale.tr('app_language'),
             subtitle: AppLocale.languages.firstWhere((l) => l['code'] == _settings.language, orElse: () => {'name': 'English', 'native': 'English'})['native']!,
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Select Language", style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(AppLocale.tr('select_language'), style: const TextStyle(fontWeight: FontWeight.bold)),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: AppLocale.languages.map((l) {
@@ -351,9 +351,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         leading: isSelected
                             ? const Icon(Icons.check_circle, color: FinTheme.primary)
                             : const Icon(Icons.circle_outlined, color: Colors.grey),
-                        title: Text("${l['native']} (${l['name']})", style: const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(l['native']!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                         onTap: () async {
-                          final updated = _settings.copyWith(language: l['code']);
+                          final newLang = l['code']!;
+                          AppLocale.currentLang = newLang;
+                          final updated = _settings.copyWith(language: newLang);
                           await StorageService.saveSettings(updated);
                           setState(() => _settings = updated);
                           widget.onSettingsChanged(updated);

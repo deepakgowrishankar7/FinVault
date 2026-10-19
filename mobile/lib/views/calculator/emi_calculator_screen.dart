@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/loan.dart';
+import '../../theme/app_locale.dart';
 import '../../theme/fin_theme.dart';
 import '../loans/add_edit_loan_screen.dart';
 
@@ -13,15 +14,17 @@ class EmiCalculatorScreen extends StatefulWidget {
 
 class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   double _principal = 100000;
-  double _interestRate = 12.0;
+  double _interestRate = 2.0;
   int _tenure = 12;
-  String _model = 'emi'; // 'emi' or 'simple'
+  String _model = 'rupee'; // 'rupee', 'emi', or 'simple'
 
   late TextEditingController _principalCtrl;
   late TextEditingController _rateCtrl;
   late TextEditingController _tenureCtrl;
 
   final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+
+  String _t(String key) => AppLocale.tr(key);
 
   @override
   void initState() {
@@ -41,7 +44,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
 
   double get _monthlyInstallment {
     if (_model == 'rupee') {
-      return Loan.calcRupeeRate(_principal, _interestRate, _tenure);
+      return Loan.calcRupeeMonthlyInterest(_principal, _interestRate);
     } else if (_model == 'emi') {
       return Loan.calcEmi(_principal, _interestRate, _tenure);
     } else {
@@ -82,13 +85,85 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
     return tempLoan.amortizationSchedule;
   }
 
+  Widget _buildCalcMethodTile({
+    required String id,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    final isSelected = _model == id;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _model = id;
+          if (id == 'rupee' && _interestRate > 10.0) {
+            _interestRate = 2.0;
+            _rateCtrl.text = "2.0";
+          } else if (id != 'rupee' && _interestRate <= 5.0) {
+            _interestRate = 12.0;
+            _rateCtrl.text = "12.0";
+          }
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? FinTheme.primary.withOpacity(0.12)
+              : (isDark ? const Color(0xFF1E2838) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? FinTheme.primary : (isDark ? FinTheme.borderDark : FinTheme.borderLight),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? FinTheme.primary : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? FinTheme.primary : (isDark ? Colors.white : Colors.black87),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("EMI & Loan Calculator"),
+        title: Text(_t('emi_calculator')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -116,9 +191,9 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    "MONTHLY INSTALLMENT (EMI)",
-                    style: TextStyle(
+                  Text(
+                    (_model == 'rupee' ? _t('monthly_interest') : _t('monthly_emi')).toUpperCase(),
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white70,
@@ -129,16 +204,16 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                   Text(
                     _currency.format(_monthlyInstallment),
                     style: const TextStyle(
-                      fontSize: 32,
+                      fontSize: 34,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                       letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    "Payable every month by borrower",
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  Text(
+                    _model == 'rupee' ? _t('rupee_rate_sub') : "Payable monthly",
+                    style: const TextStyle(fontSize: 11, color: Colors.white70),
                   ),
                   const SizedBox(height: 18),
                   const Divider(color: Colors.white24, height: 1),
@@ -148,7 +223,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     children: [
                       Column(
                         children: [
-                          const Text("Total Payable", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                          Text(_t('total_payable'), style: const TextStyle(fontSize: 11, color: Colors.white70)),
                           const SizedBox(height: 3),
                           Text(
                             _currency.format(_totalPayable),
@@ -159,7 +234,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                       Container(width: 1, height: 28, color: Colors.white24),
                       Column(
                         children: [
-                          const Text("Total Interest", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                          Text(_t('total_interest'), style: const TextStyle(fontSize: 11, color: Colors.white70)),
                           const SizedBox(height: 3),
                           Text(
                             _currency.format(_totalInterest),
@@ -198,14 +273,14 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                             children: [
                               Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
                               const SizedBox(width: 4),
-                              Text("Principal (${(_principalRatio * 100).toStringAsFixed(0)}%)", style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                              Text("${_t('loan_principal')} (${(_principalRatio * 100).toStringAsFixed(0)}%)", style: const TextStyle(fontSize: 10, color: Colors.white70)),
                             ],
                           ),
                           Row(
                             children: [
                               Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFFFD60A), shape: BoxShape.circle)),
                               const SizedBox(width: 4),
-                              Text("Interest (${(_interestRatio * 100).toStringAsFixed(0)}%)", style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                              Text("${_t('total_interest')} (${(_interestRatio * 100).toStringAsFixed(0)}%)", style: const TextStyle(fontSize: 10, color: Colors.white70)),
                             ],
                           ),
                         ],
@@ -229,31 +304,29 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Calculation Model Selector
-                  const Text("CALCULATION METHOD", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: _model,
-                    decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
-                    items: const [
-                      DropdownMenuItem(value: 'emi', child: Text("Reducing Balance (Standard Bank EMI)")),
-                      DropdownMenuItem(value: 'simple', child: Text("Simple / Flat Interest (Fixed Monthly)")),
-                      DropdownMenuItem(value: 'rupee', child: Text("Rupee Interest (₹ per ₹100/mo - రూపాయి వడ్డీ)")),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _model = val;
-                          if (val == 'rupee' && _interestRate > 10.0) {
-                            _interestRate = 2.0;
-                            _rateCtrl.text = "2.0";
-                          } else if (val != 'rupee' && _interestRate <= 5.0) {
-                            _interestRate = 12.0;
-                            _rateCtrl.text = "12.0";
-                          }
-                        });
-                      }
-                    },
+                  // Modern 3-Card Calculation Method Selector
+                  Text(_t('calc_method').toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 0.8)),
+                  const SizedBox(height: 10),
+                  _buildCalcMethodTile(
+                    id: 'rupee',
+                    title: _t('rupee_rate'),
+                    subtitle: _t('rupee_rate_sub'),
+                    icon: Icons.currency_rupee,
+                    isDark: isDark,
+                  ),
+                  _buildCalcMethodTile(
+                    id: 'emi',
+                    title: _t('reducing_emi'),
+                    subtitle: _t('reducing_emi_sub'),
+                    icon: Icons.trending_down,
+                    isDark: isDark,
+                  ),
+                  _buildCalcMethodTile(
+                    id: 'simple',
+                    title: _t('flat_simple'),
+                    subtitle: _t('flat_simple_sub'),
+                    icon: Icons.horizontal_rule,
+                    isDark: isDark,
                   ),
 
                   const SizedBox(height: 18),
@@ -262,7 +335,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Loan Principal", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(_t('loan_principal'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       Text(
                         _currency.format(_principal),
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: FinTheme.primary),
@@ -286,7 +359,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Text("₹10,000", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text("₹10,00,000", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text("₹5,00,000", style: TextStyle(fontSize: 10, color: Colors.grey)),
                       Text("₹20,00,000", style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
                   ),
@@ -298,7 +371,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _model == 'rupee' ? "Rupee Rate (₹ per ₹100 / month)" : "Interest Rate (% per annum)",
+                        _model == 'rupee' ? _t('vaddi_rate_label') : _t('interest_rate'),
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       Text(
@@ -326,9 +399,9 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: _model == 'rupee'
                         ? const [
-                            Text("₹0.50 (50 paise)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("₹0.50", style: TextStyle(fontSize: 10, color: Colors.grey)),
                             Text("₹2.00 (₹2 vaddi)", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                            Text("₹10.00 (₹10 vaddi)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text("₹10.00", style: TextStyle(fontSize: 10, color: Colors.grey)),
                           ]
                         : const [
                             Text("1%", style: TextStyle(fontSize: 10, color: Colors.grey)),
@@ -343,7 +416,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Tenure Duration", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text("${_t('tenure_months')}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       Text(
                         "$_tenure Months",
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: FinTheme.primary),
@@ -367,7 +440,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Text("1 Mo", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      Text("24 Mo", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text("12 Mo", style: TextStyle(fontSize: 10, color: Colors.grey)),
                       Text("60 Mo", style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
                   ),
@@ -403,7 +476,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                   );
                 },
                 icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text("Apply Values to New Loan", style: TextStyle(fontWeight: FontWeight.bold)),
+                label: Text(_t('apply_to_new_loan'), style: const TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FinTheme.success,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -413,12 +486,12 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
 
             const SizedBox(height: 24),
 
-            // Amortization Schedule Table Header
+            // Repayment Schedule Table Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Amortization Schedule ($_tenure Months)",
+                  "${_t('amortization_schedule')} ($_tenure Months)",
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ],

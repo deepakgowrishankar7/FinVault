@@ -54,7 +54,7 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
     super.dispose();
   }
 
-  String get _currentLang => widget.settings.language;
+  String get _currentLang => AppLocale.currentLang;
   String _t(String key) => AppLocale.tr(key, _currentLang);
 
   double get _enteredAmount {

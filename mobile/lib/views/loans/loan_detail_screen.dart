@@ -94,7 +94,10 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                   final edited = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AddEditLoanScreen(loanToEdit: loan),
+                      builder: (context) => AddEditLoanScreen(
+                        loanToEdit: loan,
+                        settings: widget.settings,
+                      ),
                     ),
                   );
                   if (edited == true) _refreshLoan();
@@ -278,16 +281,23 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                       child: Column(
                         children: [
                           _buildDetailRow("Principal Amount", _currency.format(loan.principal), isDark),
+                          const Divider(height: 16),
                           _buildDetailRow(
-                            loan.model == 'rupee' ? "Rupee Interest (Vaddi)" : "Interest Rate",
+                            loan.model == 'rupee' ? "Rupee Interest Rate" : "Interest Rate",
                             loan.model == 'rupee'
-                                ? "₹${loan.interest} per ₹100/mo (రూపాయి వడ్డీ)"
+                                ? "₹${loan.interest} per ₹100/mo"
                                 : "${loan.interest}% (${loan.model == 'emi' ? 'Reducing EMI' : 'Flat Simple'})",
                             isDark,
                           ),
+                          const Divider(height: 16),
                           _buildDetailRow("Tenure / Duration", "${loan.tenure} Months", isDark),
                           const Divider(height: 16),
-                          _buildDetailRow("Monthly Installment", _currency.format(loan.monthlyInstallment), isDark, highlight: true),
+                          _buildDetailRow(
+                            loan.model == 'rupee' ? "Monthly Interest (Vaddi)" : "Monthly Installment",
+                            _currency.format(loan.monthlyInstallment),
+                            isDark,
+                            highlight: true,
+                          ),
                           const Divider(height: 16),
                           _buildDetailRow("Total Loan Amount", _currency.format(loan.totalPayable), isDark),
                           const Divider(height: 16),

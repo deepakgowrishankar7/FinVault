@@ -96,7 +96,7 @@ class Loan {
     if (model == 'emi') {
       return calcEmi(principal, interest, tenure);
     } else if (model == 'rupee') {
-      return calcRupeeRate(principal, interest, tenure);
+      return calcRupeeMonthlyInterest(principal, interest);
     } else {
       return calcSimple(principal, interest, tenure);
     }
@@ -104,9 +104,9 @@ class Loan {
 
   double get totalPayable {
     if (model == 'emi') {
-      return monthlyInstallment * tenure;
+      return calcEmi(principal, interest, tenure) * tenure;
     } else if (model == 'rupee') {
-      final monthlyInterest = (principal / 100) * interest;
+      final monthlyInterest = calcRupeeMonthlyInterest(principal, interest);
       return (principal + (monthlyInterest * tenure)).roundToDouble();
     } else {
       final totalInterest = principal * (interest / 100) * (tenure / 12);
@@ -177,8 +177,15 @@ class Loan {
         balance = max(0.0, balance - prinVal);
       } else if (model == 'rupee') {
         intVal = (principal / 100) * interest;
-        prinVal = emiVal - intVal;
-        balance = max(0.0, balance - prinVal);
+        if (i == tenure) {
+          prinVal = principal;
+          emiVal = intVal + prinVal;
+          balance = 0.0;
+        } else {
+          prinVal = 0.0;
+          emiVal = intVal;
+          balance = principal;
+        }
       } else {
         intVal = (principal * (interest / 100) * (1 / 12));
         prinVal = emiVal - intVal;

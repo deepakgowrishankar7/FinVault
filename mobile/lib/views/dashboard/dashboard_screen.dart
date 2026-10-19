@@ -48,7 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String get _currentLang => _currentSettings.language;
+  String get _currentLang => AppLocale.currentLang;
   String _t(String key) => AppLocale.tr(key, _currentLang);
 
   Future<void> _loadLoans() async {
@@ -104,6 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         agent: widget.agent,
         settings: _currentSettings,
         onSettingsChanged: (updated) {
+          AppLocale.currentLang = updated.language;
           setState(() => _currentSettings = updated);
         },
       ),

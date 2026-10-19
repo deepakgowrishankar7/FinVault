@@ -43,7 +43,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
     _loadLoans();
   }
 
-  String get _currentLang => widget.settings.language;
+  String get _currentLang => AppLocale.currentLang;
   String _t(String key) => AppLocale.tr(key, _currentLang);
 
   Future<void> _loadLoans() async {
