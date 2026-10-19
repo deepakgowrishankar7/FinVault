@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Flutter Android APK
 
 on:
   push:
@@ -10,69 +10,43 @@ permissions:
 
 jobs:
   build:
-    name: Build FinVault APK
+    name: Build FinVault Flutter APK
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Node Dependencies
-        run: npm install
-
-      - name: Build Web Assets & Sync
-        run: node build.js
-
-      - name: Setup Java 21 (LTS)
-        uses: actions/setup-java@v5
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '17'
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android || true
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
 
-      - name: Grant Execute Permission to Gradlew
-        run: chmod +x android/gradlew
+      - name: Get Flutter Packages
+        working-directory: mobile
+        run: flutter pub get
 
-      - name: Accept Android SDK Licenses & Install SDK 36
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" || true
-
-      - name: Build Debug APK with Gradle
-        working-directory: android
-        run: |
-          set -o pipefail
-          ./gradlew assembleDebug --stacktrace 2>&1 | tee ../gradle_output.log
-
-      - name: Post Build Logs on Failure
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          LOG_CONTENT=$(tail -n 80 gradle_output.log)
-          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
-            -f body="### ❌ Gradle Build Failure Details:
-          \`\`\`text
-          $LOG_CONTENT
-          \`\`\`" || true
-
+      - name: Build Android Release APK
+        working-directory: mobile
+        run: flutter build apk --release
 
       - name: Prepare APK Output
         run: |
           mkdir -p release-output
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-output/FinVault.apk
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk release-output/FinVault.apk
 
       - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FinVault-Android-APK
+          name: FinVault-Flutter-APK
           path: release-output/FinVault.apk
           retention-days: 30
 
@@ -80,20 +54,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0
-          name: "FinVault Android APK (v1.0.0)"
+          tag_name: v2.0.0
+          name: "FinVault Flutter Native APK (v2.0.0)"
           body: |
-            ### 📱 FinVault Android Application
+            ### 🚀 FinVault Native Flutter Android Application (v2.0.0)
 
             - **App Name:** FinVault — Smart Loan & Repayment Ledger
-            - **Platform:** Android 7.0+ (Phones & Tablets)
-            - **Architecture:** Offline-First with On-Device AES/IndexedDB Storage
+            - **Engine:** Flutter Native Dart (60–120 FPS Butter-Smooth Native Performance)
+            - **Platform:** Android 7.0+ (ARM64 & x86_64)
+            - **Backend:** 100% On-Device Offline Storage + Supabase Cloud Sync
+            - **Live Web App:** [FinVault Web App](https://deepakgowrishankar7.github.io/FinVault/)
 
             #### 📥 Quick Installation Instructions:
             1. Download the **`FinVault.apk`** file below directly on your Android phone.
             2. Tap the downloaded `.apk` notification or open it from your Files / Downloads app.
             3. If Android shows a security prompt (*"Install unknown apps"*), tap **Settings** and enable **"Allow from this source"**.
-            4. Tap **Install** and launch FinVault!
+            4. Tap **Install** and enjoy ultra-smooth financial management!
           files: release-output/FinVault.apk
           draft: false
           prerelease: false

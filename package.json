@@ -5,18 +5,17 @@
   "main": "app.js",
   "scripts": {
     "build": "node build.js",
-    "sync": "node build.js && npx cap sync android",
-    "open": "npx cap open android",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "icons": "node generate-icons.js"
   },
-  "keywords": [],
+  "keywords": [
+    "fintech",
+    "loan-manager",
+    "flutter",
+    "pwa",
+    "emi-calculator"
+  ],
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@capacitor/android": "^8.5.3",
-    "@capacitor/cli": "^7.6.9",
-    "@capacitor/core": "^8.5.3"
-  },
+  "license": "MIT",
   "devDependencies": {
     "sharp": "^0.35.5"
   }

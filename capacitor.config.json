@@ -1,8 +1,0 @@
-{
-  "appId": "com.dgs.finance",
-  "appName": "FinVault",
-  "webDir": "www",
-  "server": {
-    "androidScheme": "https"
-  }
-}

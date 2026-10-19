@@ -21,7 +21,7 @@ async function run() {
   fs.writeFileSync(path.join(__dirname, 'icon.svg'), svgContent, 'utf8');
   console.log('Generated icon.svg from high-res logo');
 
-  // 3. Android Mipmap Sizes (Standard & Round)
+  // 3. Android Mipmap Sizes (Flutter Android Runner)
   const mipmaps = [
     { dir: 'mipmap-mdpi', size: 48, fgSize: 108 },
     { dir: 'mipmap-hdpi', size: 72, fgSize: 162 },
@@ -30,31 +30,39 @@ async function run() {
     { dir: 'mipmap-xxxhdpi', size: 192, fgSize: 432 }
   ];
 
-  const resDir = path.join(__dirname, 'android', 'app', 'src', 'main', 'res');
+  const flutterResDirs = [
+    path.join(__dirname, 'mobile', 'android', 'app', 'src', 'main', 'res')
+  ];
 
-  for (const m of mipmaps) {
-    const targetDir = path.join(resDir, m.dir);
-    if (!fs.existsSync(targetDir)) continue;
+  for (const resDir of flutterResDirs) {
+    if (!fs.existsSync(resDir)) continue;
+    for (const m of mipmaps) {
+      const targetDir = path.join(resDir, m.dir);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
 
-    // Standard Launcher Icon
-    await sharp(srcBuffer).resize(m.size, m.size).png().toFile(path.join(targetDir, 'ic_launcher.png'));
-    // Round Launcher Icon
-    await sharp(srcBuffer).resize(m.size, m.size).png().toFile(path.join(targetDir, 'ic_launcher_round.png'));
-    // Adaptive Foreground Icon
-    await sharp(srcBuffer).resize(m.fgSize, m.fgSize).png().toFile(path.join(targetDir, 'ic_launcher_foreground.png'));
+      await sharp(srcBuffer).resize(m.size, m.size).png().toFile(path.join(targetDir, 'ic_launcher.png'));
+      await sharp(srcBuffer).resize(m.size, m.size).png().toFile(path.join(targetDir, 'ic_launcher_round.png'));
+      await sharp(srcBuffer).resize(m.fgSize, m.fgSize).png().toFile(path.join(targetDir, 'ic_launcher_foreground.png'));
+      console.log(`Updated Flutter Android ${m.dir} icons (${m.size}px)`);
+    }
 
-    console.log(`Updated Android ${m.dir} icons (${m.size}px)`);
-  }
-
-  // 4. Update Adaptive Icon Background color to Obsidian Black
-  const bgXmlPath = path.join(resDir, 'values', 'ic_launcher_background.xml');
-  if (fs.existsSync(bgXmlPath)) {
+    const bgXmlDir = path.join(resDir, 'values');
+    if (!fs.existsSync(bgXmlDir)) fs.mkdirSync(bgXmlDir, { recursive: true });
+    const bgXmlPath = path.join(bgXmlDir, 'ic_launcher_background.xml');
     const bgXml = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#06429A</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>\n`;
     fs.writeFileSync(bgXmlPath, bgXml, 'utf8');
-    console.log('Updated ic_launcher_background.xml to #06429A');
+  }
+
+  // 4. Flutter App Assets
+  const mobileAssetsDir = path.join(__dirname, 'mobile', 'assets');
+  if (fs.existsSync(mobileAssetsDir)) {
+    await sharp(srcBuffer).resize(512, 512).png().toFile(path.join(mobileAssetsDir, 'logo.png'));
+    console.log('Copied logo to mobile/assets/logo.png');
   }
 
   console.log('All icons generated successfully!');
