@@ -30,13 +30,43 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Scaffold Official Flutter Android Runner
+        run: |
+          echo "Generating official Flutter 3.29 Android runner template..."
+          flutter create --org com.finvault --project-name finvault --platforms android /tmp/runner_template
+
+          echo "Syncing official Gradle wrapper and build scripts..."
+          mkdir -p mobile/android/gradle
+          cp -r /tmp/runner_template/android/gradle/* mobile/android/gradle/
+          cp /tmp/runner_template/android/gradlew mobile/android/
+          cp /tmp/runner_template/android/gradlew.bat mobile/android/
+
+          # Clean any existing build files to avoid .gradle vs .gradle.kts conflicts
+          rm -f mobile/android/settings.gradle*
+          rm -f mobile/android/build.gradle*
+          rm -f mobile/android/app/build.gradle*
+
+          cp /tmp/runner_template/android/settings.gradle* mobile/android/
+          cp /tmp/runner_template/android/build.gradle* mobile/android/
+          cp /tmp/runner_template/android/app/build.gradle* mobile/android/app/
+
+          chmod +x mobile/android/gradlew
+
       - name: Get Flutter Packages
         working-directory: mobile
         run: flutter pub get
 
       - name: Build Android Release APK
         working-directory: mobile
-        run: flutter build apk --release
+        run: |
+          set -o pipefail
+          flutter build apk --release -v 2>&1 | tee ../flutter_build.log
+
+      - name: Print Build Logs on Failure
+        if: failure()
+        run: |
+          echo "==== LAST 120 LINES OF FLUTTER BUILD LOG ===="
+          tail -n 120 flutter_build.log || true
 
       - name: Prepare APK Output
         run: |
