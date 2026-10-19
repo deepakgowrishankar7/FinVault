@@ -111,7 +111,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
 
     return Scaffold(
-      body: pages[_currentIndex],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1080),
+          child: pages[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? FinTheme.cardDark : Colors.white,
@@ -122,38 +127,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: Colors.transparent,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          selectedItemColor: FinTheme.primary,
-          unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.dashboard_outlined),
-              activeIcon: const Icon(Icons.dashboard),
-              label: _t('overview'),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1080),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              backgroundColor: Colors.transparent,
+              type: BottomNavigationBarType.fixed,
+              elevation: 0,
+              selectedItemColor: FinTheme.primary,
+              unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              unselectedLabelStyle: const TextStyle(fontSize: 12),
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.dashboard_outlined),
+                  activeIcon: const Icon(Icons.dashboard),
+                  label: _t('overview'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.account_balance_wallet_outlined),
+                  activeIcon: const Icon(Icons.account_balance_wallet),
+                  label: _t('loans'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.calculate_outlined),
+                  activeIcon: const Icon(Icons.calculate),
+                  label: _t('calculator'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.settings_outlined),
+                  activeIcon: const Icon(Icons.settings),
+                  label: _t('settings'),
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: const Icon(Icons.account_balance_wallet),
-              label: _t('loans'),
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.calculate_outlined),
-              activeIcon: const Icon(Icons.calculate),
-              label: _t('calculator'),
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              activeIcon: const Icon(Icons.settings),
-              label: _t('settings'),
-            ),
-          ],
+          ),
         ),
       ),
     );

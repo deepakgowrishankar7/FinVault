@@ -236,18 +236,38 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = MediaQuery.of(context).size.width > 700;
 
     return Scaffold(
       backgroundColor: isDark ? FinTheme.bgDark : const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Language Switcher Selector Bar
-              Align(
-                alignment: Alignment.topRight,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 20 : 24,
+                vertical: isDesktop ? 24 : 16,
+              ),
+              child: Card(
+                elevation: isDesktop ? 4 : 0,
+                color: isDesktop
+                    ? (isDark ? FinTheme.cardDark : Colors.white)
+                    : Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: isDesktop
+                      ? BorderSide(color: isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0))
+                      : BorderSide.none,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(isDesktop ? 28.0 : 0.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Language Switcher Selector Bar
+                      Align(
+                        alignment: Alignment.topRight,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                   decoration: BoxDecoration(
@@ -759,6 +779,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                 const SizedBox(height: 20),
               ],
             ],
+          ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

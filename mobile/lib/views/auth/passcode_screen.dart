@@ -306,18 +306,36 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = MediaQuery.of(context).size.width > 700;
 
     return Scaffold(
       backgroundColor: isDark ? FinTheme.bgDark : Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              // App Icon & Brand
-              Container(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Card(
+              elevation: isDesktop ? 6 : 0,
+              color: isDesktop
+                  ? (isDark ? FinTheme.cardDark : Colors.white)
+                  : Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+                side: isDesktop
+                    ? BorderSide(color: isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0))
+                    : BorderSide.none,
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 28.0,
+                  vertical: isDesktop ? 28.0 : 0.0,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(),
+                    // App Icon & Brand
+                    Container(
                 width: 76,
                 height: 76,
                 decoration: BoxDecoration(
@@ -585,6 +603,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
           ),
         ),
       ),
+    ),
+  ),
+),
     );
   }
 

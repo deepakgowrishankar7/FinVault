@@ -204,9 +204,12 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
       appBar: AppBar(
         title: Text(widget.loanToEdit != null ? _t('update_loan') : _t('add_new_loan')),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,7 +596,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildModelOption({
