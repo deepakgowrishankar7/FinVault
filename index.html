@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FinVault — Smart Loan & Repayment Ledger | Mobile APK & Laptop App</title>
-  <meta name="description" content="FinVault: Modern loan and repayment ledger for private financiers and field recovery teams. Developed by Enduri Deepak Gowri Shankar. Available for Android & Windows.">
+  <meta name="description" content="FinVault: Modern loan and repayment ledger for private financiers, credit firms, and field recovery teams. Developed by Enduri Deepak Gowri Shankar. Available for Android & Windows.">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,15 +38,14 @@
     :root {
       --primary: #0071E3;
       --primary-hover: #005bb5;
-      --primary-glow: rgba(0, 113, 227, 0.25);
-      --bg-dark: #0A0E17;
-      --card-dark: #121826;
-      --border-dark: #1F2937;
+      --primary-glow: rgba(0, 113, 227, 0.22);
+      --accent-cyan: #00B4D8;
       --text-main: #0F172A;
       --text-muted: #64748B;
       --success: #10B981;
       --surface: #FFFFFF;
       --surface-subtle: #F8FAFC;
+      --border-subtle: #E2E8F0;
     }
 
     * {
@@ -61,6 +60,13 @@
       color: var(--text-main);
       line-height: 1.6;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient Hero Gradient Background */
+    .hero-wrapper {
+      background: radial-gradient(1000px 500px at 50% 0%, rgba(0, 113, 227, 0.08) 0%, rgba(248, 250, 252, 0) 100%);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.6);
     }
 
     /* Glass Navbar */
@@ -70,7 +76,7 @@
       z-index: 100;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.88);
       border-bottom: 1px solid rgba(226, 232, 240, 0.8);
     }
     .navbar {
@@ -89,8 +95,8 @@
       color: inherit;
     }
     .brand-logo {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
       box-shadow: 0 4px 12px var(--primary-glow);
       object-fit: cover;
@@ -104,7 +110,7 @@
     .brand-tag {
       font-size: 11px;
       font-weight: 700;
-      background: rgba(0, 113, 227, 0.1);
+      background: rgba(0, 113, 227, 0.08);
       color: var(--primary);
       padding: 3px 8px;
       border-radius: 20px;
@@ -113,7 +119,7 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 22px;
     }
     .nav-links a {
       color: var(--text-muted);
@@ -143,7 +149,7 @@
     .hero {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 60px 20px 40px;
+      padding: 60px 20px 48px;
       text-align: center;
     }
     .badge-pill {
@@ -158,14 +164,14 @@
       padding: 6px 16px;
       border-radius: 30px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.08);
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.06);
     }
     .hero h1 {
-      font-size: 46px;
+      font-size: 48px;
       font-weight: 800;
-      line-height: 1.2;
+      line-height: 1.18;
       letter-spacing: -1.5px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       color: #0F172A;
     }
     .hero h1 span {
@@ -176,7 +182,7 @@
     .hero p {
       font-size: 18px;
       color: var(--text-muted);
-      max-width: 740px;
+      max-width: 760px;
       margin: 0 auto 36px;
       line-height: 1.6;
     }
@@ -264,9 +270,9 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 28px;
+      gap: 24px;
       flex-wrap: wrap;
-      padding: 16px;
+      padding: 12px 16px;
       font-size: 13px;
       font-weight: 600;
       color: var(--text-muted);
@@ -280,18 +286,18 @@
     /* Founder & Developer Section (About Me) */
     .founder-section {
       max-width: 1050px;
-      margin: 40px auto 60px;
+      margin: 48px auto 64px;
       padding: 0 20px;
     }
     .founder-card {
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 24px;
-      padding: 36px;
+      padding: 36px 40px;
       display: flex;
       align-items: center;
       gap: 36px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
       position: relative;
       overflow: hidden;
     }
@@ -300,35 +306,38 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 6px;
+      width: 5px;
       height: 100%;
-      background: linear-gradient(180deg, var(--primary) 0%, #00B4D8 100%);
+      background: linear-gradient(180deg, var(--primary) 0%, var(--accent-cyan) 100%);
     }
     .founder-photo-wrapper {
       position: relative;
       flex-shrink: 0;
     }
+    /* Fixed: Head position adjusted with 50% 10% object-position so full head and hair are perfectly framed */
     .founder-photo {
-      width: 170px;
-      height: 170px;
-      border-radius: 22px;
+      width: 180px;
+      height: 220px;
+      border-radius: 20px;
       object-fit: cover;
+      object-position: 50% 8%;
       border: 3px solid #FFFFFF;
-      box-shadow: 0 12px 28px rgba(0, 113, 227, 0.2);
+      box-shadow: 0 12px 28px rgba(0, 113, 227, 0.16);
+      display: block;
     }
     .founder-tag {
       position: absolute;
-      bottom: -8px;
+      bottom: -10px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--primary);
       color: #FFFFFF;
       font-size: 11px;
       font-weight: 800;
-      padding: 3px 12px;
+      padding: 4px 12px;
       border-radius: 12px;
       white-space: nowrap;
-      box-shadow: 0 4px 10px rgba(0, 113, 227, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
     }
     .founder-info {
       flex: 1;
@@ -346,7 +355,7 @@
       font-size: 28px;
       font-weight: 800;
       color: #0F172A;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       letter-spacing: -0.5px;
     }
     .founder-role {
@@ -359,7 +368,7 @@
       font-size: 14px;
       color: #475569;
       line-height: 1.6;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
     .founder-links {
       display: flex;
@@ -371,12 +380,12 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 16px;
+      padding: 9px 16px;
       border-radius: 10px;
       text-decoration: none;
       font-size: 13px;
       font-weight: 700;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
     .contact-btn.email {
       background: #EFF6FF;
@@ -385,6 +394,7 @@
     }
     .contact-btn.email:hover {
       background: #DBEAFE;
+      transform: translateY(-1px);
     }
     .contact-btn.linkedin {
       background: #0A66C2;
@@ -392,16 +402,18 @@
     }
     .contact-btn.linkedin:hover {
       background: #084e96;
+      transform: translateY(-1px);
     }
     .contact-btn.github {
-      background: #181717;
+      background: #0F172A;
       color: #FFFFFF;
     }
     .contact-btn.github:hover {
       background: #000000;
+      transform: translateY(-1px);
     }
 
-    /* Features Grid */
+    /* Features Section */
     .section-title {
       text-align: center;
       margin-bottom: 40px;
@@ -443,8 +455,8 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
     }
     .feat-icon {
-      width: 46px;
-      height: 46px;
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
       background: #EFF6FF;
       color: var(--primary);
@@ -466,43 +478,50 @@
       line-height: 1.6;
     }
 
-    /* Simple Install Steps */
+    /* Fixed: Premium Light Installation Guide (No Odd Dark Block) */
     .guide-section {
-      background: #0F172A;
-      color: #FFFFFF;
-      padding: 60px 20px;
-      border-radius: 28px;
-      max-width: 1160px;
-      margin: 0 auto 60px;
+      background: #FFFFFF;
+      color: #0F172A;
+      padding: 48px 36px;
+      border-radius: 24px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+      max-width: 1100px;
+      margin: 0 auto 64px;
     }
     .guide-section h2 {
       text-align: center;
       font-size: 30px;
       font-weight: 800;
-      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      color: #0F172A;
     }
     .guide-section .sub {
       text-align: center;
-      color: #94A3B8;
+      color: var(--text-muted);
       font-size: 15px;
-      margin-bottom: 40px;
+      margin-bottom: 36px;
     }
     .guide-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
+      gap: 20px;
     }
     .guide-box {
-      background: #1E293B;
+      background: #F8FAFC;
       padding: 24px;
       border-radius: 18px;
-      border: 1px solid #334155;
+      border: 1px solid #E2E8F0;
     }
     .guide-box h4 {
       font-size: 17px;
       font-weight: 700;
-      margin-bottom: 12px;
-      color: #38BDF8;
+      margin-bottom: 14px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .step-list {
       list-style: none;
@@ -515,7 +534,7 @@
       align-items: flex-start;
       gap: 12px;
       font-size: 13px;
-      color: #CBD5E1;
+      color: #334155;
       line-height: 1.5;
     }
     .step-list li::before {
@@ -534,22 +553,22 @@
       margin-top: 1px;
     }
 
-    /* Footer */
+    /* Fixed: Clean Light Footer (No Dark Background) */
     footer {
-      background: #060911;
-      color: #64748B;
+      background: #FFFFFF;
+      color: var(--text-muted);
       text-align: center;
       padding: 32px 20px;
       font-size: 13px;
-      border-top: 1px solid #1E293B;
+      border-top: 1px solid #E2E8F0;
     }
     footer a {
-      color: #94A3B8;
+      color: var(--primary);
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
     }
     footer a:hover {
-      color: #FFFFFF;
+      text-decoration: underline;
     }
 
     /* Responsive Mobile Adjustments */
@@ -560,11 +579,12 @@
       .founder-card {
         flex-direction: column;
         text-align: center;
-        padding: 28px 20px;
+        padding: 30px 20px;
       }
       .founder-info { text-align: center; }
       .founder-links { justify-content: center; }
       .nav-links a:not(.nav-btn) { display: none; }
+      .guide-section { padding: 32px 20px; }
     }
   </style>
 </head>
@@ -587,45 +607,47 @@
     </nav>
   </div>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="badge-pill">
-      <span>🚀</span> FinVault Multi-Platform Released
-    </div>
-    <h1>Smart Loan & Repayment Ledger<br><span>Built for Speed, Trust & Precision</span></h1>
-    <p>The complete digital finance vault for private financiers, credit firms, and field recovery agents. Supports Village Rupee Vaddi (రూపాయి వడ్డీ), Bank Reducing EMI, 100% Offline Local Storage, Live UPI QR, and 5 Indian Languages.</p>
+  <div class="hero-wrapper">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="badge-pill">
+        <span>🚀</span> FinVault Multi-Platform Released
+      </div>
+      <h1>Smart Loan & Repayment Ledger<br><span>Built for Speed, Trust & Precision</span></h1>
+      <p>The complete digital finance vault for private financiers, credit firms, and field recovery agents. Supports Village Rupee Interest (Vaddi Calculation), Bank Reducing EMI, 100% Offline Local Storage, Live UPI QR, and Multi-language support.</p>
 
-    <!-- Dual Download Hub -->
-    <div class="download-grid" id="download">
-      <!-- 1. Android Mobile APK -->
-      <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" class="download-card primary">
-        <div class="dl-icon">📱</div>
-        <div class="dl-content">
-          <h3>Download Mobile APK</h3>
-          <p>For Android Phones & Tablets</p>
-          <span class="dl-badge">Direct APK • v2.0.0 (Fast Install)</span>
-        </div>
-      </a>
+      <!-- Dual Download Hub -->
+      <div class="download-grid" id="download">
+        <!-- 1. Android Mobile APK -->
+        <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" class="download-card primary">
+          <div class="dl-icon">📱</div>
+          <div class="dl-content">
+            <h3>Download Mobile APK</h3>
+            <p>For Android Phones & Tablets</p>
+            <span class="dl-badge">Direct APK • v2.0.0 (Fast Install)</span>
+          </div>
+        </a>
 
-      <!-- 2. Laptop / Windows PC Application -->
-      <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip" class="download-card">
-        <div class="dl-icon">💻</div>
-        <div class="dl-content">
-          <h3>Download Laptop App</h3>
-          <p>For Windows 10 & 11 PCs/Laptops</p>
-          <span class="dl-badge">Portable ZIP • Extract & Run .exe</span>
-        </div>
-      </a>
-    </div>
+        <!-- 2. Laptop / Windows PC Application -->
+        <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip" class="download-card">
+          <div class="dl-icon">💻</div>
+          <div class="dl-content">
+            <h3>Download Laptop App</h3>
+            <p>For Windows 10 & 11 PCs/Laptops</p>
+            <span class="dl-badge">Portable ZIP • Extract & Run .exe</span>
+          </div>
+        </a>
+      </div>
 
-    <!-- Highlights Bar -->
-    <div class="highlights-bar">
-      <div class="highlight-item">🛡️ 100% Offline Local Storage</div>
-      <div class="highlight-item">🪙 Village Rupee Vaddi (రూపాయి వడ్డీ)</div>
-      <div class="highlight-item">⚡ Dynamic UPI QR</div>
-      <div class="highlight-item">🌐 5 Indian Languages</div>
-    </div>
-  </section>
+      <!-- Highlights Bar (Clean English text only, no regional language scripts) -->
+      <div class="highlights-bar">
+        <div class="highlight-item">🛡️ 100% Offline Local Storage</div>
+        <div class="highlight-item">🪙 Village Rupee Interest (Vaddi Model)</div>
+        <div class="highlight-item">⚡ Dynamic UPI QR</div>
+        <div class="highlight-item">🌐 5 Indian Languages</div>
+      </div>
+    </section>
+  </div>
 
   <!-- About Founder & Developer Section -->
   <section class="founder-section" id="about-founder">
@@ -666,7 +688,7 @@
     <div class="features-grid">
       <div class="feature-card">
         <div class="feat-icon">🪙</div>
-        <h3>Village Rupee Vaddi (రూపాయి వడ్డీ)</h3>
+        <h3>Village Rupee Interest (Vaddi Model)</h3>
         <p>Pure ₹1, ₹2, ₹3 monthly interest per ₹100 without dividing principal into EMI. Example: ₹5,00,000 at ₹2 interest pays ₹10,000 monthly pure interest until principal clearance.</p>
       </div>
 
@@ -697,12 +719,12 @@
       <div class="feature-card">
         <div class="feat-icon">🌐</div>
         <h3>5 Indian Languages</h3>
-        <p>Instant localization for English, Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), and Kannada (ಕನ್ನಡ) across all screens.</p>
+        <p>Instant localization for English, Telugu, Hindi, Tamil, and Kannada across all screens.</p>
       </div>
     </div>
   </section>
 
-  <!-- Installation Guide -->
+  <!-- Installation Guide (Clean Light Mode) -->
   <section class="guide-section" id="install">
     <h2>Easy Installation Guide</h2>
     <p class="sub">Get started on your Android phone or Windows PC in less than 2 minutes.</p>
@@ -730,10 +752,10 @@
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- Footer (Clean Light Theme) -->
   <footer>
     <p>© 2026 <strong>FinVault</strong>. Designed & Developed with ❤️ by <a href="https://www.linkedin.com/in/enduri-deepak-gowri-shankar/" target="_blank" rel="noopener">Enduri Deepak Gowri Shankar</a>.</p>
-    <p style="margin-top: 6px; font-size: 12px; color: #475569;">All rights reserved. Dedicated to high-trust private financial empowerment.</p>
+    <p style="margin-top: 6px; font-size: 12px; color: #64748B;">All rights reserved. Dedicated to high-trust private financial empowerment.</p>
   </footer>
 
 </body>
