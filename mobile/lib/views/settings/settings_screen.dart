@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               widget.onSettingsChanged(updated);
               if (mounted) Navigator.pop(ctx);
             },
-            child: const Text("Save"),
+            child: Text(_t('confirm')),
           ),
         ],
       ),
@@ -91,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           keyboardType: TextInputType.number,
           maxLength: 4,
           obscureText: true,
-          decoration: const InputDecoration(labelText: _t('master_admin_pin'), prefixIcon: Icon(Icons.lock)),
+          decoration: InputDecoration(labelText: _t('master_admin_pin'), prefixIcon: const Icon(Icons.lock)),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_t('cancel'))),
