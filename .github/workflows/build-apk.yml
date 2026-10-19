@@ -58,9 +58,10 @@ jobs:
       - name: Get Flutter Packages & Verify Assets
         working-directory: mobile
         run: |
+          set -o pipefail
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings || true
-          flutter build bundle -v
+          flutter build bundle -v 2>&1 | tee ../bundle.log
 
       - name: Build Android Release APK
         working-directory: mobile
@@ -73,11 +74,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ERROR_SNIPPET=$(grep -B 60 "FAILURE: Build failed" flutter_build.log | tail -n 60 || tail -n 80 flutter_build.log)
+          if [ -f "bundle.log" ]; then
+            LOG_CONTENT=$(tail -n 80 bundle.log)
+          elif [ -f "flutter_build.log" ]; then
+            LOG_CONTENT=$(tail -n 80 flutter_build.log)
+          else
+            LOG_CONTENT="No log file found"
+          fi
           gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
             -f body="### ❌ Build Failure Details:
           \`\`\`text
-          $ERROR_SNIPPET
+          $LOG_CONTENT
           \`\`\`" || true
 
       - name: Prepare APK Output
