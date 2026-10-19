@@ -1,4 +1,4 @@
-name: Build Flutter Android APK
+name: Build FinVault Multi-Platform (Android APK & Windows Laptop App)
 
 on:
   push:
@@ -9,8 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build FinVault Flutter APK
+  # Job 1: Build Android Release APK
+  build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -33,92 +34,139 @@ jobs:
       - name: Configure Flutter Android Platform
         working-directory: mobile
         run: |
-          echo "Configuring Flutter Android platform for mobile project..."
           flutter create . --org com.finvault --project-name finvault --platforms android
 
-          # Configure release build to use debug signing key so APK is signed & installable
           if [ -f "android/app/build.gradle.kts" ]; then
             sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig = signingConfigs.getByName("debug")\n        }/' android/app/build.gradle.kts || true
           elif [ -f "android/app/build.gradle" ]; then
             sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig signingConfigs.debug\n        }/' android/app/build.gradle || true
           fi
-
-          # Ensure gradlew has execute permission
           chmod +x android/gradlew || true
 
-      - name: Inject Internet & Query Permissions into Manifest
+      - name: Inject Permissions into Manifest
         working-directory: mobile
         run: |
-          # Add INTERNET and ACCESS_NETWORK_STATE permissions before <application>
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' android/app/src/main/AndroidManifest.xml || true
-          
-          # Add WhatsApp and UPI query schemes inside <queries>
           sed -i '/<\/queries>/i \        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="whatsapp"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.VIEW"\/>\n            <data android:scheme="upi"\/>\n        <\/intent>' android/app/src/main/AndroidManifest.xml || true
 
-      - name: Get Flutter Packages & Verify Assets
+      - name: Get Packages & Build Android APK
         working-directory: mobile
         run: |
           set -o pipefail
           flutter pub get
-          flutter analyze --no-fatal-infos --no-fatal-warnings || true
-          flutter build bundle -v 2>&1 | tee ../bundle.log
+          flutter build apk --release --no-tree-shake-icons -v
 
-      - name: Build Android Release APK
-        working-directory: mobile
-        run: |
-          set -o pipefail
-          flutter build apk --release --no-tree-shake-icons -v 2>&1 | tee ../flutter_build.log
-
-      - name: Post Failure Log to Commit Comment
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -f "bundle.log" ]; then
-            LOG_CONTENT=$(tail -n 80 bundle.log)
-          elif [ -f "flutter_build.log" ]; then
-            LOG_CONTENT=$(tail -n 80 flutter_build.log)
-          else
-            LOG_CONTENT="No log file found"
-          fi
-          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
-            -f body="### ❌ Build Failure Details:
-          \`\`\`text
-          $LOG_CONTENT
-          \`\`\`" || true
-
-      - name: Prepare APK Output
+      - name: Prepare Android Output
         run: |
           mkdir -p release-output
           cp mobile/build/app/outputs/flutter-apk/app-release.apk release-output/FinVault.apk
 
-      - name: Upload APK as Workflow Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FinVault-Flutter-APK
+          name: FinVault-Android-APK
           path: release-output/FinVault.apk
           retention-days: 30
 
-      - name: Create / Update GitHub Release with APK
+  # Job 2: Build Windows Desktop Laptop App (.exe & dependencies)
+  build-windows:
+    name: Build Windows Laptop App (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Configure Windows Desktop Platform
+        working-directory: mobile
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          flutter create . --org com.finvault --project-name finvault --platforms windows
+          flutter pub get
+
+      - name: Build Windows Desktop Release (.exe)
+        working-directory: mobile
+        shell: pwsh
+        run: |
+          flutter build windows --release
+
+      - name: Package Windows Desktop ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-output
+          $releasePath = "mobile/build/windows/x64/runner/Release"
+          if (-not (Test-Path $releasePath)) {
+            $releasePath = "mobile/build/windows/runner/Release"
+          }
+          Write-Host "Packaging Windows release from: $releasePath"
+          Compress-Archive -Path "$releasePath/*" -DestinationPath release-output/FinVault-Windows.zip -Force
+
+      - name: Upload Windows App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinVault-Windows-Laptop-App
+          path: release-output/FinVault-Windows.zip
+          retention-days: 30
+
+  # Job 3: Publish GitHub Release with both Mobile APK and Windows Laptop App
+  publish-release:
+    name: Publish Release (Mobile APK & Laptop App)
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: FinVault-Android-APK
+          path: release-files
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: FinVault-Windows-Laptop-App
+          path: release-files
+
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main'
         with:
           tag_name: v2.0.0
-          name: "FinVault Flutter Native APK (v2.0.0)"
+          name: "FinVault v2.0.0 (Mobile APK & Laptop Windows App)"
           body: |
-            ### 🚀 FinVault Native Flutter Android Application (v2.0.0)
+            ### 🚀 FinVault Multi-Platform Release (v2.0.0)
 
-            - **App Name:** FinVault — Smart Loan & Repayment Ledger
-            - **Engine:** Flutter Native Dart (60–120 FPS Butter-Smooth Native Performance)
-            - **Platform:** Android 7.0+ (ARM64 & x86_64)
-            - **Backend:** 100% On-Device Offline Storage + Supabase Cloud Sync
-            - **Live Web App:** [FinVault Web App](https://deepakgowrishankar7.github.io/FinVault/)
+            FinVault is a high-performance loan and repayment ledger for private financiers, firms, and field recovery teams.
 
-            #### 📥 Quick Installation Instructions:
-            1. Download the **`FinVault.apk`** file below directly on your Android phone.
-            2. Tap the downloaded `.apk` notification or open it from your Files / Downloads app.
-            3. If Android shows a security prompt (*"Install unknown apps"*), tap **Settings** and enable **"Allow from this source"**.
-            4. Tap **Install** and enjoy ultra-smooth financial management!
-          files: release-output/FinVault.apk
+            ---
+
+            ### 📥 Downloads:
+
+            | Platform | File | Description |
+            | :--- | :--- | :--- |
+            | 📱 **Android Mobile** | [**`FinVault.apk`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk) | Direct APK for Android phones & tablets |
+            | 💻 **Windows Laptop / PC** | [**`FinVault-Windows.zip`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip) | Portable Windows desktop app (extract & run `finvault.exe`) |
+
+            ---
+
+            ### 🌟 Key Capabilities:
+            1. 🪙 **Indian Village Rupee Vaddi (రూపాయి వడ్డీ)**: Pure ₹1/₹2/₹3 monthly interest calculation per ₹100 without dividing principal into EMI.
+            2. 📉 **Bank Reducing EMI & Flat Simple**: With interactive sliders and complete amortization schedules.
+            3. 🛡️ **100% Offline Local Storage**: All borrower records stored securely on your device.
+            4. ☁️ **Dual Cloud Sync**: Central FinVault Cloud (isolated by 6-digit Firm Code `FV-XXXXXX`) or your own Supabase database.
+            5. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full balance clearance.
+            6. 👥 **Master Admin & Field Agent Roles**: Seamless role toggle on both Mobile and Laptop.
+            7. 🌐 **5 Indian Languages**: English, Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), and Kannada (ಕನ್ನಡ).
+          files: |
+            release-files/FinVault.apk
+            release-files/FinVault-Windows.zip
           draft: false
           prerelease: false

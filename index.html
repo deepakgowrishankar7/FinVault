@@ -1,1187 +1,585 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-  <meta name="theme-color" content="#0071E3"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="FinVault"/>
-  <meta name="application-name" content="FinVault"/>
-  <meta name="apple-touch-fullscreen" content="yes"/>
-  <meta name="format-detection" content="telephone=no"/>
-  <meta name="description" content="Apple-grade smart loan, EMI and repayment ledger manager for mobile and web."/>
-  
-  <title>FinVault — Smart Loan & Repayment Manager</title>
-  
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="stylesheet" href="styles.css"/>
-  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
-  <link rel="apple-touch-icon" href="icon-192.png"/>
-  <script>
-    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinVault — Smart Loan & Repayment Ledger | Mobile APK & Laptop App</title>
+  <meta name="description" content="Official download page for FinVault. Smart loan ledger for private financiers, firms, and field agents. Supports Village Rupee Interest, Bank Reducing EMI, 100% Offline Local Storage, and Multi-language.">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0071E3;
+      --primary-hover: #005bb5;
+      --primary-glow: rgba(0, 113, 227, 0.25);
+      --bg-dark: #0B0F19;
+      --card-dark: #131A2A;
+      --border-dark: #1E293B;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --success: #10B981;
+      --surface: #FFFFFF;
     }
-  </script>
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #F8FAFC;
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Glass Navbar */
+    .nav-container {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.85);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .navbar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #0F172A;
+    }
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(0, 113, 227, 0.1);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+    .nav-btn {
+      background: var(--primary);
+      color: #FFF !important;
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 24px 60px;
+      text-align: center;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.08);
+    }
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+      color: #0F172A;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #0071E3 0%, #00C6FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 19px;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+
+    /* Dual Download Hub */
+    .download-grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .download-card {
+      background: #FFFFFF;
+      border: 2px solid #E2E8F0;
+      border-radius: 20px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      text-align: left;
+      text-decoration: none;
+      color: inherit;
+      width: 360px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .download-card.primary {
+      background: linear-gradient(145deg, #0071E3 0%, #0052B4 100%);
+      border-color: #0071E3;
+      color: #FFFFFF;
+      box-shadow: 0 10px 30px rgba(0, 113, 227, 0.35);
+    }
+    .download-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+    }
+    .download-card.primary:hover {
+      box-shadow: 0 16px 40px rgba(0, 113, 227, 0.45);
+    }
+    .dl-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      background: #F1F5F9;
+      color: #0F172A;
+      flex-shrink: 0;
+    }
+    .download-card.primary .dl-icon {
+      background: rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+    }
+    .dl-content h3 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .dl-content p {
+      font-size: 12px;
+      margin: 0;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+    .dl-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.25);
+      margin-top: 6px;
+    }
+    .download-card:not(.primary) .dl-badge {
+      background: #E2E8F0;
+      color: #475569;
+    }
+
+    /* Highlight Features */
+    .highlights {
+      display: flex;
+      justify-content: center;
+      gap: 36px;
+      flex-wrap: wrap;
+      padding-top: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .highlight-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Features Grid */
+    .section-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title h2 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+    .section-title p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features-section {
+      max-width: 1200px;
+      margin: 40px auto 80px;
+      padding: 0 24px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+      padding: 32px 28px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+    .feature-card:hover {
+      border-color: #CBD5E1;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
+    }
+    .feat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #EFF6FF;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #0F172A;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Install Instructions Section */
+    .install-section {
+      background: #0B0F19;
+      color: #FFFFFF;
+      padding: 80px 24px;
+      margin-top: 60px;
+    }
+    .install-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .install-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .install-box {
+      background: #131A2A;
+      border: 1px solid #1E293B;
+      border-radius: 20px;
+      padding: 32px;
+    }
+    .install-box h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .step-list {
+      list-style: none;
+      counter-reset: steps;
+    }
+    .step-list li {
+      counter-increment: steps;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 14px;
+      color: #94A3B8;
+      line-height: 1.5;
+    }
+    .step-list li::before {
+      content: counter(steps);
+      background: var(--primary);
+      color: #FFFFFF;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Footer */
+    footer {
+      background: #060911;
+      color: #64748B;
+      text-align: center;
+      padding: 36px 24px;
+      font-size: 13px;
+      border-top: 1px solid #1E293B;
+    }
+    footer a {
+      color: #94A3B8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    footer a:hover {
+      color: #FFFFFF;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 36px; letter-spacing: -1px; }
+      .hero p { font-size: 16px; }
+      .download-card { width: 100%; }
+      .nav-links a:not(.nav-btn) { display: none; }
+    }
+  </style>
 </head>
 <body>
-  <!-- Ambient Apple Glows -->
-  <div class="ambient-glow"></div>
-  <div class="ambient-glow-2"></div>
 
-  <!-- Dynamic Notification Pill (Toast) -->
-  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
-
-  <!-- ==================== APPLE-STYLE PASSCODE LOCK SCREEN ==================== -->
-  <div id="lockScreenOverlay" class="lock-screen-overlay" aria-modal="true" role="dialog">
-    <div class="lock-container">
-      <img src="icon.svg" class="lock-logo" alt="FinVault Logo"/>
-      <h2 class="lock-title">FinVault</h2>
-      <p id="lockRoleSubtitle" class="lock-sub">Enter Passcode to Unlock</p>
-
-      <!-- Role Selector -->
-      <div class="role-segmented-control">
-        <button id="roleBtnAdmin" class="role-segment-btn active" type="button">👑 Admin (Financier)</button>
-        <button id="roleBtnAgent" class="role-segment-btn" type="button">🏃 Field Agent</button>
+  <!-- Navigation -->
+  <div class="nav-container">
+    <nav class="navbar">
+      <a href="#" class="brand">
+        <img src="icon-192.png" alt="FinVault Logo" class="brand-logo">
+        <span class="brand-name">FinVault</span>
+        <span class="brand-tag">v2.0</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#download">Downloads</a>
+        <a href="#install">Setup Guide</a>
+        <a href="#download" class="nav-btn">Download App</a>
       </div>
-
-      <!-- PIN Dots -->
-      <div class="pin-dots-wrap">
-        <div class="pin-dot" id="dot-0"></div>
-        <div class="pin-dot" id="dot-1"></div>
-        <div class="pin-dot" id="dot-2"></div>
-        <div class="pin-dot" id="dot-3"></div>
-      </div>
-
-      <!-- Numpad Grid -->
-      <div class="numpad-grid">
-        <button class="numpad-btn" data-key="1">1<span class="numpad-letters">&nbsp;</span></button>
-        <button class="numpad-btn" data-key="2">2<span class="numpad-letters">ABC</span></button>
-        <button class="numpad-btn" data-key="3">3<span class="numpad-letters">DEF</span></button>
-        <button class="numpad-btn" data-key="4">4<span class="numpad-letters">GHI</span></button>
-        <button class="numpad-btn" data-key="5">5<span class="numpad-letters">JKL</span></button>
-        <button class="numpad-btn" data-key="6">6<span class="numpad-letters">MNO</span></button>
-        <button class="numpad-btn" data-key="7">7<span class="numpad-letters">PQRS</span></button>
-        <button class="numpad-btn" data-key="8">8<span class="numpad-letters">TUV</span></button>
-        <button class="numpad-btn" data-key="9">9<span class="numpad-letters">WXYZ</span></button>
-        <button class="numpad-btn" style="font-size:13px;font-weight:600" id="numpadClearBtn">Clear</button>
-        <button class="numpad-btn" data-key="0">0<span class="numpad-letters">+</span></button>
-        <button class="numpad-btn" style="font-size:18px" id="numpadDeleteBtn">⌫</button>
-      </div>
-
-      <!-- Privacy Guarantee Badge -->
-      <div class="privacy-badge">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>100% On-Device Private Vault • Zero Cloud Tracking</span>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;justify-content:center">
-        <button type="button" id="forgotPinBtn" class="btn btn-ghost btn-sm" style="font-size:12px">
-          🔑 Forgot Passcode?
-        </button>
-        <label class="btn btn-ghost btn-sm" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
-          📥 Transfer Vault (.finvault)
-          <input type="file" id="lockVaultImportInput" accept=".finvault,.dgsvault,.json" style="display:none;" />
-        </label>
-      </div>
-
-      <!-- Real App Installation Pill (Removes top browser address link) -->
-      <div id="pwaInstallBanner" class="pwa-install-banner" style="display:none;">
-        <button type="button" id="pwaInstallBtn" class="pwa-install-btn">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>📲 Install App (Removes Top Link Bar)</span>
-        </button>
-      </div>
-    </div>
+    </nav>
   </div>
 
-  <!-- Top Navigation Bar -->
-  <header class="top-nav">
-    <div class="top-nav-inner">
-      <div class="brand-wrapper" onclick="switchAppTab('overview')">
-        <img src="icon.svg" class="brand-logo" alt="FinVault Logo"/>
-        <div class="brand-info">
-          <h1>FinVault</h1>
-          <span class="brand-badge">PRO EDITION</span>
-        </div>
-      </div>
-
-      <!-- Desktop Navigation Tabs -->
-      <nav class="desktop-nav-tabs">
-        <button class="nav-tab-btn active" data-tab="overview">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          Overview
-        </button>
-        <button class="nav-tab-btn" data-tab="loans">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-          Loans & Ledger
-        </button>
-        <button class="nav-tab-btn" data-tab="calculator">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-          EMI Simulator
-        </button>
-        <button class="nav-tab-btn" data-tab="settings">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Settings
-        </button>
-      </nav>
-
-      <!-- Action Buttons -->
-      <div class="nav-actions">
-        <!-- Current User Role Badge (Click to Lock / Switch) -->
-        <button id="currentUserBadge" class="current-user-tag" title="Switch User / Lock App">
-          <span id="roleIcon">👑</span>
-          <span id="roleName">Admin</span>
-        </button>
-
-        <button id="themeToggleBtn" class="btn btn-ghost btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        </button>
-        <button id="newLoanBtn" class="btn btn-primary admin-only">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>New Loan</span>
-        </button>
-      </div>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="badge-pill">
+      <span>🚀</span> FinVault v2.0 Released for Mobile & Laptop
     </div>
-  </header>
+    <h1>Smart Loan & Repayment Ledger<br><span>Built for Speed, Trust & Precision</span></h1>
+    <p>The complete digital finance vault for private lenders, credit firms, and field recovery agents. Supports Village Rupee Vaddi, Bank Reducing EMI, 100% Offline Local Storage, Live UPI QR, and 5 Indian Languages.</p>
 
-  <!-- Main Content Container -->
-  <main class="app-container">
-
-    <!-- ==================== SCREEN 1: OVERVIEW ==================== -->
-    <div id="screen-overview">
-      <!-- Apple Card Hero Banner -->
-      <section class="hero-card">
-        <div class="hero-top">
-          <div>
-            <div class="hero-label">Total Outstanding Balance</div>
-            <div id="heroBalance" class="hero-balance">₹ 0</div>
-            <div class="hero-sub">Remaining to be collected from active borrowers</div>
-          </div>
-          <button id="newLoanHeroBtn" class="btn btn-secondary admin-only">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            + New Loan
-          </button>
+    <!-- Dual Download Hub -->
+    <div class="download-grid" id="download">
+      <!-- 1. Android Mobile APK -->
+      <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" class="download-card primary">
+        <div class="dl-icon">📱</div>
+        <div class="dl-content">
+          <h3>Download Mobile APK</h3>
+          <p>For Android Phones & Tablets</p>
+          <span class="dl-badge">Direct APK • v2.0.0 (Fast Install)</span>
         </div>
+      </a>
 
-        <div class="hero-metrics">
-          <div class="hero-metric-item">
-            <div class="metric-title">Total Lent</div>
-            <div id="heroLent" class="metric-val">₹ 0</div>
-          </div>
-          <div class="hero-metric-item">
-            <div class="metric-title">Total Collected</div>
-            <div id="heroCollected" class="metric-val text-collected">₹ 0</div>
-          </div>
-          <div class="hero-metric-item admin-only">
-            <div class="metric-title">Interest Profit</div>
-            <div id="heroProfit" class="metric-val text-profit">₹ 0</div>
-          </div>
+      <!-- 2. Laptop / Windows PC Application -->
+      <a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip" class="download-card">
+        <div class="dl-icon">💻</div>
+        <div class="dl-content">
+          <h3>Download Laptop App</h3>
+          <p>For Windows 10 & 11 PC / Laptop</p>
+          <span class="dl-badge">Desktop (.exe) • Large Screen</span>
         </div>
-      </section>
-
-      <!-- 4 Quick Stats -->
-      <section class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon blue">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div class="stat-label">Active Loans</div>
-          <div id="statActiveLoans" class="stat-value">0</div>
-          <div class="stat-desc">Currently in repayment cycle</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon green">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-          <div class="stat-label">Closed & Paid</div>
-          <div id="statPaidLoans" class="stat-value">0</div>
-          <div class="stat-desc">Fully settled without dues</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon amber">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div class="stat-label">Total Accounts</div>
-          <div id="statTotalLoans" class="stat-value">0</div>
-          <div class="stat-desc">Borrowers registered</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <div class="stat-label">Recovery Rate</div>
-          <div id="statRecoveryRate" class="stat-value">0%</div>
-          <div class="stat-desc">Collection efficiency</div>
-        </div>
-      </section>
-
-      <!-- Recent Loans Preview -->
-      <section class="section">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Recent Loans</h2>
-            <div class="section-sub">Latest active lending accounts & repayment progress</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="switchAppTab('loans')">View All Loans →</button>
-        </div>
-        <div id="recentLoansList"></div>
-      </section>
+      </a>
     </div>
 
-    <!-- ==================== SCREEN 2: ALL LOANS ==================== -->
-    <div id="screen-loans" class="hidden">
-      <section class="section">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">All Loans & Ledger</h2>
-            <div class="section-sub">Search borrowers, track EMI installments, and record payments</div>
-          </div>
-        </div>
+    <!-- Highlights -->
+    <div class="highlights">
+      <div class="highlight-item">🛡️ 100% On-Device Offline Vault</div>
+      <div class="highlight-item">🪙 Indian Village Rupee Vaddi (రూపాయి వడ్డీ)</div>
+      <div class="highlight-item">⚡ Live Dynamic UPI QR Codes</div>
+      <div class="highlight-item">🌐 5 Indian Languages</div>
+    </div>
+  </section>
 
-        <!-- Toolbar (Search & Filter Pills) -->
-        <div class="toolbar" style="margin-bottom: 20px;">
-          <div class="search-box">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="loansSearchInput" type="text" placeholder="Search by name, phone, or amount..."/>
-          </div>
-
-          <div class="filter-pills">
-            <button class="pill-btn active" data-filter="all">All</button>
-            <button class="pill-btn" data-filter="today">📅 Due Today <span id="badgeDueToday" class="pill-counter" style="display:none">0</span></button>
-            <button class="pill-btn" data-filter="week">⏰ Due This Week <span id="badgeDueWeek" class="pill-counter" style="display:none">0</span></button>
-            <button class="pill-btn" data-filter="active">Active</button>
-            <button class="pill-btn" data-filter="overdue">Overdue</button>
-            <button class="pill-btn" data-filter="paid">Fully Paid</button>
-          </div>
-        </div>
-
-        <div id="allLoansContainer"></div>
-      </section>
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="section-title">
+      <h2>Engineered for Private Finance</h2>
+      <p>Everything you need to manage principal disbursals, monthly interest collections, and field recovery teams in one unified ledger.</p>
     </div>
 
-    <!-- ==================== SCREEN 3: CALCULATOR & SIMULATOR ==================== -->
-    <div id="screen-calculator" class="hidden">
-      <section class="section">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Interactive Loan & EMI Simulator</h2>
-            <div class="section-sub">Drag the sliders to simulate loan repayments, calculate interest, and plan tenure</div>
-          </div>
-        </div>
-
-        <div class="calc-grid">
-          <!-- Controls -->
-          <div class="card calc-controls">
-            <!-- Principal Slider -->
-            <div class="slider-group">
-              <label>
-                <span>Principal Amount</span>
-                <span id="calcValP" class="slider-val">₹ 1,00,000</span>
-              </label>
-              <input id="calcSliderP" type="range" min="10000" max="2000000" step="5000" value="100000"/>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
-                <span>₹10,000</span>
-                <span>₹20,00,000</span>
-              </div>
-            </div>
-
-            <!-- Interest Slider -->
-            <div class="slider-group">
-              <label>
-                <span>Interest Rate (% per annum)</span>
-                <span id="calcValR" class="slider-val">12% p.a.</span>
-              </label>
-              <input id="calcSliderR" type="range" min="1" max="36" step="0.5" value="12"/>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
-                <span>1%</span>
-                <span>36%</span>
-              </div>
-            </div>
-
-            <!-- Tenure Slider -->
-            <div class="slider-group">
-              <label>
-                <span>Tenure (Months)</span>
-                <span id="calcValT" class="slider-val">12 months</span>
-              </label>
-              <input id="calcSliderT" type="range" min="1" max="60" step="1" value="12"/>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-tertiary);margin-top:4px">
-                <span>1 month</span>
-                <span>5 years (60m)</span>
-              </div>
-            </div>
-
-            <!-- Model Selection -->
-            <div class="form-group" style="margin-top: 10px;">
-              <label>Calculation Model</label>
-              <select id="calcModelSelect" class="form-control">
-                <option value="emi">Reducing Balance (Standard Bank EMI)</option>
-                <option value="simple">Simple / Flat Interest (Fixed Monthly)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Results -->
-          <div class="calc-result-card">
-            <div>
-              <div class="calc-highlight-box">
-                <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--accent)">
-                  Monthly Payment (EMI)
-                </div>
-                <div id="calcResultMonthly" class="calc-monthly-val">₹ 8,885</div>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Payable every month by borrower</div>
-              </div>
-
-              <div>
-                <div class="breakdown-row">
-                  <span style="color:var(--text-secondary)">Total Repayment</span>
-                  <span id="calcResultTotalPayable" style="font-weight:700">₹ 1,06,619</span>
-                </div>
-                <div class="breakdown-row">
-                  <span style="color:var(--text-secondary)">Total Interest Profit</span>
-                  <span id="calcResultInterest" style="font-weight:700;color:var(--warning)">₹ 6,619</span>
-                </div>
-
-                <!-- Visual Split Bar -->
-                <div class="split-bar">
-                  <div id="calcSplitPrincipal" class="split-principal" style="width: 85%" title="Principal"></div>
-                  <div id="calcSplitInterest" class="split-interest" style="width: 15%" title="Interest"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary)">
-                  <span>● Principal Amount</span>
-                  <span>● Interest Profit</span>
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top: 24px;">
-              <button class="btn btn-primary" style="width: 100%;" onclick="openNewLoanModal()">
-                + Create Loan with These Values
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- ==================== SCREEN 4: SETTINGS & BACKUP ==================== -->
-    <div id="screen-settings" class="hidden">
-      <section class="section">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Settings & Data Management</h2>
-            <div class="section-sub">Backup your records, import data, or test with sample loans</div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-bottom: 20px;">
-          <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Data Backup & Restore</h3>
-          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
-            Your data is stored securely in this device's local database. You can export a full backup anytime or transfer your records to a new computer or phone.
-          </p>
-
-          <div id="vaultHealthBadgeWrap" style="margin-bottom:12px">
-            <div id="vaultHealthIndicator" class="health-pill healthy">
-              <div class="health-dot"></div>
-              <span id="vaultHealthText">Dual-Layer Vault: 100% Protected (IndexedDB + LocalStorage)</span>
-            </div>
-          </div>
-
-          <!-- Real-Time Storage Architecture & Status Box -->
-          <div id="vaultStorageDetailsCard" style="margin: 12px 0 16px 0; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Current Storage Architecture</span>
-              <span id="activeStoragePill" class="health-pill" style="font-size: 11px; padding: 3px 8px;">100% On-Device Mode</span>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 12.5px;">
-              <div>
-                <span style="color: var(--text-secondary);">Stored Ledger:</span>
-                <strong id="primaryStoragePayload">0 loans stored</strong>
-              </div>
-              <div>
-                <span style="color: var(--text-secondary);">Cloud Mirror:</span>
-                <strong id="cloudMirrorStatus">Inactive (Offline)</strong>
-              </div>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <button id="exportEncryptedVaultBtn" class="btn btn-primary">
-              📦 Download Complete Vault (.finvault)
-            </button>
-            <button id="exportJsonBtn" class="btn btn-secondary">
-              Export JSON Backup
-            </button>
-            <button id="exportCsvBtn" class="btn btn-secondary">
-              Export CSV Spreadsheet
-            </button>
-            <label class="btn btn-secondary" style="cursor:pointer">
-              Restore Backup / Vault
-              <input id="importFileInput" type="file" accept=".finvault,.dgsvault,.json,.csv" style="display:none"/>
-            </label>
-          </div>
-        </div>
-
-        <!-- Field Agents & Team Management Roster (Admin Only) -->
-        <div class="card admin-only" style="margin-bottom: 20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-            <div>
-              <h3 style="font-size:16px;font-weight:700">👥 Team, Partners & Field Agents</h3>
-              <div style="font-size:13px;color:var(--text-secondary)">Manage Co-Admins and field collection staff</div>
-            </div>
-            <button id="openAddAgentBtn" class="btn btn-primary btn-sm">+ Add Team Member / Co-Admin</button>
-          </div>
-
-          <div id="agentTableBody" class="team-roster-list">
-            <!-- Dynamically rendered team member cards -->
-          </div>
-        </div>
-
-        <!-- Cloud Sync & Multi-Device Backup (User Control) -->
-        <div class="card admin-only" style="margin-bottom: 20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
-            <div>
-              <h3 style="font-size:16px;font-weight:700">☁️ Cloud Backup & Multi-Device Sync</h3>
-              <div style="font-size:13px;color:var(--text-secondary)">Securely sync borrower ledger across devices</div>
-            </div>
-            <label class="switch-toggle" style="display:inline-flex;align-items:center;cursor:pointer;gap:10px">
-              <input type="checkbox" id="cloudSyncToggle" style="display:none;" />
-              <span class="switch-track"><span class="switch-thumb"></span></span>
-              <span id="cloudSyncToggleLabel" style="font-size:13px;font-weight:600;color:var(--text-secondary)">OFF (Local Device Only)</span>
-            </label>
-          </div>
-          <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px">
-            By default, all your data remains <strong>100% offline and private on this device</strong>. Turn this switch <strong>ON</strong> if you want your loans and repayment ledger automatically backed up and synced to the central cloud database.
-          </p>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button type="button" id="syncNowBtn" class="btn btn-primary btn-sm" style="display:none;">☁️ Sync Now</button>
-            <button type="button" id="testCloudPingBtn" class="btn btn-secondary btn-sm" style="display:none;">⚡ Test Connection</button>
-            <div id="cloudSyncStatusPill" class="health-pill" style="display:inline-flex;padding:4px 10px;font-size:12px;">
-              🔒 100% On-Device Private Mode
-            </div>
-          </div>
-
-          <!-- Live Connection & Cloud Diagnostic Details Box -->
-          <div id="cloudSyncDetailsBox" style="display:none;margin-top:16px;background:rgba(0,0,0,0.03);border:1px solid var(--border-subtle);border-radius:14px;padding:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-              <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);">Live Cloud Database Details</span>
-              <span id="cloudPingBadge" style="font-size:11px;font-weight:600;color:var(--text-secondary);">Supabase Project: cpfpmnyipiqdtcnobwoq</span>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:10px;">
-              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
-                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Database Link</div>
-                <div id="cloudDbState" style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">
-                  <span class="status-dot healthy"></span> <span>Checking...</span>
-                </div>
-              </div>
-
-              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
-                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Response Latency</div>
-                <div id="cloudDbLatency" style="font-size:13px;font-weight:700;">—</div>
-              </div>
-
-              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
-                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Cloud Backed Loans</div>
-                <div id="cloudDbRecordsCount" style="font-size:13px;font-weight:700;">0 loans</div>
-              </div>
-
-              <div style="background:var(--bg-secondary);padding:10px 12px;border-radius:10px;border:1px solid var(--border-subtle);">
-                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Last Successful Sync</div>
-                <div id="cloudDbLastSyncTime" style="font-size:13px;font-weight:700;">Never</div>
-              </div>
-            </div>
-
-            <!-- Problem / Error Alert Box (Only shown if error detected) -->
-            <div id="cloudSyncErrorAlert" style="display:none;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--danger);margin-top:8px;">
-              <div style="font-weight:700;margin-bottom:2px;">⚠️ Problem Detected:</div>
-              <div id="cloudSyncErrorMessage" style="line-height:1.4;">Could not reach database.</div>
-            </div>
-
-            <!-- Operational Success Notice -->
-            <div id="cloudSyncSuccessAlert" style="display:none;background:rgba(52,199,89,0.1);border:1px solid rgba(52,199,89,0.25);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--success);margin-top:8px;">
-              ✓ <strong>Connected & Active</strong>: Supabase project is reachable and healthy.
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin Master Security & Recovery Settings -->
-        <div class="card admin-only" style="margin-bottom: 20px;">
-          <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">👑 Admin Master Security & Recovery</h3>
-          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
-            Your master passcode and security recovery question are stored encrypted locally on this device.
-          </p>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="settingAdminPin">Admin Master Passcode (4 Digits)</label>
-              <input id="settingAdminPin" class="form-control" type="password" maxlength="4" placeholder="1234"/>
-            </div>
-            <div class="form-group">
-              <label for="settingOwnerUpi">Owner UPI ID (for QR code payments)</label>
-              <input id="settingOwnerUpi" class="form-control" placeholder="owner@okhdfcbank"/>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="settingSecurityQuestion">Security Recovery Question</label>
-              <input id="settingSecurityQuestion" class="form-control" placeholder="City where business started?"/>
-            </div>
-            <div class="form-group">
-              <label for="settingSecurityAnswer">Recovery Answer (confidential)</label>
-              <input id="settingSecurityAnswer" class="form-control" type="password" placeholder="Answer to reset PIN"/>
-            </div>
-          </div>
-          <button id="saveSecuritySettingsBtn" class="btn btn-primary btn-sm" style="margin-top:8px">
-            Save Security & UPI Settings
-          </button>
-        </div>
-
-        <div class="card admin-only" style="border-color: rgba(255, 59, 48, 0.2);">
-          <h3 style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:8px">Danger Zone</h3>
-          <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:16px">
-            Manage or erase stored records. These actions cannot be undone unless you have downloaded an encrypted .finvault backup.
-          </p>
-          <div style="display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;">
-            <button id="clearDataBtn" class="btn btn-ghost" style="width:100%;justify-content:center;color:var(--danger);border:1px solid rgba(255,59,48,0.3);padding:11px 16px;font-size:13px;box-sizing:border-box;">
-              🧹 Clear Local Device Storage Only
-            </button>
-            <button id="wipeCloudDbBtn" class="btn btn-ghost" style="width:100%;justify-content:center;color:var(--danger);border:1px solid rgba(255,59,48,0.3);padding:11px 16px;font-size:13px;box-sizing:border-box;">
-              ☁️ Wipe Cloud Database (Supabase)
-            </button>
-            <button id="factoryResetAllBtn" class="btn" style="width:100%;justify-content:center;background:rgba(255,59,48,0.12);color:var(--danger);border:1px solid rgba(255,59,48,0.35);font-weight:600;padding:11px 16px;font-size:13px;box-sizing:border-box;">
-              ⚠️ Complete Factory Reset (Local + Cloud)
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
-
-  </main>
-
-  <!-- ==================== MODAL 1: NEW / EDIT LOAN ==================== -->
-  <div id="loanModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 id="loanModalTitle" class="modal-title">Create New Loan</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+    <div class="features-grid">
+      <!-- Feature 1: Rupee Vaddi -->
+      <div class="feature-card">
+        <div class="feat-icon">🪙</div>
+        <h3>Village Rupee Vaddi (రూపాయి వడ్డీ)</h3>
+        <p>Pure village finance calculation (₹1, ₹2, ₹3 per ₹100/mo). ₹5 Lakh at ₹2 vaddi automatically calculates ₹10,000 monthly interest, with full principal intact until settlement.</p>
       </div>
 
-      <form id="loanForm">
-        <input id="editLoanId" type="hidden"/>
-
-        <div class="form-group">
-          <label for="loanBorrower">Borrower Full Name *</label>
-          <input id="loanBorrower" class="form-control" placeholder="e.g. Rajesh Kumar" required/>
-        </div>
-
-        <div class="form-group">
-          <label for="loanPhone">Mobile Number (for WhatsApp Reminders)</label>
-          <input id="loanPhone" class="form-control" type="tel" placeholder="e.g. 9876543210"/>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="loanPrincipal">Principal Amount (₹) *</label>
-            <input id="loanPrincipal" class="form-control" type="number" min="1" step="1" placeholder="100000" required/>
-          </div>
-          <div class="form-group">
-            <label for="loanInterest">Interest Rate (% p.a.)</label>
-            <input id="loanInterest" class="form-control" type="number" step="0.1" value="12" required/>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="loanTenure">Tenure (Months) *</label>
-            <input id="loanTenure" class="form-control" type="number" min="1" value="12" required/>
-          </div>
-          <div class="form-group">
-            <label for="loanModel">Repayment Model</label>
-            <select id="loanModel" class="form-control">
-              <option value="emi">Reducing Balance (EMI)</option>
-              <option value="simple">Flat / Simple Interest</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="loanStartDate">Loan Issue Date</label>
-          <input id="loanStartDate" class="form-control" type="date"/>
-        </div>
-
-        <div class="form-group">
-          <label for="loanNotes">Notes / Collateral / Reference</label>
-          <textarea id="loanNotes" class="form-control" rows="2" placeholder="Guarantor, business purpose, collateral details..."></textarea>
-        </div>
-
-        <!-- Borrower Photo / Aadhaar Card / ID Proof -->
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-weight:600;font-size:13px;color:var(--text-primary)">📷 Borrower Photo / ID Proof (Optional)</span>
-            <span style="font-size:11px;color:var(--text-tertiary)">Aadhaar, PAN, or Photo</span>
-          </label>
-          <input type="file" id="loanPhotoInput" accept="image/*" style="display:none" />
-          <input type="file" id="loanPhotoCameraInput" accept="image/*" capture="environment" style="display:none" />
-          <input type="hidden" id="loanPhotoData" />
-          <div id="loanPhotoUploadArea" class="photo-upload-dropzone">
-            <div id="loanPhotoEmptyView">
-              <span style="font-size:26px;display:block;margin-bottom:6px">📷</span>
-              <div style="font-size:13.5px;font-weight:700;color:var(--text-primary);margin-bottom:2px">Attach Photo or Identity Card</div>
-              <div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:12px">Compressed & saved 100% locally on device (~80KB)</div>
-              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-                <button type="button" id="triggerGalleryBtn" class="btn btn-secondary" style="font-size:12px;padding:7px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;font-weight:600">
-                  📁 Choose from Gallery / Files
-                </button>
-                <button type="button" id="triggerCameraBtn" class="btn btn-secondary" style="font-size:12px;padding:7px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;font-weight:600">
-                  📸 Open Camera
-                </button>
-              </div>
-            </div>
-            <div id="loanPhotoPreviewView" style="display:none;position:relative;width:100%;text-align:center">
-              <img id="loanPhotoPreviewImg" alt="Borrower ID" style="max-height:140px;border-radius:10px;object-fit:cover;border:1px solid var(--border-subtle);box-shadow:0 2px 8px rgba(0,0,0,0.08)" />
-              <button type="button" id="removeLoanPhotoBtn" class="photo-delete-badge" title="Remove photo">✕</button>
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--accent-light);padding:12px;border-radius:12px;margin:16px 0;font-size:13.5px">
-          <span style="color:var(--text-secondary)">Estimated Installment: </span>
-          <strong id="loanSuggestPreview" style="color:var(--accent)">—</strong>
-        </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Loan</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 2: RECORD PAYMENT ==================== -->
-  <div id="paymentModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">Record Payment</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      <!-- Feature 2: Bank Reducing EMI -->
+      <div class="feature-card">
+        <div class="feat-icon">📉</div>
+        <h3>Bank Reducing & Flat Simple EMI</h3>
+        <p>Standard monthly reducing balance calculation and flat rate models with interactive EMI sliders, split ratios, and month-by-month amortization schedules.</p>
       </div>
 
-      <div style="background:var(--bg-tertiary);padding:14px;border-radius:12px;margin-bottom:18px">
-        <div style="font-size:12px;color:var(--text-secondary)">Borrower</div>
-        <div id="payBorrowerName" style="font-size:17px;font-weight:700">—</div>
-        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px">
-          <span>Remaining Balance: <strong id="payRemainingBalance">—</strong></span>
-          <span>Due EMI: <strong id="paySuggestedAmount">—</strong></span>
-        </div>
+      <!-- Feature 3: 100% Offline Local Storage -->
+      <div class="feature-card">
+        <div class="feat-icon">🛡️</div>
+        <h3>100% Offline Local Security</h3>
+        <p>Your ledger belongs strictly to you. All borrower details and loan histories live on your local device storage. Zero external server dependencies required.</p>
       </div>
 
-      <form id="paymentForm">
-        <input id="payLoanId" type="hidden"/>
-
-        <div class="form-group">
-          <label for="payAmount">Payment Amount (₹) *</label>
-          <input id="payAmount" class="form-control" type="number" min="1" step="1" required/>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="payDate">Date of Payment</label>
-            <input id="payDate" class="form-control" type="date" required/>
-          </div>
-          <div class="form-group">
-            <label for="payMode">Payment Mode</label>
-            <select id="payMode" class="form-control">
-              <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
-              <option value="Cash">Cash</option>
-              <option value="Bank Transfer">Bank Transfer / NEFT</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="payNote">Reference / Remarks</label>
-          <input id="payNote" class="form-control" placeholder="Transaction ID, receipt notes..."/>
-        </div>
-
-        <!-- UPI QR Code Section -->
-        <div style="margin: 16px 0;">
-          <button type="button" id="toggleUpiQrBtn" class="btn btn-secondary btn-sm" style="width:100%">
-            📷 Show UPI QR Code to Borrower (GPay/PhonePe)
-          </button>
-          <div id="upiQrSection" class="upi-qr-card hidden">
-            <div style="font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:0.5px">Scan to Pay via Any UPI App</div>
-            <div id="upiQrContainer" style="display:flex;justify-content:center;align-items:center;margin:12px auto;background:#ffffff;padding:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);width:fit-content;min-height:180px;"></div>
-            <div>
-              <span id="upiIdBadge" class="upi-id-badge">UPI: lender@dgs</span>
-            </div>
-            <a id="upiDirectPayLink" href="#" class="btn btn-primary btn-sm" style="display:inline-flex;width:100%;justify-content:center;align-items:center;gap:6px;text-decoration:none;margin-top:12px;font-weight:600;padding:10px 14px;">
-              <span>📱 Open in GPay / PhonePe / Paytm</span>
-            </a>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Payment & Receipt</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 3: LOAN DETAILS & LEDGER ==================== -->
-  <div id="loanDetailsModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 720px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">Loan Details & Ledger</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
-      <div id="loanDetailsContent"></div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 4: DIGITAL RECEIPT ==================== -->
-  <div id="receiptModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 500px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">Payment Receipt</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
-      <div id="receiptContent"></div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 5: FIRST-TIME ADMIN SETUP WIZARD ==================== -->
-  <div id="setupWizardModal" class="wizard-overlay hidden" role="dialog" aria-modal="true">
-    <div class="wizard-card">
-      <div class="wizard-header">
-        <span class="wizard-badge">Initial Setup</span>
-        <h2 style="font-size:24px;font-weight:800;letter-spacing:-0.5px">Register Your Lending Firm</h2>
-        <p style="font-size:13.5px;color:var(--text-secondary);margin-top:6px">
-          Configure your master security credentials. Stored 100% on this device with zero external tracking.
-        </p>
+      <!-- Feature 4: Dual Cloud Database -->
+      <div class="feature-card">
+        <div class="feat-icon">☁️</div>
+        <h3>Dual Cloud Database Options</h3>
+        <p>Switch between the free FinVault Central Cloud (partitioned by your unique 6-digit Firm Code <code>FV-XXXXXX</code>) or connect your personal Supabase database URL and key.</p>
       </div>
 
-      <!-- Method A: Transfer from another device / restore existing vault -->
-      <div style="margin-bottom: 20px; padding: 14px 16px; background: var(--bg-tertiary); border: 1.5px dashed var(--border-card); border-radius: 14px; text-align: center;">
-        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
-          Already using FinVault on another device?
-        </div>
-        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px; margin-bottom: 10px;">
-          Transfer your complete vault file (.finvault) from Phone/PC in 1 click.
-        </div>
-        <label class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
-          📥 Transfer Vault from Another Device (.finvault)
-          <input type="file" id="wizardVaultImportInput" accept=".finvault,.dgsvault,.json" style="display: none;" />
-        </label>
+      <!-- Feature 5: Dynamic UPI QR Code -->
+      <div class="feature-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Dynamic UPI QR Code Generator</h3>
+        <p>Generates real-time UPI QR codes directly inside the payment modal for 1x EMI, 2x EMI, or Full Settlement. Borrowers scan with GPay, PhonePe, or Paytm instantly.</p>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
-        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); font-weight: 600;">OR REGISTER NEW FIRM</span>
-        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+      <!-- Feature 6: Master Admin & Field Agents -->
+      <div class="feature-card">
+        <div class="feat-icon">👥</div>
+        <h3>Admin & Field Agent Onboarding</h3>
+        <p>Clean 2-way login system on both Mobile and Laptop. Master Admins manage records, while Field Agents log in with their firm code to record field collections.</p>
       </div>
 
-      <form id="setupWizardForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wizFirmName">Firm / Business Name *</label>
-            <input id="wizFirmName" class="form-control" placeholder="FinVault" value="FinVault" required/>
-          </div>
-          <div class="form-group">
-            <label for="wizAdminName">Admin Full Name *</label>
-            <input id="wizAdminName" class="form-control" placeholder="Dhanasekar" required/>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wizPin">Master Passcode (4 Digits) *</label>
-            <input id="wizPin" class="form-control" type="password" maxlength="4" placeholder="e.g. 7845" required/>
-          </div>
-          <div class="form-group">
-            <label for="wizPinConfirm">Confirm Passcode *</label>
-            <input id="wizPinConfirm" class="form-control" type="password" maxlength="4" placeholder="Confirm 4 digits" required/>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wizQuestion">Security Recovery Question *</label>
-            <input id="wizQuestion" class="form-control" placeholder="e.g. City where you started?" required/>
-          </div>
-          <div class="form-group">
-            <label for="wizAnswer">Secret Recovery Answer *</label>
-            <input id="wizAnswer" class="form-control" placeholder="Secret answer to reset PIN" required/>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="wizUpi">Owner UPI ID (for QR code payments)</label>
-          <input id="wizUpi" class="form-control" placeholder="yourname@okhdfcbank" value="owner@okhdfcbank"/>
-        </div>
-
-        <div style="margin-top:24px">
-          <button type="submit" class="btn btn-primary" style="width:100%;padding:12px">
-            ✨ Complete Registration & Enter Vault
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 6: PASSCODE RECOVERY ==================== -->
-  <div id="recoveryModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 440px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">Reset Admin Passcode</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      <!-- Feature 7: Multi-Language Reactivity -->
+      <div class="feature-card">
+        <div class="feat-icon">🌐</div>
+        <h3>5 Native Indian Languages</h3>
+        <p>Instantly switch between English, తెలుగు (Telugu), हिंदी (Hindi), தமிழ் (Tamil), and ಕನ್ನಡ (Kannada) with 100% pure native translations across every screen.</p>
       </div>
 
-      <form id="recoveryForm">
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">
-          Answer your confidential security recovery question to set a new master passcode.
-        </p>
-
-        <div class="form-group">
-          <label id="recoveryQuestionLabel">Security Question</label>
-          <input id="recoveryAnswerInput" class="form-control" placeholder="Enter your secret answer" required/>
-        </div>
-
-        <div class="form-group">
-          <label for="recoveryNewPin">New 4-Digit Passcode</label>
-          <input id="recoveryNewPin" class="form-control" type="password" maxlength="4" placeholder="Enter new 4 digits" required/>
-        </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn btn-primary">Reset Passcode</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 6B: AGENT PASSCODE ASSISTANCE ==================== -->
-  <div id="agentPasscodeHelpModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 440px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">🏃 Field Agent Passcode Help</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      <!-- Feature 8: WhatsApp & Document Proofs -->
+      <div class="feature-card">
+        <div class="feat-icon">📄</div>
+        <h3>Calling, WhatsApp & Document Proofs</h3>
+        <p>Separate fields for calling phone and WhatsApp numbers. Attach Aadhaar, PAN card, cheques, and promissory notes. One-tap WhatsApp receipt dispatch.</p>
       </div>
 
-      <div style="padding: 10px 0;">
-        <div style="background: rgba(0,113,227,0.08); border: 1px solid rgba(0,113,227,0.2); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-          <p style="font-size: 13.5px; line-height: 1.5; color: var(--text-primary); margin-bottom: 10px;">
-            Field Agent passcodes are private and assigned directly by the <strong>Admin (Financier)</strong>.
-          </p>
-          <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-            To retrieve or reset your 4-digit agent passcode:
-            <ol style="margin: 6px 0 0 18px; padding: 0;">
-              <li>Contact your <strong>Admin (<span id="agentHelpAdminName">Deepak Gowri Shankar</span>)</strong>.</li>
-              <li>Admin will log into FinVault and open:
-                <br/><code>Settings ➔ Team, Partners & Field Agents</code></li>
-              <li>Admin can view your assigned passcode or edit it to a new 4-digit PIN.</li>
-            </ol>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end;">
-          <button type="button" class="btn btn-primary btn-sm" data-close-modal>
-            Understood
-          </button>
-        </div>
+      <!-- Feature 9: Cross-Device Synchronized -->
+      <div class="feature-card">
+        <div class="feat-icon">💻</div>
+        <h3>Laptop & Mobile Parity</h3>
+        <p>Built with Flutter Native Dart for 60–120 FPS butter-smooth performance on both Android phones and Windows desktop laptops.</p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- ==================== MODAL 7: ADD / EDIT TEAM MEMBER ==================== -->
-  <div id="agentModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 480px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 id="agentModalTitle" class="modal-title">Add Team Member</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+  <!-- Installation Instructions -->
+  <section class="install-section" id="install">
+    <div class="install-container">
+      <div class="section-title">
+        <h2>Quick Installation Instructions</h2>
+        <p>Get started with FinVault on your Android phone or Windows laptop in under 2 minutes.</p>
       </div>
 
-      <form id="agentForm">
-        <input id="agentEditId" type="hidden"/>
-
-        <div class="form-group" style="margin-bottom: 18px;">
-          <label style="display:block;font-weight:600;font-size:13px;color:var(--text-primary);margin-bottom:6px">
-            Role & Access Level *
-          </label>
-          <input id="agentInputRole" type="hidden" value="agent"/>
-
-          <div class="role-cards-container">
-            <!-- Field Collection Agent (Safe & Collections Only) -->
-            <div id="roleSelectCardAgent" class="role-select-card selected" data-role="agent" role="button" tabindex="0">
-              <div class="card-icon-box">🏃</div>
-              <div class="card-body">
-                <div class="card-title-row">
-                  <span class="card-title">Field Collection Agent</span>
-                  <span class="card-pill">Recommended</span>
-                </div>
-                <p class="card-desc">
-                  Collects repayments & issues receipts. Profit analytics, interest rates & settings are safely hidden.
-                </p>
-              </div>
-              <div class="card-radio-circle"></div>
-            </div>
-
-            <!-- Co-Admin / Business Partner -->
-            <div id="roleSelectCardAdmin" class="role-select-card admin-card" data-role="admin" role="button" tabindex="0">
-              <div class="card-icon-box">👑</div>
-              <div class="card-body">
-                <div class="card-title-row">
-                  <span class="card-title">Co-Admin / Business Partner</span>
-                  <span class="card-pill">Full Access</span>
-                </div>
-                <p class="card-desc">
-                  Full control over dashboard, editing loans, profit analytics, ledger downloads & vault settings.
-                </p>
-              </div>
-              <div class="card-radio-circle"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="agentInputName">Full Name *</label>
-          <input id="agentInputName" class="form-control" placeholder="e.g. Suresh Patel" required/>
-        </div>
-
-        <div class="form-group">
-          <label for="agentInputPhone">Mobile Phone</label>
-          <input id="agentInputPhone" class="form-control" type="tel" placeholder="e.g. 9812345678"/>
-        </div>
-
-        <div class="form-group">
-          <label for="agentInputPin">Personal 4-Digit Passcode *</label>
-          <input id="agentInputPin" class="form-control" type="password" maxlength="4" placeholder="e.g. 2468" required/>
-          <div style="font-size:11.5px;color:var(--text-tertiary);margin-top:4px">
-            This person will use this 4-digit PIN to log into their assigned role on any device.
-          </div>
-        </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Team Member</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 8: PWA STANDALONE INSTALL GUIDE ==================== -->
-  <div id="pwaInstallModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 440px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">📲 Use FinVault as Fullscreen App</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
-
-      <div style="padding: 6px 0;">
-        <p style="font-size:13.5px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px">
-          To remove the browser top link bar and open FinVault with a clean, full-screen native mobile feel:
-        </p>
-
-        <div style="background:rgba(0,113,227,0.08);border:1px solid rgba(0,113,227,0.2);border-radius:14px;padding:14px;margin-bottom:12px">
-          <div style="font-weight:700;font-size:13.5px;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px">
-            📱 On Android (Chrome, Samsung, Mi, Vivo)
-          </div>
-          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-primary);line-height:1.6">
-            <li>Tap the <strong>three dots menu (⋮)</strong> at the top right of your browser.</li>
-            <li>Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
-            <li>Confirm by clicking <strong>"Install"</strong> or <strong>"Add"</strong>.</li>
-            <li>Open <strong>FinVault</strong> from your phone's home screen icon! The top link bar will be completely gone.</li>
+      <div class="install-grid">
+        <!-- Android Instructions -->
+        <div class="install-box">
+          <h3>📱 Android Installation Guide</h3>
+          <ol class="step-list">
+            <li>Tap <strong><a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk" style="color: #60A5FA;">Download Mobile APK</a></strong> on your Android phone.</li>
+            <li>Open the downloaded <code>FinVault.apk</code> file from your notification bar or Downloads folder.</li>
+            <li>If Android prompts <em>"Install unknown apps"</em>, tap <strong>Settings</strong> and enable <strong>"Allow from this source"</strong>.</li>
+            <li>Tap <strong>Install</strong> and open the app. Choose <strong>Master Admin</strong> or <strong>Field Agent</strong> to begin!</li>
           </ol>
         </div>
 
-        <div style="background:rgba(0,0,0,0.04);border:1px solid var(--border-card);border-radius:14px;padding:14px;margin-bottom:16px">
-          <div style="font-weight:700;font-size:13.5px;color:var(--text-primary);margin-bottom:6px;display:flex;align-items:center;gap:6px">
-            🍎 On iPhone (Safari)
-          </div>
-          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.6">
-            <li>Tap the <strong>Share</strong> icon (bottom center).</li>
-            <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
-            <li>Tap <strong>Add</strong> at the top right.</li>
+        <!-- Windows Instructions -->
+        <div class="install-box">
+          <h3>💻 Laptop / PC Installation Guide</h3>
+          <ol class="step-list">
+            <li>Click <strong><a href="https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip" style="color: #60A5FA;">Download Laptop App</a></strong> to download the Windows ZIP package.</li>
+            <li>Right-click the downloaded <code>FinVault-Windows.zip</code> and select <strong>Extract All...</strong>.</li>
+            <li>Open the extracted folder and double-click <strong><code>FinVault.exe</code></strong> to run directly.</li>
+            <li><em>Tip:</em> Right-click <code>FinVault.exe</code> and select <strong>"Pin to taskbar"</strong> or <strong>"Create desktop shortcut"</strong> for instant 1-click access!</li>
           </ol>
         </div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
-          <button type="button" id="pwaTriggerNativeBtn" class="btn btn-primary btn-sm" style="display:none">
-            ⚡ Quick Install Now
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" data-close-modal>
-            Got It
-          </button>
-        </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- ==================== MODAL 9: USER PROFILE & SESSION ==================== -->
-  <div id="userProfileModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 400px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">User Profile</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 <strong>FinVault</strong> — Smart Loan & Repayment Ledger. High-Performance Flutter Engine.</p>
+    <p style="margin-top: 8px;">
+      <a href="https://github.com/deepakgowrishankar7/FinVault/releases/tag/v2.0.0">GitHub Releases</a> • 
+      <a href="https://github.com/deepakgowrishankar7/FinVault">Source Code</a> • 
+      <a href="#download">Downloads</a>
+    </p>
+  </footer>
 
-      <div style="padding: 12px 4px; text-align: center;">
-        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(0, 113, 227, 0.12); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 10px auto; border: 2px solid rgba(0, 113, 227, 0.25);">
-          <span id="profileModalAvatar">👑</span>
-        </div>
-        <h3 id="profileModalName" style="font-size: 18px; font-weight: 700; margin-bottom: 4px; word-break: break-word;">Admin</h3>
-        <div id="profileModalRoleBadge" class="health-pill healthy" style="display: inline-flex; margin-bottom: 18px; font-size: 12px; padding: 4px 12px;">
-          👑 Admin (Financier)
-        </div>
-
-        <div style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 14px; text-align: left; margin-bottom: 18px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px;">
-            <span style="color: var(--text-secondary);">Session Status</span>
-            <span style="color: var(--success); font-weight: 600;">● Active (Unlocked)</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px;">
-            <span style="color: var(--text-secondary);">Storage Vault</span>
-            <span style="font-weight: 600;">100% On-Device</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-            <span style="color: var(--text-secondary);">Role Access</span>
-            <span id="profileModalAccessMode" style="font-weight: 600;">Full Control</span>
-          </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <button type="button" id="profileGoSettingsBtn" class="btn btn-secondary admin-only" style="width: 100%; justify-content: center;">
-            ⚙️ Vault Settings & Team
-          </button>
-          <button type="button" id="profileLogoutBtn" class="btn" style="width: 100%; justify-content: center; background: rgba(255, 59, 48, 0.12); color: var(--danger); border: 1px solid rgba(255, 59, 48, 0.25); font-weight: 600;">
-            🔒 Lock & Logout
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 10: CLOUD SYNC ONBOARDING POPUP ==================== -->
-  <div id="cloudSyncOnboardModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 440px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 class="modal-title">☁️ Enable Cloud Database Sync</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
-      <div style="padding: 10px 4px;">
-        <p style="font-size: 14px; color: var(--text-primary); line-height: 1.5; margin-bottom: 14px;">
-          You are enabling cloud multi-device sync.
-        </p>
-        <div style="background: rgba(0, 113, 227, 0.08); border: 1px solid rgba(0, 113, 227, 0.2); border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px;">
-          <div style="font-weight: 700; color: var(--accent); margin-bottom: 4px;">📦 Automatic Past Ledger Upload:</div>
-          <div id="cloudOnboardLoanCountText" style="color: var(--text-secondary); line-height: 1.4;">
-            All your existing past borrower records and payments stored on this device will be immediately uploaded and backed up to the central database.
-          </div>
-        </div>
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-          <button type="button" id="cancelCloudSyncModalBtn" class="btn btn-secondary">Cancel</button>
-          <button type="button" id="confirmCloudSyncModalBtn" class="btn btn-primary">Upload & Enable Cloud Sync</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 11: DANGER ZONE PIN CONFIRMATION POPUP ==================== -->
-  <div id="dangerConfirmModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 440px;">
-      <div class="sheet-handle"></div>
-      <div class="modal-header">
-        <h2 id="dangerConfirmTitle" class="modal-title" style="color: var(--danger);">⚠️ Confirm Deletion</h2>
-        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
-      </div>
-      <div style="padding: 10px 4px;">
-        <p id="dangerConfirmDesc" style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
-          This action will permanently delete records and cannot be undone.
-        </p>
-
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="dangerAdminPinInput">Enter 4-Digit Admin Passcode to Authorize *</label>
-          <input id="dangerAdminPinInput" class="form-control" type="password" maxlength="4" placeholder="••••" style="font-size: 18px; letter-spacing: 4px; text-align: center;" required/>
-          <div id="dangerPinError" style="display: none; color: var(--danger); font-size: 12px; margin-top: 6px; font-weight: 600;">⚠️ Incorrect Admin Passcode</div>
-        </div>
-
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-          <button type="button" id="executeDangerActionBtn" class="btn" style="background: var(--danger); color: #fff; font-weight: 600;">Confirm & Delete</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 12: IMAGE LIGHTBOX VIEWER ==================== -->
-  <div id="imageLightboxModal" class="modal-overlay" role="dialog" aria-modal="true" style="background: rgba(0, 0, 0, 0.92);">
-    <div class="modal-sheet" style="background: transparent; box-shadow: none; border: none; text-align: center; max-width: 95vw; padding: 10px;">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-        <button class="modal-close-btn" data-close-modal aria-label="Close" style="background: rgba(255, 255, 255, 0.25); color: #ffffff; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; border: none;">✕</button>
-      </div>
-      <img id="lightboxImage" src="" alt="Borrower Document" style="max-width: 90vw; max-height: 75vh; border-radius: 12px; object-fit: contain; box-shadow: 0 12px 40px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2);" />
-      <div style="margin-top: 14px;">
-        <a id="lightboxDownloadBtn" href="#" download="Borrower_ID.jpg" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-weight: 600; text-decoration: none;">
-          ⬇️ Download Document
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 13: IN-APP ACTION CONFIRMATION POPUP ==================== -->
-  <div id="inAppConfirmModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-sheet" style="max-width: 390px; text-align: center; padding: 24px 20px;">
-      <div id="inAppConfirmIcon" style="width: 58px; height: 58px; border-radius: 50%; background: rgba(255, 59, 48, 0.12); color: var(--danger); font-size: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto;">
-        🗑️
-      </div>
-      <h3 id="inAppConfirmTitle" style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Delete Loan Record?</h3>
-      <p id="inAppConfirmDesc" style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 22px;">
-        Are you sure you want to delete this record? This action cannot be undone.
-      </p>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button type="button" id="inAppConfirmCancelBtn" class="btn btn-secondary" style="flex: 1; justify-content: center;">Cancel</button>
-        <button type="button" id="inAppConfirmActionBtn" class="btn" style="flex: 1; justify-content: center; background: var(--danger); color: #fff; font-weight: 700;">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MOBILE BOTTOM TAB BAR (iOS Style) ==================== -->
-  <nav class="bottom-nav">
-    <button class="bottom-tab active" data-tab="overview">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>Overview</span>
-    </button>
-    <button class="bottom-tab" data-tab="loans">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-      <span>Loans</span>
-    </button>
-    <button class="bottom-tab" data-tab="calculator">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-      <span>Calculator</span>
-    </button>
-    <button class="bottom-tab" data-tab="settings">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Settings</span>
-    </button>
-  </nav>
-
-  <script src="qrcode.min.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>
