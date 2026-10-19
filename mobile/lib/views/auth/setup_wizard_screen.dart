@@ -233,8 +233,6 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     }
   }
 
-  String _t(String key) => AppLocale.tr(key, _selectedLang);
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
