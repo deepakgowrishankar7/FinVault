@@ -105,13 +105,17 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path release-output
-          $foundExe = Get-ChildItem -Path "mobile/build" -Filter "*.exe" -Recurse | Select-Object -First 1
+          $foundExe = Get-ChildItem -Path "mobile/build" -Filter "finvault.exe" -Recurse | Select-Object -First 1
+          if (-not $foundExe) {
+            $foundExe = Get-ChildItem -Path "mobile/build/windows" -Filter "*.exe" -Recurse | Where-Object { $_.Name -notlike "*CompilerId*" } | Select-Object -First 1
+          }
           if ($foundExe) {
             $releasePath = $foundExe.DirectoryName
             Write-Host "Packaging Windows release from: $releasePath"
+            Get-ChildItem -Path $releasePath | Select-Object Name, Length
             Compress-Archive -Path "$releasePath/*" -DestinationPath release-output/FinVault-Windows.zip -Force
           } else {
-            Write-Error "Could not locate built Windows executable in mobile/build"
+            Write-Error "Could not locate built finvault.exe in mobile/build"
             exit 1
           }
 
