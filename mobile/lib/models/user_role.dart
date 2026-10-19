@@ -37,6 +37,7 @@ class StaffAgent {
 }
 
 class SecuritySettings {
+  final String vaultId; // Unique UUID for complete database isolation
   final bool isRegistered;
   final String firmName;
   final String adminName;
@@ -49,8 +50,10 @@ class SecuritySettings {
   final String supabaseUrl;
   final String supabaseKey;
   final bool cloudSyncEnabled;
+  final String language; // 'en', 'te', 'hi', 'ta', 'kn'
 
   SecuritySettings({
+    this.vaultId = '',
     this.isRegistered = false,
     this.firmName = 'FinVault',
     this.adminName = 'Admin',
@@ -63,6 +66,7 @@ class SecuritySettings {
     this.supabaseUrl = '',
     this.supabaseKey = '',
     this.cloudSyncEnabled = false,
+    this.language = 'en',
   });
 
   factory SecuritySettings.fromJson(Map<String, dynamic> json) {
@@ -75,6 +79,7 @@ class SecuritySettings {
     }
 
     return SecuritySettings(
+      vaultId: json['vaultId']?.toString() ?? '',
       isRegistered: json['isRegistered'] ?? false,
       firmName: json['firmName']?.toString() ?? 'FinVault',
       adminName: json['adminName']?.toString() ?? 'Admin',
@@ -87,11 +92,13 @@ class SecuritySettings {
       supabaseUrl: json['supabaseUrl']?.toString() ?? '',
       supabaseKey: json['supabaseKey']?.toString() ?? '',
       cloudSyncEnabled: json['cloudSyncEnabled'] ?? false,
+      language: json['language']?.toString() ?? 'en',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'vaultId': vaultId,
       'isRegistered': isRegistered,
       'firmName': firmName,
       'adminName': adminName,
@@ -104,10 +111,12 @@ class SecuritySettings {
       'supabaseUrl': supabaseUrl,
       'supabaseKey': supabaseKey,
       'cloudSyncEnabled': cloudSyncEnabled,
+      'language': language,
     };
   }
 
   SecuritySettings copyWith({
+    String? vaultId,
     bool? isRegistered,
     String? firmName,
     String? adminName,
@@ -120,8 +129,10 @@ class SecuritySettings {
     String? supabaseUrl,
     String? supabaseKey,
     bool? cloudSyncEnabled,
+    String? language,
   }) {
     return SecuritySettings(
+      vaultId: vaultId ?? this.vaultId,
       isRegistered: isRegistered ?? this.isRegistered,
       firmName: firmName ?? this.firmName,
       adminName: adminName ?? this.adminName,
@@ -134,6 +145,7 @@ class SecuritySettings {
       supabaseUrl: supabaseUrl ?? this.supabaseUrl,
       supabaseKey: supabaseKey ?? this.supabaseKey,
       cloudSyncEnabled: cloudSyncEnabled ?? this.cloudSyncEnabled,
+      language: language ?? this.language,
     );
   }
 }

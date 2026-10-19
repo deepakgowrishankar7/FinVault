@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/loan.dart';
+import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/fin_theme.dart';
+import '../../theme/app_locale.dart';
 
 class AddEditLoanScreen extends StatefulWidget {
   final Loan? loanToEdit;
+  final SecuritySettings? settings;
 
-  const AddEditLoanScreen({super.key, this.loanToEdit});
+  const AddEditLoanScreen({super.key, this.loanToEdit, this.settings});
 
   @override
   State<AddEditLoanScreen> createState() => _AddEditLoanScreenState();
@@ -17,11 +21,14 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
   final _formKey = GlobalKey<FormState>();
   final _borrowerCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _whatsappCtrl = TextEditingController();
   final _principalCtrl = TextEditingController();
   final _interestCtrl = TextEditingController();
   final _tenureCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
+  bool _sameAsCallingPhone = true;
+  List<String> _documentProofs = [];
   String _model = 'emi'; // 'emi' or 'simple'
   DateTime _startDate = DateTime.now();
   final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
@@ -33,6 +40,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
     if (edit != null) {
       _borrowerCtrl.text = edit.borrower;
       _phoneCtrl.text = edit.phone;
+      _whatsappCtrl.text = edit.whatsappPhone;
+      _sameAsCallingPhone = edit.phone == edit.whatsappPhone;
+      _documentProofs = List<String>.from(edit.documentProofs);
       _principalCtrl.text = edit.principal.toStringAsFixed(0);
       _interestCtrl.text = edit.interest.toString();
       _tenureCtrl.text = edit.tenure.toString();
@@ -50,18 +60,27 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
     _principalCtrl.addListener(() => setState(() {}));
     _interestCtrl.addListener(() => setState(() {}));
     _tenureCtrl.addListener(() => setState(() {}));
+    _phoneCtrl.addListener(() {
+      if (_sameAsCallingPhone) {
+        _whatsappCtrl.text = _phoneCtrl.text;
+      }
+    });
   }
 
   @override
   void dispose() {
     _borrowerCtrl.dispose();
     _phoneCtrl.dispose();
+    _whatsappCtrl.dispose();
     _principalCtrl.dispose();
     _interestCtrl.dispose();
     _tenureCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
+
+  String get _currentLang => widget.settings?.language ?? 'en';
+  String _t(String key) => AppLocale.tr(key, _currentLang);
 
   double get _currentPrincipal => double.tryParse(_principalCtrl.text) ?? 0.0;
   double get _currentInterest => double.tryParse(_interestCtrl.text) ?? 0.0;
@@ -86,8 +105,35 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
 
   double get _computedTotalInterest => (_computedTotalPayable - _currentPrincipal).clamp(0.0, double.infinity);
 
+  Future<void> _pickDocuments() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          for (final f in result.files) {
+            final name = f.name;
+            if (!_documentProofs.contains(name)) {
+              _documentProofs.add(name);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Could not pick file: $e")),
+      );
+    }
+  }
+
   Future<void> _saveLoan() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final callingPhone = _phoneCtrl.text.trim();
+    final waPhone = _sameAsCallingPhone ? callingPhone : _whatsappCtrl.text.trim();
 
     final allLoans = await StorageService.getLoans();
 
@@ -97,7 +143,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
         allLoans[idx] = Loan(
           id: widget.loanToEdit!.id,
           borrower: _borrowerCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim(),
+          phone: callingPhone,
+          whatsappPhone: waPhone,
+          documentProofs: _documentProofs,
           principal: _currentPrincipal,
           interest: _currentInterest,
           tenure: _currentTenure,
@@ -113,7 +161,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
       final newLoan = Loan(
         id: "L-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}",
         borrower: _borrowerCtrl.text.trim(),
-        phone: _phoneCtrl.text.trim(),
+        phone: callingPhone,
+        whatsappPhone: waPhone,
+        documentProofs: _documentProofs,
         principal: _currentPrincipal,
         interest: _currentInterest,
         tenure: _currentTenure,
@@ -136,7 +186,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.loanToEdit != null ? "Edit Loan" : "Create New Loan"),
+        title: Text(widget.loanToEdit != null ? _t('update_loan') : _t('add_new_loan')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -147,14 +197,14 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
             children: [
               // Live Calculation Preview Card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0071E3), Color(0xFF0056B3)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: FinTheme.primary.withOpacity(0.3),
@@ -165,16 +215,16 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      "ESTIMATED MONTHLY INSTALLMENT",
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
+                    Text(
+                      _t('monthly_emi').toUpperCase(),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 0.8),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       _currency.format(_computedMonthly),
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -185,7 +235,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                             Text(_currency.format(_computedTotalPayable), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                           ],
                         ),
-                        Container(width: 1, height: 24, color: Colors.white24),
+                        Container(width: 1, height: 26, color: Colors.white24),
                         Column(
                           children: [
                             const Text("Total Interest", style: TextStyle(fontSize: 11, color: Colors.white70)),
@@ -204,27 +254,73 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
               // Borrower Name
               TextFormField(
                 controller: _borrowerCtrl,
-                decoration: const InputDecoration(
-                  labelText: "Borrower Full Name *",
-                  prefixIcon: Icon(Icons.person),
+                decoration: InputDecoration(
+                  labelText: "${_t('borrower_name')} *",
+                  prefixIcon: const Icon(Icons.person_outline),
+                  filled: true,
+                  fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? "Borrower name is required" : null,
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-              // Phone Number
+              // Calling Phone Number
               TextFormField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: "Phone Number (WhatsApp) *",
-                  prefixIcon: Icon(Icons.phone),
+                decoration: InputDecoration(
+                  labelText: "${_t('call_phone')} *",
+                  hintText: "10-digit calling number",
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  filled: true,
+                  fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? "Phone number is required" : null,
+                validator: (val) => val == null || val.trim().isEmpty ? "Calling phone is required" : null,
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
+
+              // WhatsApp Checkbox
+              CheckboxListTile(
+                value: _sameAsCallingPhone,
+                onChanged: (val) {
+                  setState(() {
+                    _sameAsCallingPhone = val ?? true;
+                    if (_sameAsCallingPhone) {
+                      _whatsappCtrl.text = _phoneCtrl.text;
+                    }
+                  });
+                },
+                title: Text(_t('same_as_phone'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+
+              // WhatsApp Phone Number (If different)
+              if (!_sameAsCallingPhone) ...[
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _whatsappCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: "${_t('whatsapp_phone')} *",
+                    hintText: "WhatsApp number for reminders",
+                    prefixIcon: const Icon(Icons.chat_bubble_outline, color: FinTheme.success),
+                    filled: true,
+                    fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  validator: (val) => (!_sameAsCallingPhone && (val == null || val.trim().isEmpty))
+                      ? "WhatsApp phone is required"
+                      : null,
+                ),
+              ],
+
+              const SizedBox(height: 16),
 
               // Principal & Interest Rate
               Row(
@@ -233,13 +329,16 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                     child: TextFormField(
                       controller: _principalCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Principal (₹) *",
-                        prefixIcon: Icon(Icons.currency_rupee),
+                      decoration: InputDecoration(
+                        labelText: "${_t('principal_amount')} *",
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                        filled: true,
+                        fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       validator: (val) {
                         final n = double.tryParse(val ?? '');
-                        return (n == null || n <= 0) ? "Enter valid amount" : null;
+                        return (n == null || n <= 0) ? "Enter amount" : null;
                       },
                     ),
                   ),
@@ -248,9 +347,12 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                     child: TextFormField(
                       controller: _interestCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: "Annual Rate (%) *",
-                        prefixIcon: Icon(Icons.percent),
+                      decoration: InputDecoration(
+                        labelText: "${_t('interest_rate')} *",
+                        prefixIcon: const Icon(Icons.percent),
+                        filled: true,
+                        fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       validator: (val) {
                         final n = double.tryParse(val ?? '');
@@ -261,50 +363,127 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                 ],
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-              // Tenure & Interest Model
+              // Tenure
+              TextFormField(
+                controller: _tenureCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "${_t('tenure_months')} *",
+                  prefixIcon: const Icon(Icons.calendar_today_outlined),
+                  filled: true,
+                  fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                validator: (val) {
+                  final n = int.tryParse(val ?? '');
+                  return (n == null || n <= 0) ? "Enter months" : null;
+                },
+              ),
+
+              const SizedBox(height: 18),
+
+              // Premium Loan Model Selection Chips
+              Text(
+                _t('loan_type').toUpperCase(),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _tenureCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Tenure (Months) *",
-                        prefixIcon: Icon(Icons.calendar_today),
-                      ),
-                      validator: (val) {
-                        final n = int.tryParse(val ?? '');
-                        return (n == null || n <= 0) ? "Enter months" : null;
-                      },
+                    child: _buildModelOption(
+                      id: 'emi',
+                      title: _t('reducing_emi'),
+                      subtitle: 'Bank Standard reducing balance',
+                      icon: Icons.trending_down,
+                      isDark: isDark,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _model,
-                      decoration: const InputDecoration(
-                        labelText: "Calculation Model",
-                        prefixIcon: Icon(Icons.calculate),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'emi', child: Text("Reducing EMI")),
-                        DropdownMenuItem(value: 'simple', child: Text("Flat Simple")),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _model = val);
-                      },
+                    child: _buildModelOption(
+                      id: 'simple',
+                      title: _t('flat_simple'),
+                      subtitle: 'Fixed flat interest per month',
+                      icon: Icons.horizontal_rule,
+                      isDark: isDark,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
 
-              // Start Date Picker
+              // Document Proof Attachments Card (Single, Multiple, or None)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? FinTheme.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.folder_shared_outlined, size: 20, color: FinTheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              _t('proof_docs'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed: _pickDocuments,
+                          icon: const Icon(Icons.add, size: 16),
+                          label: Text(_t('add_proof'), style: const TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_documentProofs.isEmpty)
+                      Text(
+                        _t('no_docs'),
+                        style: TextStyle(fontSize: 12, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _documentProofs.map((doc) {
+                          return Chip(
+                            avatar: const Icon(Icons.attach_file, size: 14, color: FinTheme.primary),
+                            label: Text(
+                              doc,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            deleteIcon: const Icon(Icons.close, size: 14),
+                            onDeleted: () {
+                              setState(() => _documentProofs.remove(doc));
+                            },
+                            backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          );
+                        }).toList(),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Start Date Picker Card
               InkWell(
-                borderRadius: BorderRadius.circular(FinTheme.radiusSmall),
+                borderRadius: BorderRadius.circular(14),
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
@@ -317,34 +496,42 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1A2332) : const Color(0xFFF0F2F6),
-                    borderRadius: BorderRadius.circular(FinTheme.radiusSmall),
+                    color: isDark ? FinTheme.cardDark : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.event, size: 20, color: FinTheme.primary),
+                          const Icon(Icons.event_outlined, size: 20, color: FinTheme.primary),
                           const SizedBox(width: 12),
-                          Text("Disbursement Date: ${DateFormat('dd MMM yyyy').format(_startDate)}"),
+                          Text(
+                            "${_t('start_date')}: ${DateFormat('dd MMM yyyy').format(_startDate)}",
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
                         ],
                       ),
-                      const Icon(Icons.arrow_drop_down),
+                      const Icon(Icons.arrow_drop_down, color: Colors.grey),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               // Notes
               TextFormField(
                 controller: _notesCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: "Notes / Collateral / Purpose",
-                  prefixIcon: Icon(Icons.note),
+                decoration: InputDecoration(
+                  labelText: _t('notes_collateral'),
+                  hintText: "Property pledge, gold weight, vehicle number, guarantor...",
+                  prefixIcon: const Icon(Icons.note_alt_outlined),
+                  filled: true,
+                  fillColor: isDark ? FinTheme.cardDark : Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
 
@@ -357,16 +544,73 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                   onPressed: _saveLoan,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: FinTheme.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 2,
                   ),
                   child: Text(
-                    widget.loanToEdit != null ? "Update Loan" : "Create Loan Ledger",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    widget.loanToEdit != null ? _t('update_loan') : _t('save_loan'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModelOption({
+    required String id,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    final isSelected = _model == id;
+    return GestureDetector(
+      onTap: () => setState(() => _model = id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? FinTheme.primary.withOpacity(0.12)
+              : (isDark ? FinTheme.cardDark : Colors.white),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? FinTheme.primary : (isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0)),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: isSelected ? FinTheme.primary : Colors.grey),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected ? FinTheme.primary : (isDark ? Colors.white : Colors.black87),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 10, color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary),
+            ),
+          ],
         ),
       ),
     );

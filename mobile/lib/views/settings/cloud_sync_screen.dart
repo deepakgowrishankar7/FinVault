@@ -36,12 +36,12 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
     setState(() => _isSyncing = true);
     final connected = await SupabaseService.init();
     if (connected) {
-      final remoteLoans = await SupabaseService.pullLoans();
+      final remoteLoans = await SupabaseService.pullLoans(widget.settings.vaultId);
       setState(() {
         _isHealthy = true;
         _isSyncing = false;
         _cloudCount = remoteLoans?.length ?? 0;
-        _statusMessage = "Connected & Active • Supabase project 'cpfpmnyipiqdtcnobwoq' is reachable and healthy.";
+        _statusMessage = "Connected & Active • Private partition (Vault: ${widget.settings.vaultId.isEmpty ? 'Offline' : widget.settings.vaultId})";
       });
     } else {
       setState(() {
@@ -75,8 +75,9 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
       return;
     }
 
+    final vaultId = widget.settings.vaultId;
     final localLoans = await StorageService.getLoans();
-    final remoteLoans = await SupabaseService.pullLoans();
+    final remoteLoans = await SupabaseService.pullLoans(vaultId);
 
     if (remoteLoans != null && remoteLoans.isNotEmpty) {
       final mergedMap = {for (var l in localLoans) l.id: l};
@@ -85,26 +86,26 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
       }
       final mergedList = mergedMap.values.toList();
       await StorageService.saveLoans(mergedList);
-      await SupabaseService.pushLoans(mergedList);
+      await SupabaseService.pushLoans(mergedList, vaultId);
       setState(() {
         _cloudCount = mergedList.length;
         _isHealthy = true;
         _isSyncing = false;
-        _statusMessage = "Synchronized ${_cloudCount} loans across Web & Mobile devices!";
+        _statusMessage = "Synchronized $_cloudCount loans for Vault: $vaultId";
       });
     } else if (localLoans.isNotEmpty) {
-      await SupabaseService.pushLoans(localLoans);
+      await SupabaseService.pushLoans(localLoans, vaultId);
       setState(() {
         _cloudCount = localLoans.length;
         _isHealthy = true;
         _isSyncing = false;
-        _statusMessage = "Pushed ${localLoans.length} loans to Central Cloud Database!";
+        _statusMessage = "Pushed ${localLoans.length} loans to your private cloud partition!";
       });
     } else {
       setState(() {
         _isHealthy = true;
         _isSyncing = false;
-        _statusMessage = "Central Cloud Database is connected and synchronized.";
+        _statusMessage = "Connected to private partition (Vault: $vaultId). 0 loans.";
       });
     }
 

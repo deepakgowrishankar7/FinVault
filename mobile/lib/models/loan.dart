@@ -24,11 +24,13 @@ class AmortizationRow {
 class Loan {
   final String id;
   final String borrower;
-  final String phone;
+  final String phone;           // Calling mobile number
+  final String whatsappPhone;   // WhatsApp number (optional, can match phone)
+  final List<String> documentProofs; // Document attachment paths/names
   final double principal;
-  final double interest; // annual rate %
-  final int tenure;     // months
-  final String model;   // 'emi' or 'simple'
+  final double interest;        // annual rate %
+  final int tenure;             // months
+  final String model;           // 'emi' or 'simple'
   final String startDate;
   final int created;
   final String? notes;
@@ -39,6 +41,8 @@ class Loan {
     required this.id,
     required this.borrower,
     required this.phone,
+    String? whatsappPhone,
+    List<String>? documentProofs,
     required this.principal,
     required this.interest,
     required this.tenure,
@@ -48,7 +52,11 @@ class Loan {
     this.notes,
     this.legacyPaid = 0.0,
     required this.payments,
-  });
+  })  : whatsappPhone = (whatsappPhone != null && whatsappPhone.isNotEmpty) ? whatsappPhone : phone,
+        documentProofs = documentProofs ?? const [];
+
+  // Effective WhatsApp target
+  String get effectiveWhatsApp => whatsappPhone.isNotEmpty ? whatsappPhone : phone;
 
   // Calculate Reducing EMI
   static double calcEmi(double p, double annualRate, int months) {
@@ -181,10 +189,18 @@ class Loan {
           .toList();
     }
 
+    var rawDocs = json['documentProofs'];
+    List<String> parsedDocs = [];
+    if (rawDocs is List) {
+      parsedDocs = rawDocs.map((d) => d.toString()).toList();
+    }
+
     return Loan(
       id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       borrower: json['borrower']?.toString() ?? 'Unnamed Borrower',
       phone: json['phone']?.toString() ?? '',
+      whatsappPhone: json['whatsappPhone']?.toString(),
+      documentProofs: parsedDocs,
       principal: (json['principal'] as num?)?.toDouble() ?? 0.0,
       interest: (json['interest'] as num?)?.toDouble() ?? 12.0,
       tenure: (json['tenure'] as num?)?.toInt() ?? 12,
@@ -202,6 +218,8 @@ class Loan {
       'id': id,
       'borrower': borrower,
       'phone': phone,
+      'whatsappPhone': whatsappPhone,
+      'documentProofs': documentProofs,
       'principal': principal,
       'interest': interest,
       'tenure': tenure,

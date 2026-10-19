@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/fin_theme.dart';
+import '../../theme/app_locale.dart';
 import 'team_management_screen.dart';
 import 'cloud_sync_screen.dart';
 import '../auth/passcode_screen.dart';
@@ -331,6 +332,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 18),
           ],
 
+          _buildSectionHeader("Language & Preferences"),
+          _buildTile(
+            icon: Icons.language,
+            title: "App Language (భాష / भाषा / மொழி)",
+            subtitle: AppLocale.languages.firstWhere((l) => l['code'] == _settings.language, orElse: () => {'name': 'English', 'native': 'English'})['native']!,
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text("Select Language", style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: AppLocale.languages.map((l) {
+                      final isSelected = _settings.language == l['code'];
+                      return ListTile(
+                        leading: isSelected
+                            ? const Icon(Icons.check_circle, color: FinTheme.primary)
+                            : const Icon(Icons.circle_outlined, color: Colors.grey),
+                        title: Text("${l['native']} (${l['name']})", style: const TextStyle(fontWeight: FontWeight.w600)),
+                        onTap: () async {
+                          final updated = _settings.copyWith(language: l['code']);
+                          await StorageService.saveSettings(updated);
+                          setState(() => _settings = updated);
+                          widget.onSettingsChanged(updated);
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+              );
+            },
+            isDark: isDark,
+          ),
+
+          const SizedBox(height: 18),
+
           _buildSectionHeader("Live Web Application"),
           _buildTile(
             icon: Icons.open_in_browser,
@@ -353,6 +392,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: "FinVault Native 2.0.0",
             isDark: isDark,
           ),
+          if (_settings.vaultId.isNotEmpty)
+            _buildTile(
+              icon: Icons.fingerprint,
+              title: "Vault Unique ID",
+              subtitle: _settings.vaultId,
+              isDark: isDark,
+            ),
 
           const SizedBox(height: 24),
 

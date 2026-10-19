@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/fin_theme.dart';
+import '../../theme/app_locale.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class SetupWizardScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   final _answerController = TextEditingController();
   final _upiController = TextEditingController(text: 'owner@okhdfcbank');
 
+  String _selectedLang = 'en';
   bool _obscurePin = true;
   bool _obscureConfirm = true;
   bool _isRestoring = false;
@@ -36,6 +39,16 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     _answerController.dispose();
     _upiController.dispose();
     super.dispose();
+  }
+
+  String _t(String key) => AppLocale.tr(key, _selectedLang);
+
+  String _generateUniqueVaultId() {
+    final rand = Random();
+    final chars = '0123456789ABCDEF';
+    String randomHex(int len) => List.generate(len, (_) => chars[rand.nextInt(chars.length)]).join();
+    final timeHex = DateTime.now().millisecondsSinceEpoch.toRadixString(16).toUpperCase();
+    return "FV-${randomHex(4)}-$timeHex-${randomHex(4)}";
   }
 
   Future<void> _submitSetup() async {
@@ -64,7 +77,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       return;
     }
 
+    final uniqueVaultId = _generateUniqueVaultId();
+
     final newSettings = SecuritySettings(
+      vaultId: uniqueVaultId,
       isRegistered: true,
       firmName: _firmNameController.text.trim().isEmpty ? 'FinVault' : _firmNameController.text.trim(),
       adminName: _adminNameController.text.trim().isEmpty ? 'Admin' : _adminNameController.text.trim(),
@@ -72,7 +88,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       securityQuestion: _questionController.text.trim().isEmpty ? 'City where business was started?' : _questionController.text.trim(),
       securityAnswer: _answerController.text.trim().toLowerCase(),
       ownerUpiId: _upiController.text.trim().isEmpty ? 'owner@okhdfcbank' : _upiController.text.trim(),
-      cloudSyncEnabled: true,
+      cloudSyncEnabled: false, // Default is 100% offline local storage
+      language: _selectedLang,
     );
 
     await StorageService.saveSettings(newSettings);
@@ -143,7 +160,40 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 12),
+              // Language Switcher Selector Bar
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? FinTheme.cardDark : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFE2E8F0)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedLang,
+                      icon: const Icon(Icons.language, size: 18, color: FinTheme.primary),
+                      isDense: true,
+                      items: AppLocale.languages.map((l) {
+                        return DropdownMenuItem<String>(
+                          value: l['code'],
+                          child: Text(
+                            "${l['native']} (${l['name']})",
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedLang = val);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
               // Logo
               Container(
                 width: 80,

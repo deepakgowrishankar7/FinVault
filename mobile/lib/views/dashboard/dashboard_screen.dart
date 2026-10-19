@@ -5,6 +5,7 @@ import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/fin_theme.dart';
+import '../../theme/app_locale.dart';
 import '../calculator/emi_calculator_screen.dart';
 import '../loans/loans_list_screen.dart';
 import '../loans/add_edit_loan_screen.dart';
@@ -34,14 +35,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Loan> _loans = [];
   bool _isLoading = true;
   bool _isSyncing = false;
+  late SecuritySettings _currentSettings;
   final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
   @override
   void initState() {
     super.initState();
+    _currentSettings = widget.settings;
     _loadLoans();
-    _autoInitCloudSync();
+    if (_currentSettings.cloudSyncEnabled) {
+      _triggerCloudSync();
+    }
   }
+
+  String get _currentLang => _currentSettings.language;
+  String _t(String key) => AppLocale.tr(key, _currentLang);
 
   Future<void> _loadLoans() async {
     setState(() => _isLoading = true);
@@ -52,20 +60,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _autoInitCloudSync() async {
-    // Automatically connect to central Supabase out-of-the-box
-    await SupabaseService.init();
-    _triggerCloudSync();
-  }
-
   Future<void> _triggerCloudSync() async {
+    final vaultId = _currentSettings.vaultId;
+    if (vaultId.isEmpty) return;
+
     if (!SupabaseService.isConfigured) {
       await SupabaseService.init();
     }
 
     setState(() => _isSyncing = true);
     try {
-      final remoteLoans = await SupabaseService.pullLoans();
+      final remoteLoans = await SupabaseService.pullLoans(vaultId);
       if (remoteLoans != null && remoteLoans.isNotEmpty) {
         final mergedMap = {for (var l in _loans) l.id: l};
         for (var r in remoteLoans) {
@@ -75,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         await StorageService.saveLoans(mergedList);
         setState(() => _loans = mergedList);
       } else if (_loans.isNotEmpty) {
-        await SupabaseService.pushLoans(_loans);
+        await SupabaseService.pushLoans(_loans, vaultId);
       }
     } catch (_) {}
     setState(() => _isSyncing = false);
@@ -90,15 +95,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       LoansListScreen(
         role: widget.role,
         agent: widget.agent,
-        settings: widget.settings,
+        settings: _currentSettings,
         onLoansChanged: _loadLoans,
       ),
       const EmiCalculatorScreen(),
       SettingsScreen(
         role: widget.role,
         agent: widget.agent,
-        settings: widget.settings,
-        onSettingsChanged: (updated) {},
+        settings: _currentSettings,
+        onSettingsChanged: (updated) {
+          setState(() => _currentSettings = updated);
+        },
       ),
     ];
 
@@ -124,26 +131,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: "Overview",
+              icon: const Icon(Icons.dashboard_outlined),
+              activeIcon: const Icon(Icons.dashboard),
+              label: _t('overview'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet),
-              label: "Loans",
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              activeIcon: const Icon(Icons.account_balance_wallet),
+              label: _t('loans'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.calculate_outlined),
-              activeIcon: Icon(Icons.calculate),
-              label: "Calculator",
+              icon: const Icon(Icons.calculate_outlined),
+              activeIcon: const Icon(Icons.calculate),
+              label: _t('calculator'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: "Settings",
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: _t('settings'),
             ),
           ],
         ),
@@ -290,24 +297,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 childAspectRatio: 1.45,
                 children: [
                   _buildKpiCard(
-                    title: "Total Collected",
+                    title: _t('total_collected'),
                     amount: _currency.format(totalCollected),
-                    subtitle: "${_loans.length} Total Loans",
+                    subtitle: "${_loans.length} ${_t('loans')}",
                     icon: Icons.payments,
                     color: FinTheme.success,
                     isDark: isDark,
                   ),
                   _buildKpiCard(
-                    title: "Outstanding",
+                    title: _t('pending_balance'),
                     amount: _currency.format(totalOutstanding),
-                    subtitle: "${activeLoans.length} Active Loans",
+                    subtitle: "${activeLoans.length} ${_t('filter_active')}",
                     icon: Icons.account_balance,
                     color: FinTheme.warning,
                     isDark: isDark,
                   ),
                   if (widget.role == UserRole.admin) ...[
                     _buildKpiCard(
-                      title: "Total Disbursed",
+                      title: _t('total_principal'),
                       amount: _currency.format(totalPrincipal),
                       subtitle: "Initial Principal",
                       icon: Icons.outbox,
@@ -404,13 +411,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           final created = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AddEditLoanScreen(),
+                              builder: (context) => AddEditLoanScreen(settings: _currentSettings),
                             ),
                           );
                           if (created == true) _loadLoans();
                         },
                         icon: const Icon(Icons.add_circle_outline, size: 18),
-                        label: const Text("New Loan"),
+                        label: Text(_t('add_new_loan')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FinTheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 13),

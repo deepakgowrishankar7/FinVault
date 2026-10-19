@@ -30,15 +30,13 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_loansKey);
     if (raw == null || raw.isEmpty) {
-      final sample = _getSampleLoans();
-      await saveLoans(sample);
-      return sample;
+      return [];
     }
     try {
       final list = jsonDecode(raw) as List;
       return list.map((item) => Loan.fromJson(Map<String, dynamic>.from(item))).toList();
     } catch (_) {
-      return _getSampleLoans();
+      return [];
     }
   }
 
@@ -84,12 +82,14 @@ class StorageService {
       'loansCount': loans.length,
       'loans': loans.map((l) => l.toJson()).toList(),
       'settings': {
+        'vaultId': settings.vaultId,
         'firmName': settings.firmName,
         'adminName': settings.adminName,
         'adminPin': settings.adminPin,
         'securityQuestion': settings.securityQuestion,
         'securityAnswer': settings.securityAnswer,
         'ownerUpiId': settings.ownerUpiId,
+        'language': settings.language,
         'agents': settings.agents.map((a) => a.toJson()).toList(),
       }
     };
@@ -247,6 +247,7 @@ class StorageService {
           final current = await getSettings();
           final rawSet = Map<String, dynamic>.from(parsed['settings']);
           final updated = current.copyWith(
+            vaultId: rawSet['vaultId']?.toString() ?? current.vaultId,
             isRegistered: true,
             firmName: rawSet['firmName']?.toString() ?? current.firmName,
             adminName: rawSet['adminName']?.toString() ?? current.adminName,
@@ -254,6 +255,7 @@ class StorageService {
             securityQuestion: rawSet['securityQuestion']?.toString() ?? current.securityQuestion,
             securityAnswer: rawSet['securityAnswer']?.toString() ?? current.securityAnswer,
             ownerUpiId: rawSet['ownerUpiId']?.toString() ?? current.ownerUpiId,
+            language: rawSet['language']?.toString() ?? current.language,
           );
           await saveSettings(updated);
           credsRestored = true;

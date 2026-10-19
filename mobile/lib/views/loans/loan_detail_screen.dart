@@ -146,12 +146,27 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    loan.phone,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone_outlined, size: 14, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        loan.phone,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+                                        ),
+                                      ),
+                                      if (loan.whatsappPhone.isNotEmpty && loan.whatsappPhone != loan.phone) ...[
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.chat_bubble_outline, size: 13, color: FinTheme.success),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          loan.whatsappPhone,
+                                          style: const TextStyle(fontSize: 12, color: FinTheme.success, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
                               ),
@@ -160,11 +175,13 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                                   if (loan.phone.isNotEmpty)
                                     IconButton(
                                       icon: const Icon(Icons.phone, color: FinTheme.primary),
+                                      tooltip: "Call Borrower",
                                       onPressed: () => launchUrl(Uri.parse("tel:${loan.phone}")),
                                     ),
-                                  if (loan.phone.isNotEmpty)
+                                  if (loan.effectiveWhatsApp.isNotEmpty)
                                     IconButton(
                                       icon: const Icon(Icons.chat, color: FinTheme.success),
+                                      tooltip: "WhatsApp Reminder",
                                       onPressed: () => WhatsAppService.sendEmiReminder(
                                         loan: loan,
                                         firmName: widget.settings.firmName,
@@ -210,6 +227,43 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                         ],
                       ),
                     ),
+
+                    if (loan.documentProofs.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? FinTheme.cardDark : Colors.white,
+                          borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
+                          border: Border.all(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.attach_file, size: 16, color: FinTheme.primary),
+                                SizedBox(width: 6),
+                                Text("Attached Proof Documents", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: loan.documentProofs.map((doc) {
+                                return Chip(
+                                  avatar: const Icon(Icons.description_outlined, size: 14, color: FinTheme.primary),
+                                  label: Text(doc, style: const TextStyle(fontSize: 11)),
+                                  backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 14),
 

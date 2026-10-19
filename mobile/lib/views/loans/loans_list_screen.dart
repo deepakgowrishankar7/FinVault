@@ -10,6 +10,8 @@ import 'add_edit_loan_screen.dart';
 import 'loan_detail_screen.dart';
 import '../payments/record_payment_screen.dart';
 
+import '../../theme/app_locale.dart';
+
 class LoansListScreen extends StatefulWidget {
   final UserRole role;
   final StaffAgent? agent;
@@ -41,6 +43,9 @@ class _LoansListScreenState extends State<LoansListScreen> {
     _loadLoans();
   }
 
+  String get _currentLang => widget.settings.language;
+  String _t(String key) => AppLocale.tr(key, _currentLang);
+
   Future<void> _loadLoans() async {
     setState(() => _isLoading = true);
     final loans = await StorageService.getLoans();
@@ -54,7 +59,8 @@ class _LoansListScreenState extends State<LoansListScreen> {
   List<Loan> get _filteredLoans {
     return _allLoans.where((loan) {
       final matchesSearch = loan.borrower.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          loan.phone.contains(_searchQuery);
+          loan.phone.contains(_searchQuery) ||
+          loan.whatsappPhone.contains(_searchQuery);
       if (!matchesSearch) return false;
 
       if (_filter == 'active') return !loan.isCompleted;
@@ -69,7 +75,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Borrower Ledgers"),
+        title: Text(_t('loans')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -86,7 +92,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: InputDecoration(
-                hintText: "Search by borrower name or phone...",
+                hintText: _t('search_borrowers'),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -103,11 +109,11 @@ class _LoansListScreenState extends State<LoansListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                _buildFilterChip("Active (${_allLoans.where((l) => !l.isCompleted).length})", 'active'),
+                _buildFilterChip("${_t('filter_active')} (${_allLoans.where((l) => !l.isCompleted).length})", 'active'),
                 const SizedBox(width: 8),
-                _buildFilterChip("All (${_allLoans.length})", 'all'),
+                _buildFilterChip("${_t('filter_all')} (${_allLoans.length})", 'all'),
                 const SizedBox(width: 8),
-                _buildFilterChip("Completed (${_allLoans.where((l) => l.isCompleted).length})", 'completed'),
+                _buildFilterChip("${_t('filter_completed')} (${_allLoans.where((l) => l.isCompleted).length})", 'completed'),
               ],
             ),
           ),
@@ -125,11 +131,16 @@ class _LoansListScreenState extends State<LoansListScreen> {
                             Icon(Icons.search_off, size: 48, color: Colors.grey.withOpacity(0.5)),
                             const SizedBox(height: 12),
                             Text(
-                              "No matching loans found",
+                              _t('no_loans_yet'),
                               style: TextStyle(
                                 color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _t('tap_add_to_start'),
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
                             ),
                           ],
                         ),
@@ -150,13 +161,13 @@ class _LoansListScreenState extends State<LoansListScreen> {
               onPressed: () async {
                 final created = await Navigator.push<bool>(
                   context,
-                  MaterialPageRoute(builder: (context) => const AddEditLoanScreen()),
+                  MaterialPageRoute(builder: (context) => AddEditLoanScreen(settings: widget.settings)),
                 );
                 if (created == true) _loadLoans();
               },
               backgroundColor: FinTheme.primary,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("New Loan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: Text(_t('add_new_loan'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             )
           : null,
     );
@@ -320,7 +331,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                           visualDensity: VisualDensity.compact,
                         ),
                       // WhatsApp Reminder
-                      if (loan.phone.isNotEmpty && !loan.isCompleted)
+                      if (loan.effectiveWhatsApp.isNotEmpty && !loan.isCompleted)
                         IconButton(
                           icon: const Icon(Icons.chat, size: 18, color: FinTheme.success),
                           onPressed: () => WhatsAppService.sendEmiReminder(
