@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 class FinTheme {
+  // App Version Info
+  static const String appVersion = "v2.1.1";
+  static const String appVersionName = "FinVault Native 2.1.1 (Stable)";
+
   // Brand Colors (Apple & FinVault Palette)
   static const Color primary = Color(0xFF0071E3);       // Apple Electric Blue
   static const Color primaryDark = Color(0xFF0056B3);

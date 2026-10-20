@@ -573,7 +573,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildTile(
             icon: Icons.info_outline,
             title: _t('version'),
-            subtitle: "FinVault Native 2.0.0",
+            subtitle: FinTheme.appVersionName,
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: FinTheme.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                FinTheme.appVersion,
+                style: TextStyle(
+                  color: FinTheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
             isDark: isDark,
           ),
           if (_settings.vaultId.isNotEmpty)
@@ -584,26 +599,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               isDark: isDark,
             ),
 
-          const SizedBox(height: 24),
-
-          // Lock Vault Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PasscodeScreen()),
-                );
-              },
-              icon: const Icon(Icons.lock, color: FinTheme.danger),
-              label: Text(_t('lock_vault_logout'), style: TextStyle(color: FinTheme.danger, fontWeight: FontWeight.bold)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: FinTheme.danger),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
           const SizedBox(height: 24),
         ],
       ),
