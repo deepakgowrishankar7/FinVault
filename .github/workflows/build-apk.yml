@@ -36,6 +36,36 @@ jobs:
         run: |
           flutter create . --org com.finvault --project-name finvault --platforms android
 
+          # Ensure AndroidX and Jetifier are enabled in gradle.properties
+          cat << 'EOF' > android/gradle.properties
+          org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=1G
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
+          # Ensure FlutterFragmentActivity for biometric authentication
+          mkdir -p android/app/src/main/kotlin/com/finvault/dgsfinance
+          mkdir -p android/app/src/main/kotlin/com/finvault/finvault
+          cat << 'EOF' > android/app/src/main/kotlin/com/finvault/dgsfinance/MainActivity.kt
+          package com.finvault.dgsfinance
+
+          import io.flutter.embedding.android.FlutterFragmentActivity
+
+          class MainActivity: FlutterFragmentActivity() {
+          }
+          EOF
+          cat << 'EOF' > android/app/src/main/kotlin/com/finvault/finvault/MainActivity.kt
+          package com.finvault.finvault
+
+          import io.flutter.embedding.android.FlutterFragmentActivity
+
+          class MainActivity: FlutterFragmentActivity() {
+          }
+          EOF
+
+          # Ensure minSdkVersion 24 in build.gradle
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' android/app/build.gradle* || true
+
           if [ -f "android/app/build.gradle.kts" ]; then
             sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig = signingConfigs.getByName("debug")\n        }/' android/app/build.gradle.kts || true
           elif [ -f "android/app/build.gradle" ]; then
@@ -62,6 +92,13 @@ jobs:
             cat build.log
             exit 1
           fi
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-log
+          path: mobile/build.log
 
       - name: Prepare Android Output
         run: |
