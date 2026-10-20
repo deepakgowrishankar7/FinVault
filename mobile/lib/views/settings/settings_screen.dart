@@ -5,6 +5,7 @@ import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/fin_theme.dart';
 import '../../theme/app_locale.dart';
+import 'package:local_auth/local_auth.dart';
 import 'team_management_screen.dart';
 import 'cloud_sync_screen.dart';
 import '../auth/passcode_screen.dart';
@@ -188,6 +189,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: _t('change_pin_desc'),
               onTap: _changeAdminPin,
               isDark: isDark,
+            ),
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              color: isDark ? FinTheme.cardDark : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(FinTheme.radiusSmall),
+                side: BorderSide(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
+              ),
+              child: SwitchListTile(
+                secondary: const Icon(Icons.fingerprint, color: FinTheme.primary),
+                title: const Text("Fingerprint / Face Unlock", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: const Text("Unlock FinVault instantly without retyping PIN", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                value: _settings.biometricEnabled,
+                onChanged: (val) async {
+                  if (val) {
+                    try {
+                      final auth = LocalAuthentication();
+                      final canCheck = await auth.canCheckBiometrics || await auth.isDeviceSupported();
+                      if (!canCheck && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Biometrics not available on this device")),
+                        );
+                        return;
+                      }
+                      final didAuth = await auth.authenticate(
+                        localizedReason: 'Verify biometric identity to enable quick unlock',
+                        options: const AuthenticationOptions(stickyAuth: true),
+                      );
+                      if (!didAuth) return;
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Biometric verification error: $e")),
+                        );
+                      }
+                      return;
+                    }
+                  }
+                  final updated = _settings.copyWith(biometricEnabled: val);
+                  await StorageService.saveSettings(updated);
+                  setState(() => _settings = updated);
+                  widget.onSettingsChanged(updated);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(val ? "✨ Biometric Unlock Enabled!" : "Biometric Unlock Disabled"),
+                        backgroundColor: val ? FinTheme.success : Colors.grey,
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
             _buildTile(
               icon: Icons.group,

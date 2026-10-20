@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/user_role.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../services/storage_service.dart';
 import '../../theme/app_locale.dart';
 import '../../theme/fin_theme.dart';
@@ -45,6 +46,41 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
         _selectedAgent = s.agents.first;
       }
     });
+
+    if (s.biometricEnabled) {
+      _triggerBiometrics();
+    }
+  }
+
+  Future<void> _triggerBiometrics() async {
+    try {
+      final auth = LocalAuthentication();
+      final canCheck = await auth.canCheckBiometrics || await auth.isDeviceSupported();
+      if (!canCheck) return;
+
+      final didAuth = await auth.authenticate(
+        localizedReason: 'Touch sensor or glance to unlock FinVault',
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+        ),
+      );
+
+      if (didAuth && mounted && _settings != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardScreen(
+              role: _selectedRole,
+              agent: _selectedAgent,
+              settings: _settings!,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Biometric exception: $e");
+    }
   }
 
   void _onKeyPress(String key) {
@@ -713,7 +749,9 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildActionKey('C', _onClear, icon: Icons.clear),
+        _settings?.biometricEnabled == true
+            ? _buildActionKey('bio', _triggerBiometrics, icon: Icons.fingerprint)
+            : _buildActionKey('C', _onClear, icon: Icons.clear),
         _buildKey('0'),
         _buildActionKey('backspace', _onBackspace, icon: Icons.backspace_outlined),
       ],

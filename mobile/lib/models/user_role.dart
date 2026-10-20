@@ -54,6 +54,7 @@ class SecuritySettings {
   final String customSupabaseUrl;
   final String customSupabaseKey;
   final String language; // 'en', 'te', 'hi', 'ta', 'kn'
+  final bool biometricEnabled;
 
   SecuritySettings({
     this.vaultId = '',
@@ -73,6 +74,7 @@ class SecuritySettings {
     this.customSupabaseUrl = '',
     this.customSupabaseKey = '',
     this.language = 'en',
+    this.biometricEnabled = false,
   });
 
   factory SecuritySettings.fromJson(Map<String, dynamic> json) {
@@ -102,6 +104,7 @@ class SecuritySettings {
       customSupabaseUrl: json['customSupabaseUrl']?.toString() ?? '',
       customSupabaseKey: json['customSupabaseKey']?.toString() ?? '',
       language: json['language']?.toString() ?? 'en',
+      biometricEnabled: json['biometricEnabled'] ?? false,
     );
   }
 
@@ -124,6 +127,7 @@ class SecuritySettings {
       'customSupabaseUrl': customSupabaseUrl,
       'customSupabaseKey': customSupabaseKey,
       'language': language,
+      'biometricEnabled': biometricEnabled,
     };
   }
 
@@ -145,6 +149,7 @@ class SecuritySettings {
     String? customSupabaseUrl,
     String? customSupabaseKey,
     String? language,
+    bool? biometricEnabled,
   }) {
     return SecuritySettings(
       vaultId: vaultId ?? this.vaultId,
@@ -164,6 +169,7 @@ class SecuritySettings {
       customSupabaseUrl: customSupabaseUrl ?? this.customSupabaseUrl,
       customSupabaseKey: customSupabaseKey ?? this.customSupabaseKey,
       language: language ?? this.language,
+      biometricEnabled: biometricEnabled ?? this.biometricEnabled,
     );
   }
 }

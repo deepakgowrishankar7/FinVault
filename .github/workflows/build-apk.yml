@@ -159,12 +159,12 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.0
-          name: "FinVault v2.0.0 (Mobile APK & Laptop Windows App)"
+          tag_name: v2.1.0
+          name: "FinVault v2.1.0 (Mobile APK & Laptop Windows App)"
           body: |
-            ### 🚀 FinVault Multi-Platform Release (v2.0.0)
+            ### 🚀 FinVault Major Release (v2.1.0)
 
-            FinVault is a high-performance loan and repayment ledger for private financiers, firms, and field recovery teams.
+            FinVault is an ultra-fast, professional loan and collection ledger designed for Indian private financiers, lending firms, and field recovery agents.
 
             ---
 
@@ -172,19 +172,20 @@ jobs:
 
             | Platform | File | Description |
             | :--- | :--- | :--- |
-            | 📱 **Android Mobile** | [**`FinVault.apk`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault.apk) | Direct APK for Android phones & tablets |
-            | 💻 **Windows Laptop / PC** | [**`FinVault-Windows.zip`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.0.0/FinVault-Windows.zip) | Portable Windows desktop app (extract & run `finvault.exe`) |
+            | 📱 **Android Mobile** | [**`FinVault.apk`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.0/FinVault.apk) | Direct APK for Android phones & tablets |
+            | 💻 **Windows Laptop / PC** | [**`FinVault-Windows.zip`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.0/FinVault-Windows.zip) | Portable Windows desktop app (extract & run `finvault.exe`) |
 
             ---
 
-            ### 🌟 Key Capabilities:
-            1. 🪙 **Indian Village Rupee Vaddi (రూపాయి వడ్డీ)**: Pure ₹1/₹2/₹3 monthly interest calculation per ₹100 without dividing principal into EMI.
-            2. 📉 **Bank Reducing EMI & Flat Simple**: With interactive sliders and complete amortization schedules.
-            3. 🛡️ **100% Offline Local Storage**: All borrower records stored securely on your device.
-            4. ☁️ **Dual Cloud Sync**: Central FinVault Cloud (isolated by 6-digit Firm Code `FV-XXXXXX`) or your own Supabase database.
-            5. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full balance clearance.
-            6. 👥 **Master Admin & Field Agent Roles**: Seamless role toggle on both Mobile and Laptop.
-            7. 🌐 **5 Indian Languages**: English, Telugu (తెలుగు), Hindi (हिंदी), Tamil (தமிழ்), and Kannada (ಕನ್ನಡ).
+            ### 🌟 What's New in v2.1.0:
+            1. 📖 **Daily Cash Daybook (నిత్య క్యాష్ బుక్ / Daily Tally)**: Dedicated evening cash drawer balance tracker answering today's disbursements, cash collections, UPI/Bank totals, and physical cash box drawer reconciliation with agent-wise breakdown and Daybook PDF export.
+            2. 📑 **Borrower Digital Passbook (WhatsApp Mini-Statement / పాస్‌బుక్)**: 1-tap bank-style bilingual mini-statement PDF showing all installment dates, receipts, principal/interest breakdown, and remaining balance ready to send directly on WhatsApp.
+            3. 🔒 **Biometric Fingerprint & Face Unlock (బయోమెట్రిక్)**: Instant 1-second biometric unlock via hardware sensor with 4-digit Master PIN fallback.
+            4. 📜 **Auto Promissory Note (బాండ్ పేపర్ నోటు / Demand Promissory Note)**: One-tap bilingual promissory note generator formatted with Indian Rupee numbering in words, ₹1 revenue stamp box, and witnesses ready to print on ₹100 stamp paper or plain A4.
+            5. 🔑 **Existing Vault ID Login**: Easy login option for Admins who already have a registered Vault ID (`FV-XXXXXX`) to instantly restore data from the cloud onto new phones or laptops.
+            6. 🪙 **Village Rupee Vaddi (రూపాయి వడ్డీ)**: Monthly interest per ₹100 calculation with dual interest and principal repayment tracking.
+            7. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full loan payoff.
+            8. 👥 **Multi-Device Cloud Sync & Field Agents**: Automatic sync across field agents and laptops using isolated 6-digit Vault Codes or Supabase.
           files: |
             release-files/FinVault.apk
             release-files/FinVault-Windows.zip

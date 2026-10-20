@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/loan.dart';
@@ -107,6 +108,282 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
 
   void _openDocument(BuildContext context, String docPath, String displayName) {
     FinDocumentHelper.openDocumentWithOptions(context, docPath: docPath, displayName: displayName);
+  }
+
+  Future<void> _openDigitalPassbook(BuildContext context) async {
+    final loan = _currentLoan;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E2638) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.indigoAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.menu_book_rounded, color: Colors.indigoAccent, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Borrower Digital Passbook (రుణ పాస్‌బుక్)",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "${loan.borrower} • Balance: ${_currency.format(loan.remaining)}",
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: FinTheme.primary.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.visibility_outlined, color: FinTheme.primary),
+                  ),
+                  title: const Text("View & Print Passbook PDF", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text("Bank-style mini-statement with full repayment history", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final bytes = await PdfService.generateDigitalPassbookPdf(
+                        loan: loan,
+                        firmName: widget.settings.firmName,
+                      );
+                      final tempDir = await getTemporaryDirectory();
+                      final filePath = '${tempDir.path}/Passbook_${loan.borrower}_${loan.id}.pdf';
+                      await File(filePath).writeAsBytes(bytes);
+                      if (mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FinPdfViewerScreen(
+                              filePath: filePath,
+                              title: "Passbook - ${loan.borrower}",
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                      }
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.share, color: Colors.green),
+                  ),
+                  title: const Text("Send on WhatsApp (Mini-Statement)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text("Share statement PDF with breakdown directly to borrower", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final bytes = await PdfService.generateDigitalPassbookPdf(
+                        loan: loan,
+                        firmName: widget.settings.firmName,
+                      );
+                      final tempDir = await getTemporaryDirectory();
+                      final filePath = '${tempDir.path}/Passbook_${loan.borrower}_${loan.id}.pdf';
+                      await File(filePath).writeAsBytes(bytes);
+
+                      final msg = """
+*LOAN PASSBOOK STATEMENT — ${widget.settings.firmName}*
+━━━━━━━━━━━━━━━━━━━━
+Dear *${loan.borrower}*,
+Here is your official digital passbook statement:
+
+📌 *Loan ID:* #${loan.id}
+💰 *Principal Amount:* ${_currency.format(loan.principal)}
+💸 *Total Repaid:* ${_currency.format(loan.totalPaid)} (${loan.payments.length} installments)
+⚠️ *Remaining Balance:* ${_currency.format(loan.remaining)}
+
+Please find your official passbook PDF statement attached.
+━━━━━━━━━━━━━━━━━━━━
+""";
+                      await Share.shareXFiles([XFile(filePath)], text: msg);
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openPromissoryNoteOptions(BuildContext context) async {
+    final loan = _currentLoan;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E2638) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.description_outlined, color: Colors.deepOrange, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Auto Promissory Note (డిమాండ్ ప్రామిసరీ నోటు)",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "Amount: ${_currency.format(loan.principal)} • ${loan.borrower}",
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: FinTheme.primary.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.print_outlined, color: FinTheme.primary),
+                  ),
+                  title: const Text("Standard A4 Plain Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text("Print on plain A4 paper with legal revenue stamp box", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => _generateAndShowBond(false),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.deepOrange.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.gavel_outlined, color: Colors.deepOrange),
+                  ),
+                  title: const Text("₹100 Stamp Paper Margin (బాండ్ పేపర్)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: const Text("Leaves top 3.3 inches for government stamp paper emblem", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => _generateAndShowBond(true),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _generateAndShowBond(bool stampPaperMargin) async {
+    Navigator.pop(context);
+    try {
+      final bytes = await PdfService.generatePromissoryNotePdf(
+        loan: _currentLoan,
+        firmName: widget.settings.firmName,
+        lenderName: widget.settings.adminName,
+        stampPaperMargin: stampPaperMargin,
+      );
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/PromissoryNote_${_currentLoan.borrower}_${_currentLoan.id}.pdf';
+      await File(filePath).writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FinPdfViewerScreen(
+              filePath: filePath,
+              title: "Promissory Note - ${_currentLoan.borrower}",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    }
   }
 
   @override
@@ -514,6 +791,36 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: FinTheme.primary),
                               padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openDigitalPassbook(context),
+                            icon: const Icon(Icons.menu_book_rounded, size: 17, color: Colors.indigoAccent),
+                            label: const Text("📑 Passbook", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.indigoAccent)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.indigoAccent),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openPromissoryNoteOptions(context),
+                            icon: const Icon(Icons.description_outlined, size: 17, color: Colors.deepOrange),
+                            label: const Text("📜 Bond Note", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.deepOrange)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.deepOrange),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
                         ),

@@ -7,6 +7,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/fin_theme.dart';
 import '../../theme/app_locale.dart';
 import '../calculator/emi_calculator_screen.dart';
+import '../daybook/daily_daybook_screen.dart';
 import '../loans/loans_list_screen.dart';
 import '../loans/add_edit_loan_screen.dart';
 import '../loans/loan_detail_screen.dart';
@@ -447,6 +448,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DailyDaybookScreen(
+                                settings: _currentSettings,
+                                role: widget.role,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.menu_book_rounded, color: Colors.amber),
+                        tooltip: "Daily Cash Daybook (నిత్య క్యాష్ బుక్)",
+                      ),
                       if (widget.settings.cloudSyncEnabled)
                         IconButton(
                           onPressed: _isSyncing ? null : _triggerCloudSync,
@@ -613,7 +629,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ),
-                  if (widget.role == UserRole.admin) const SizedBox(width: 10),
+                  if (widget.role == UserRole.admin) const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
@@ -631,6 +647,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       label: Text(_t('show_upi_qr'), style: const TextStyle(color: FinTheme.primary)),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: FinTheme.primary, width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(FinTheme.radiusSmall),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DailyDaybookScreen(
+                              settings: _currentSettings,
+                              role: widget.role,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.menu_book_rounded, size: 18, color: Colors.amber),
+                      label: const Text("Daybook", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.amber, width: 1.2),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(FinTheme.radiusSmall),
@@ -952,6 +993,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: const Icon(Icons.qr_code, size: 18),
                   label: const Text("Dynamic UPI QR", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DailyDaybookScreen(
+                          settings: _currentSettings,
+                          role: widget.role,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.menu_book_rounded, size: 18, color: Colors.amber),
+                  label: const Text("Daily Daybook (క్యాష్ బుక్)", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.amber)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.amber),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
