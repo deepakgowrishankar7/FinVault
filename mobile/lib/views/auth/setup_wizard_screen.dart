@@ -17,8 +17,10 @@ class SetupWizardScreen extends StatefulWidget {
 class _SetupWizardScreenState extends State<SetupWizardScreen> {
   // Mode: 0 for Admin Registration, 1 for Field Agent Join
   int _onboardingMode = 0;
+  int _adminSubMode = 0; // 0 for New Account, 1 for Already Registered (Past Vault ID)
 
   final _adminFormKey = GlobalKey<FormState>();
+  final _adminLoginFormKey = GlobalKey<FormState>();
   final _agentFormKey = GlobalKey<FormState>();
 
   // Admin Form Controllers
@@ -33,6 +35,12 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   // Agent Form Controllers
   final _agentVaultCodeCtrl = TextEditingController();
   final _agentPinCtrl = TextEditingController();
+
+  // Admin Login Controllers
+  final _adminLoginVaultCodeCtrl = TextEditingController();
+  final _adminLoginPinCtrl = TextEditingController();
+  bool _obscureAdminLoginPin = true;
+  bool _isConnectingAdmin = false;
 
   String _selectedLang = 'en';
   bool _obscurePin = true;
@@ -52,6 +60,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     _upiController.dispose();
     _agentVaultCodeCtrl.dispose();
     _agentPinCtrl.dispose();
+    _adminLoginVaultCodeCtrl.dispose();
+    _adminLoginPinCtrl.dispose();
     super.dispose();
   }
 
@@ -63,6 +73,85 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     final chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Exclude I, O to prevent confusion
     final code = List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
     return "FV-$code";
+  }
+
+  Future<void> _submitAdminLogin() async {
+    if (!_adminLoginFormKey.currentState!.validate()) return;
+
+    final rawCode = _adminLoginVaultCodeCtrl.text.trim().toUpperCase();
+    final vaultCode = rawCode.startsWith('FV-') ? rawCode : 'FV-$rawCode';
+    final adminPin = _adminLoginPinCtrl.text.trim();
+
+    if (adminPin.length != 4 || int.tryParse(adminPin) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("⚠️ Master Passcode must be exactly 4 digits"),
+          backgroundColor: FinTheme.danger,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isConnectingAdmin = true);
+
+    try {
+      await SupabaseService.init();
+
+      // Pull loans from Supabase cloud database
+      final remoteLoans = await SupabaseService.pullLoans(vaultCode);
+
+      if (remoteLoans.isNotEmpty) {
+        await StorageService.saveLoans(remoteLoans);
+      }
+
+      final newSettings = SecuritySettings(
+        vaultId: vaultCode,
+        isRegistered: true,
+        firmName: "Firm ($vaultCode)",
+        adminName: "Master Admin",
+        adminPin: adminPin,
+        securityQuestion: "City where business was started?",
+        securityAnswer: "admin",
+        ownerUpiId: "owner@okhdfcbank",
+        cloudSyncEnabled: true,
+        language: _selectedLang,
+      );
+
+      await StorageService.saveSettings(newSettings);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            remoteLoans.isNotEmpty
+                ? "✨ Connected! Restored ${remoteLoans.length} loans for $vaultCode"
+                : "✨ Connected to Vault $vaultCode! (Ledger is ready)",
+          ),
+          backgroundColor: FinTheme.success,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DashboardScreen(
+            role: UserRole.admin,
+            settings: newSettings,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Connection failed: $e"),
+            backgroundColor: FinTheme.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isConnectingAdmin = false);
+    }
   }
 
   Future<void> _submitAdminSetup() async {
@@ -425,53 +514,78 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
               // VIEW 1: ADMIN REGISTRATION & RESTORE
               if (_onboardingMode == 0) ...[
-                // Restore Existing Vault Card (Method A)
+                // Admin Sub-mode Switcher (New Account vs Already Registered)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isDark ? FinTheme.cardDark : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: FinTheme.primary.withOpacity(0.3),
-                      width: 1.5,
-                    ),
+                    color: isDark ? const Color(0xFF1E2638) : const Color(0xFFE2E8F0).withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      Text(
-                        _t('already_using_finvault'),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _t('transfer_vault_sub'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _isRestoring ? null : _handleRestore,
-                          icon: _isRestoring
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.file_download_outlined, color: FinTheme.primary, size: 18),
-                          label: Text(
-                            _isRestoring ? _t('restoring_vault') : _t('transfer_vault_btn'),
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _adminSubMode = 0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: _adminSubMode == 0 ? FinTheme.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: _adminSubMode == 0
+                                  ? [BoxShadow(color: FinTheme.primary.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 1))]
+                                  : [],
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_business_outlined, size: 15, color: _adminSubMode == 0 ? Colors.white : Colors.grey),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "New Account",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: _adminSubMode == 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: FinTheme.primary, width: 1.5),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _adminSubMode = 1),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: _adminSubMode == 1 ? FinTheme.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: _adminSubMode == 1
+                                  ? [BoxShadow(color: FinTheme.primary.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 1))]
+                                  : [],
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.cloud_download_outlined, size: 15, color: _adminSubMode == 1 ? Colors.white : Colors.grey),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Already Registered",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: _adminSubMode == 1 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -479,33 +593,141 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                if (_adminSubMode == 1) ...[
+                  // Already Registered: Login with Past Vault ID & PIN
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: isDark ? FinTheme.cardDark : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: FinTheme.primary.withOpacity(0.35), width: 1.5),
+                    ),
+                    child: Form(
+                      key: _adminLoginFormKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: FinTheme.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.vpn_key_rounded, color: FinTheme.primary, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Login with Existing Vault ID",
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    Text(
+                                      "Restore your past loans & ledger from the database",
+                                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(
-                        _t('or_register_new_firm'),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                        ),
+                          TextFormField(
+                            controller: _adminLoginVaultCodeCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: InputDecoration(
+                              labelText: "Firm Vault ID *",
+                              hintText: "e.g. FV-EX1819 or EX1819",
+                              prefixIcon: const Icon(Icons.badge_outlined),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? "Please enter your Vault ID" : null,
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _adminLoginPinCtrl,
+                            keyboardType: TextInputType.number,
+                            maxLength: 4,
+                            obscureText: _obscureAdminLoginPin,
+                            decoration: InputDecoration(
+                              labelText: "Master Admin Passcode *",
+                              hintText: "Enter your 4-digit PIN",
+                              counterText: "",
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscureAdminLoginPin ? Icons.visibility_off : Icons.visibility, size: 18),
+                                onPressed: () => setState(() => _obscureAdminLoginPin = !_obscureAdminLoginPin),
+                              ),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return "Please enter 4-digit PIN";
+                              if (v.trim().length != 4 || int.tryParse(v.trim()) == null) return "Must be exactly 4 digits";
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 18),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isConnectingAdmin ? null : _submitAdminLogin,
+                              icon: _isConnectingAdmin
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.cloud_download, color: Colors.white, size: 18),
+                              label: Text(
+                                _isConnectingAdmin ? "Connecting & Restoring..." : "Restore & Login as Admin",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: FinTheme.primary,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
+                  ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Form
-                Form(
-                  key: _adminFormKey,
+                  // Offline Backup File Option
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _isRestoring ? null : _handleRestore,
+                      icon: _isRestoring
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.file_open_outlined, size: 16, color: FinTheme.primary),
+                      label: Text(
+                        _isRestoring ? "Restoring backup file..." : "Or restore from offline .finvault backup file",
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: FinTheme.primary),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // New Account: Register New Firm Form
+                  Form(
+                    key: _adminFormKey,
                   child: Column(
                     children: [
                       TextFormField(
@@ -660,6 +882,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                     ],
                   ),
                 ),
+                ],
               ] else ...[
                 // VIEW 2: FIELD AGENT JOIN FLOW
                 Container(
