@@ -213,7 +213,10 @@ class _LoansListScreenState extends State<LoansListScreen> {
               ),
             ),
           );
-          if (changed == true) _loadLoans();
+          if (changed == true) {
+            _loadLoans();
+            widget.onLoansChanged?.call();
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -357,7 +360,10 @@ class _LoansListScreenState extends State<LoansListScreen> {
                             ),
                           ),
                         );
-                        if (paid == true) _loadLoans();
+                        if (paid == true) {
+                          _loadLoans();
+                          widget.onLoansChanged?.call();
+                        }
                       },
                       icon: const Icon(Icons.add, size: 16),
                       label: const Text("Collect"),

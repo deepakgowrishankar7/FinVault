@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/fin_theme.dart';
 import '../../theme/app_locale.dart';
 import 'package:local_auth/local_auth.dart';
@@ -69,6 +70,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ownerUpiId: upiCtrl.text.trim().isNotEmpty ? upiCtrl.text.trim() : 'owner@okhdfcbank',
               );
               await StorageService.saveSettings(updated);
+              if (updated.vaultId.isNotEmpty) {
+                SupabaseService.pushVaultProfile(updated);
+              }
               setState(() => _settings = updated);
               widget.onSettingsChanged(updated);
               if (mounted) Navigator.pop(ctx);
@@ -379,6 +383,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       content: Text("⚠️ ${result.message}"),
                       backgroundColor: FinTheme.danger,
                     ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.lock_outline,
+              title: "Lock Vault Screen (లాక్ చేయండి)",
+              subtitle: "Instantly lock app and require 4-digit PIN / fingerprint to unlock",
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PasscodeScreen()),
+                );
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.logout_rounded,
+              title: "Logout from Device (లాగౌట్)",
+              subtitle: "Sign out of Vault ID ${_settings.vaultId} safely and return to Welcome screen",
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: FinTheme.danger),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: FinTheme.danger.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.logout_rounded, color: FinTheme.danger, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text("Logout of Vault?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Are you sure you want to log out of Vault ${_settings.vaultId} on this device?",
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "✓ Your loans, borrower ledgers, and collection history remain safely stored in the cloud under your Vault ID.\n\n✓ You will be returned to the Welcome setup screen where you can sign back in anytime or connect a different firm.",
+                          style: TextStyle(fontSize: 12, height: 1.5, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FinTheme.danger,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text("Yes, Logout", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && mounted) {
+                  final def = SecuritySettings(isRegistered: false);
+                  await StorageService.saveSettings(def);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SetupWizardScreen()),
+                    (route) => false,
                   );
                 }
               },

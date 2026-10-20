@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/loan.dart';
 import '../models/user_role.dart';
@@ -52,7 +53,7 @@ class SupabaseService {
 
   static bool get isConfigured => _client != null;
 
-  /// Pull ONLY loans belonging to this specific vault ID
+  /// Pull ONLY loans belonging to this specific vault ID (excluding vault metadata records)
   static Future<List<Loan>?> pullLoans(String vaultId) async {
     if (vaultId.isEmpty) return null;
     if (!isConfigured) await init();
@@ -60,7 +61,9 @@ class SupabaseService {
 
     try {
       final res = await _client!.from('loans').select().filter('notes', 'ilike', '%[vault:$vaultId]%');
-      final list = (res as List).map((row) {
+      final list = (res as List)
+          .where((row) => (row['borrower']?.toString() ?? '') != '__VAULT_PROFILE__')
+          .map((row) {
         final map = Map<String, dynamic>.from(row);
         if (!map.containsKey('interest') && map.containsKey('rate')) {
           map['interest'] = map['rate'];
@@ -79,10 +82,40 @@ class SupabaseService {
     }
   }
 
-  /// Push loans tagged with this specific vault ID
-  static Future<bool> pushLoans(List<Loan> loans, String vaultId) async {
+  /// Push a single updated loan immediately to Supabase (e.g., right after recording an EMI payment)
+  static Future<bool> pushSingleLoan(Loan loan, String vaultId, {SecuritySettings? settings}) async {
     if (vaultId.isEmpty) return false;
-    if (!isConfigured) await init();
+    if (!isConfigured || settings != null) await init(settings: settings);
+    if (_client == null) return false;
+
+    try {
+      final rawId = loan.created > 0 ? loan.created : (int.tryParse(loan.id) ?? loan.id.hashCode.abs());
+      final baseNotes = (loan.notes ?? '').replaceAll(RegExp(r'\s*\[vault:[^\]]+\]'), '').trim();
+      final row = {
+        'id': rawId,
+        'borrower': loan.borrower,
+        'phone': loan.phone,
+        'principal': loan.principal,
+        'rate': loan.interest,
+        'tenure': loan.tenure,
+        'model': loan.model,
+        'startDate': loan.startDate,
+        'created': loan.created > 0 ? loan.created : rawId,
+        'notes': "$baseNotes [vault:$vaultId]".trim(),
+        'payments': loan.payments.map((p) => p.toJson()).toList(),
+      };
+
+      await _client!.from('loans').upsert([row]);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Push loans tagged with this specific vault ID
+  static Future<bool> pushLoans(List<Loan> loans, String vaultId, {SecuritySettings? settings}) async {
+    if (vaultId.isEmpty) return false;
+    if (!isConfigured || settings != null) await init(settings: settings);
     if (_client == null) return false;
 
     try {
@@ -108,6 +141,73 @@ class SupabaseService {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Store Vault Profile (Firm Name, Owner Name, UPI ID) in cloud so logins preserve identity
+  static Future<bool> pushVaultProfile(SecuritySettings settings) async {
+    final vaultId = settings.vaultId.trim();
+    if (vaultId.isEmpty) return false;
+    if (!isConfigured) await init(settings: settings);
+    if (_client == null) return false;
+
+    try {
+      final rawId = 9990000000000 + (vaultId.hashCode.abs() % 1000000000);
+      final profileJson = jsonEncode({
+        'firmName': settings.firmName,
+        'adminName': settings.adminName,
+        'ownerUpiId': settings.ownerUpiId,
+      });
+      final row = {
+        'id': rawId,
+        'borrower': '__VAULT_PROFILE__',
+        'phone': '',
+        'principal': 0,
+        'rate': 0,
+        'tenure': 0,
+        'model': 'vault_profile',
+        'startDate': '2026-01-01',
+        'created': 0,
+        'notes': "[vault:$vaultId] [profile:$profileJson]",
+        'payments': [],
+      };
+      await _client!.from('loans').upsert([row]);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Retrieve Vault Profile (Firm Name, Owner Name, UPI ID) from cloud for a given vault ID
+  static Future<Map<String, String>?> pullVaultProfile(String vaultId) async {
+    if (vaultId.isEmpty) return null;
+    if (!isConfigured) await init();
+    if (_client == null) return null;
+
+    try {
+      final res = await _client!
+          .from('loans')
+          .select()
+          .filter('notes', 'ilike', '%[vault:$vaultId]%')
+          .filter('borrower', 'eq', '__VAULT_PROFILE__')
+          .limit(1);
+
+      if (res is List && res.isNotEmpty) {
+        final row = res.first;
+        final notes = row['notes']?.toString() ?? '';
+        final match = RegExp(r'\[profile:(.*?)\]').firstMatch(notes);
+        if (match != null && match.group(1) != null) {
+          final decoded = jsonDecode(match.group(1)!) as Map<String, dynamic>;
+          return {
+            'firmName': decoded['firmName']?.toString() ?? '',
+            'adminName': decoded['adminName']?.toString() ?? '',
+            'ownerUpiId': decoded['ownerUpiId']?.toString() ?? '',
+          };
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

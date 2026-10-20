@@ -207,6 +207,7 @@ jobs:
         with:
           name: FinVault-Android-APK
           path: release-files
+          merge-multiple: true
 
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
@@ -214,14 +215,15 @@ jobs:
         with:
           name: FinVault-Windows-Laptop-App
           path: release-files
+          merge-multiple: true
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.1.0
-          name: "FinVault v2.1.0 (Mobile APK & Laptop Windows App)"
+          tag_name: v2.1.1
+          name: "FinVault v2.1.1 (Mobile APK & Laptop Windows App)"
           body: |
-            ### 🚀 FinVault Major Release (v2.1.0)
+            ### 🚀 FinVault Major Release (v2.1.1)
 
             FinVault is an ultra-fast, professional loan and collection ledger designed for Indian private financiers, lending firms, and field recovery agents.
 
@@ -231,22 +233,24 @@ jobs:
 
             | Platform | File | Description |
             | :--- | :--- | :--- |
-            | 📱 **Android Mobile** | [**`FinVault.apk`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.0/FinVault.apk) | Direct APK for Android phones & tablets |
-            | 💻 **Windows Laptop / PC** | [**`FinVault-Windows.zip`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.0/FinVault-Windows.zip) | Portable Windows desktop app (extract & run `finvault.exe`) |
+            | 📱 **Android Mobile** | [**`FinVault.apk`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.1/FinVault.apk) | Direct APK for Android phones & tablets |
+            | 💻 **Windows Laptop / PC** | [**`FinVault-Windows.zip`**](https://github.com/deepakgowrishankar7/FinVault/releases/download/v2.1.1/FinVault-Windows.zip) | Portable Windows desktop app (extract & run `finvault.exe`) |
 
             ---
 
-            ### 🌟 What's New in v2.1.0:
-            1. 📖 **Daily Cash Daybook (నిత్య క్యాష్ బుక్ / Daily Tally)**: Dedicated evening cash drawer balance tracker answering today's disbursements, cash collections, UPI/Bank totals, and physical cash box drawer reconciliation with agent-wise breakdown and Daybook PDF export.
-            2. 📑 **Borrower Digital Passbook (WhatsApp Mini-Statement / పాస్‌బుక్)**: 1-tap bank-style bilingual mini-statement PDF showing all installment dates, receipts, principal/interest breakdown, and remaining balance ready to send directly on WhatsApp.
-            3. 🔒 **Biometric Fingerprint & Face Unlock (బయోమెట్రిక్)**: Instant 1-second biometric unlock via hardware sensor with 4-digit Master PIN fallback.
-            4. 📜 **Auto Promissory Note (బాండ్ పేపర్ నోటు / Demand Promissory Note)**: One-tap bilingual promissory note generator formatted with Indian Rupee numbering in words, ₹1 revenue stamp box, and witnesses ready to print on ₹100 stamp paper or plain A4.
-            5. 🔑 **Existing Vault ID Login**: Easy login option for Admins who already have a registered Vault ID (`FV-XXXXXX`) to instantly restore data from the cloud onto new phones or laptops.
-            6. 🪙 **Village Rupee Vaddi (రూపాయి వడ్డీ)**: Monthly interest per ₹100 calculation with dual interest and principal repayment tracking.
-            7. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full loan payoff.
-            8. 👥 **Multi-Device Cloud Sync & Field Agents**: Automatic sync across field agents and laptops using isolated 6-digit Vault Codes or Supabase.
+            ### 🌟 What's New in v2.1.1:
+            1. ⚡ **Instant Cloud EMI Auto-Sync**: Recording an EMI collection now saves immediately to local device storage and pushes the updated loan in real-time to the Supabase cloud in the background. No manual refresh or app restart required.
+            2. 🔑 **Preserve & Restore Owner Name and UPI ID on Login**: Logging in with an existing Vault ID (`FV-XXXXXX`) on a new phone or laptop automatically pulls and restores the saved Owner Name, Firm Name, and Owner UPI ID from the cloud.
+            3. 🔒 **Separated Quick Lock & Secure Logout**: "Lock Vault" provides immediate 1-second PIN / Biometric lock. "Logout from Device" features an informative confirmation modal reassuring you that all data remains safely preserved in the cloud under your Vault ID.
+            4. 📖 **Daily Cash Daybook (నిత్య క్యాష్ బుక్ / Daily Tally)**: Dedicated evening cash drawer balance tracker answering today's disbursements, cash collections, UPI/Bank totals, and physical cash box drawer reconciliation with agent-wise breakdown and Daybook PDF export.
+            5. 📑 **Borrower Digital Passbook (WhatsApp Mini-Statement / పాస్‌బుక్)**: 1-tap bank-style bilingual mini-statement PDF showing all installment dates, receipts, principal/interest breakdown, and remaining balance ready to send directly on WhatsApp.
+            6. 🔒 **Biometric Fingerprint & Face Unlock (బయోమెట్రిక్)**: Instant 1-second biometric unlock via hardware sensor with 4-digit Master PIN fallback.
+            7. 📜 **Auto Promissory Note (బాండ్ పేపర్ నోటు / Demand Promissory Note)**: One-tap bilingual promissory note generator formatted with Indian Rupee numbering in words, ₹1 revenue stamp box, and witnesses ready to print on ₹100 stamp paper or plain A4.
+            8. 🪙 **Village Rupee Vaddi (రూపాయి వడ్డీ)**: Monthly interest per ₹100 calculation with dual interest and principal repayment tracking.
+            9. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full loan payoff.
+            10. 👥 **Multi-Device Cloud Sync & Field Agents**: Automatic sync across field agents and laptops using isolated 6-digit Vault Codes or Supabase.
           files: |
-            release-files/FinVault.apk
-            release-files/FinVault-Windows.zip
+            release-files/**/FinVault.apk
+            release-files/**/FinVault-Windows.zip
           draft: false
           prerelease: false

@@ -39,6 +39,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   // Admin Login Controllers
   final _adminLoginVaultCodeCtrl = TextEditingController();
   final _adminLoginPinCtrl = TextEditingController();
+  final _adminLoginNameCtrl = TextEditingController();
+  final _adminLoginUpiCtrl = TextEditingController();
   bool _obscureAdminLoginPin = true;
   bool _isConnectingAdmin = false;
 
@@ -62,6 +64,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     _agentPinCtrl.dispose();
     _adminLoginVaultCodeCtrl.dispose();
     _adminLoginPinCtrl.dispose();
+    _adminLoginNameCtrl.dispose();
+    _adminLoginUpiCtrl.dispose();
     super.dispose();
   }
 
@@ -100,6 +104,26 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       // Pull loans from Supabase cloud database
       final remoteLoans = await SupabaseService.pullLoans(vaultCode);
 
+      // Pull vault profile (Firm Name, Admin Name, UPI ID) from Supabase
+      final profile = await SupabaseService.pullVaultProfile(vaultCode);
+
+      String finalFirmName = "Firm ($vaultCode)";
+      String finalAdminName = "Master Admin";
+      String finalUpiId = "owner@okhdfcbank";
+
+      if (profile != null) {
+        if ((profile['firmName'] ?? '').isNotEmpty) finalFirmName = profile['firmName']!;
+        if ((profile['adminName'] ?? '').isNotEmpty) finalAdminName = profile['adminName']!;
+        if ((profile['ownerUpiId'] ?? '').isNotEmpty) finalUpiId = profile['ownerUpiId']!;
+      }
+
+      if (_adminLoginNameCtrl.text.trim().isNotEmpty) {
+        finalAdminName = _adminLoginNameCtrl.text.trim();
+      }
+      if (_adminLoginUpiCtrl.text.trim().isNotEmpty) {
+        finalUpiId = _adminLoginUpiCtrl.text.trim();
+      }
+
       if (remoteLoans != null && remoteLoans.isNotEmpty) {
         await StorageService.saveLoans(remoteLoans);
       }
@@ -107,17 +131,19 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       final newSettings = SecuritySettings(
         vaultId: vaultCode,
         isRegistered: true,
-        firmName: "Firm ($vaultCode)",
-        adminName: "Master Admin",
+        firmName: finalFirmName,
+        adminName: finalAdminName,
         adminPin: adminPin,
         securityQuestion: "City where business was started?",
         securityAnswer: "admin",
-        ownerUpiId: "owner@okhdfcbank",
+        ownerUpiId: finalUpiId,
         cloudSyncEnabled: true,
         language: _selectedLang,
       );
 
       await StorageService.saveSettings(newSettings);
+      // Preserve / push profile to cloud
+      SupabaseService.pushVaultProfile(newSettings);
 
       if (!mounted) return;
       final loanCount = remoteLoans?.length ?? 0;
@@ -676,6 +702,32 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                               if (v.trim().length != 4 || int.tryParse(v.trim()) == null) return "Must be exactly 4 digits";
                               return null;
                             },
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _adminLoginNameCtrl,
+                            decoration: InputDecoration(
+                              labelText: "Owner Name (Optional)",
+                              hintText: "Auto-restored from cloud if saved",
+                              prefixIcon: const Icon(Icons.person_outline),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _adminLoginUpiCtrl,
+                            decoration: InputDecoration(
+                              labelText: "Owner UPI VPA (Optional)",
+                              hintText: "Auto-restored from cloud if saved",
+                              prefixIcon: const Icon(Icons.qr_code),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
                           const SizedBox(height: 18),
 

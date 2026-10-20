@@ -36,6 +36,7 @@ class LoanDetailScreen extends StatefulWidget {
 
 class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerProviderStateMixin {
   late Loan _currentLoan;
+  bool _hasChanged = false;
   late TabController _tabController;
   final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
@@ -391,9 +392,18 @@ Please find your official passbook PDF statement attached.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loan = _currentLoan;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(loan.borrower),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, _hasChanged);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context, _hasChanged),
+          ),
+          title: Text(loan.borrower),
         actions: [
           if (widget.role == UserRole.admin)
             PopupMenuButton<String>(
@@ -408,7 +418,10 @@ Please find your official passbook PDF statement attached.
                       ),
                     ),
                   );
-                  if (edited == true) _refreshLoan();
+                  if (edited == true) {
+                    _hasChanged = true;
+                    _refreshLoan();
+                  }
                 } else if (val == 'delete') {
                   _confirmDelete();
                 }
@@ -760,7 +773,10 @@ Please find your official passbook PDF statement attached.
                                     ),
                                   ),
                                 );
-                                if (paid == true) _refreshLoan();
+                                if (paid == true) {
+                                  _hasChanged = true;
+                                  _refreshLoan();
+                                }
                               },
                               icon: const Icon(Icons.add_circle, size: 18),
                               label: const Text("Collect EMI"),
@@ -859,7 +875,8 @@ Please find your official passbook PDF statement attached.
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildDetailRow(String label, String value, bool isDark, {bool highlight = false}) {

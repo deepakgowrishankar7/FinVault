@@ -94,10 +94,11 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
     );
 
     final allLoans = await StorageService.getLoans();
-    final idx = allLoans.indexWhere((l) => l.id == widget.loan.id);
+    final idx = allLoans.indexWhere((l) => l.id == widget.loan.id || (l.created > 0 && l.created == widget.loan.created));
+    Loan? updatedLoanRef;
     if (idx != -1) {
       final updatedPayments = List<Payment>.from(allLoans[idx].payments)..add(newPayment);
-      allLoans[idx] = Loan(
+      final updatedLoan = Loan(
         id: allLoans[idx].id,
         borrower: allLoans[idx].borrower,
         phone: allLoans[idx].phone,
@@ -113,9 +114,14 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
         legacyPaid: allLoans[idx].legacyPaid,
         payments: updatedPayments,
       );
+      allLoans[idx] = updatedLoan;
+      updatedLoanRef = updatedLoan;
       await StorageService.saveLoans(allLoans);
       if (widget.settings.cloudSyncEnabled && widget.settings.vaultId.isNotEmpty) {
-        SupabaseService.pushLoans(allLoans, widget.settings.vaultId);
+        // Immediately push this single updated loan to Supabase cloud
+        await SupabaseService.pushSingleLoan(updatedLoan, widget.settings.vaultId, settings: widget.settings);
+        // Also trigger background full list push
+        SupabaseService.pushLoans(allLoans, widget.settings.vaultId, settings: widget.settings);
       }
     }
 
@@ -154,7 +160,7 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
                     onPressed: () {
                       Navigator.pop(ctx);
                       PdfService.printPaymentVoucher(
-                        loan: widget.loan,
+                        loan: updatedLoanRef ?? widget.loan,
                         payment: newPayment,
                         firmName: widget.settings.firmName,
                       );
@@ -179,7 +185,7 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
                     onPressed: () {
                       Navigator.pop(ctx);
                       WhatsAppService.sendPaymentReceipt(
-                        loan: widget.loan,
+                        loan: updatedLoanRef ?? widget.loan,
                         payment: newPayment,
                         firmName: widget.settings.firmName,
                       );
