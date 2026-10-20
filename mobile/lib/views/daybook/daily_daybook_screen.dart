@@ -480,7 +480,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: Border.all(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                            side: BorderSide(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
                           ),
                           child: ListTile(
                             leading: Container(
@@ -537,7 +537,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: Border.all(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                            side: BorderSide(color: isDark ? FinTheme.borderDark : FinTheme.borderLight),
                           ),
                           child: ListTile(
                             leading: Container(
