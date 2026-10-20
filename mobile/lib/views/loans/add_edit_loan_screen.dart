@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'document_viewer_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/loan.dart';
@@ -140,6 +142,201 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
   }
 
   Future<void> _pickDocuments() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E2638) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    "Attach Document Proof",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    "Choose Camera or File Upload for Aadhaar, PAN, Cheque or Loan docs",
+                    style: TextStyle(fontSize: 12, color: isDark ? Colors.grey : Colors.black54),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: FinTheme.primary.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, color: FinTheme.primary),
+                  ),
+                  title: const Text("Take Photo (Camera)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text("Capture instant photo using camera", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickFromCamera();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.photo_library, color: Colors.purple),
+                  ),
+                  title: const Text("Choose from Gallery", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text("Select image from photo gallery", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.upload_file, color: Colors.orange),
+                  ),
+                  title: const Text("Upload Document / PDF (File)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text("Browse PDF, doc, or agreement files", style: TextStyle(fontSize: 11)),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickFromFiles();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveAndAddDocument(String srcPath, String originalName) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final proofsDir = Directory('${appDir.path}/finvault_proofs');
+      if (!await proofsDir.exists()) {
+        await proofsDir.create(recursive: true);
+      }
+
+      final cleanName = originalName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final targetPath = '${proofsDir.path}/${timestamp}_$cleanName';
+
+      final srcFile = File(srcPath);
+      if (await srcFile.exists()) {
+        await srcFile.copy(targetPath);
+      }
+
+      if (mounted && !_documentProofs.contains(targetPath)) {
+        setState(() {
+          _documentProofs.add(targetPath);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error saving document: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveBytesAndAddDocument(List<int> bytes, String originalName) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final proofsDir = Directory('${appDir.path}/finvault_proofs');
+      if (!await proofsDir.exists()) {
+        await proofsDir.create(recursive: true);
+      }
+
+      final cleanName = originalName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final targetPath = '${proofsDir.path}/${timestamp}_$cleanName';
+
+      await File(targetPath).writeAsBytes(bytes);
+
+      if (mounted && !_documentProofs.contains(targetPath)) {
+        setState(() {
+          _documentProofs.add(targetPath);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error saving document: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (photo != null) {
+        await _saveAndAddDocument(photo.path, photo.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Camera capture failed: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final photos = await picker.pickMultiImage(imageQuality: 85);
+      if (photos.isNotEmpty) {
+        for (final p in photos) {
+          await _saveAndAddDocument(p.path, p.name);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gallery selection failed: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromFiles() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
@@ -147,41 +344,18 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        final appDir = await getApplicationDocumentsDirectory();
-        final proofsDir = Directory('${appDir.path}/finvault_proofs');
-        if (!await proofsDir.exists()) {
-          await proofsDir.create(recursive: true);
-        }
-
-        setState(() {
-          for (final f in result.files) {
-            String savedPath = '';
-            final cleanName = f.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-            final timestamp = DateTime.now().millisecondsSinceEpoch;
-            final targetPath = '${proofsDir.path}/${timestamp}_$cleanName';
-
-            if (f.path != null && File(f.path!).existsSync()) {
-              File(f.path!).copySync(targetPath);
-              savedPath = targetPath;
-            } else if (f.bytes != null) {
-              File(targetPath).writeAsBytesSync(f.bytes!);
-              savedPath = targetPath;
-            } else if (f.path != null) {
-              savedPath = f.path!;
-            } else {
-              savedPath = f.name;
-            }
-
-            if (savedPath.isNotEmpty && !_documentProofs.contains(savedPath)) {
-              _documentProofs.add(savedPath);
-            }
+        for (final f in result.files) {
+          if (f.path != null && File(f.path!).existsSync()) {
+            await _saveAndAddDocument(f.path!, f.name);
+          } else if (f.bytes != null) {
+            await _saveBytesAndAddDocument(f.bytes!, f.name);
           }
-        });
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Could not pick file: $e")),
+          SnackBar(content: Text("File picker failed: $e")),
         );
       }
     }
@@ -550,19 +724,23 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                             return Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                Container(
-                                  width: 76,
-                                  height: 76,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(9),
-                                    child: Image.file(
-                                      file,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 28),
+                                InkWell(
+                                  onTap: () => FinImageViewerDialog.show(context, imagePath: docPath, title: displayName),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    width: 76,
+                                    height: 76,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(9),
+                                      child: Image.file(
+                                        file,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 28),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -585,23 +763,26 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                             );
                           }
 
-                          return Chip(
-                            avatar: Icon(
-                              isImage ? Icons.image_outlined : Icons.description_outlined,
-                              size: 14,
-                              color: FinTheme.primary,
+                          return GestureDetector(
+                            onTap: () => FinDocumentHelper.openDocumentWithOptions(context, docPath: docPath, displayName: displayName),
+                            child: Chip(
+                              avatar: Icon(
+                                isImage ? Icons.image_outlined : (displayName.toLowerCase().endsWith('.pdf') ? Icons.picture_as_pdf : Icons.description_outlined),
+                                size: 14,
+                                color: displayName.toLowerCase().endsWith('.pdf') ? Colors.redAccent : FinTheme.primary,
+                              ),
+                              label: Text(
+                                displayName,
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              deleteIcon: const Icon(Icons.close, size: 14),
+                              onDeleted: () {
+                                setState(() => _documentProofs.remove(docPath));
+                              },
+                              backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            label: Text(
-                              displayName,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            deleteIcon: const Icon(Icons.close, size: 14),
-                            onDeleted: () {
-                              setState(() => _documentProofs.remove(docPath));
-                            },
-                            backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           );
                         }).toList(),
                       ),

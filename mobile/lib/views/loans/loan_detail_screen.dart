@@ -11,6 +11,7 @@ import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/fin_theme.dart';
 import 'add_edit_loan_screen.dart';
+import 'document_viewer_screen.dart';
 import '../payments/record_payment_screen.dart';
 import '../payments/upi_qr_screen.dart';
 
@@ -101,100 +102,11 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
   }
 
   void _showFullImageViewer(BuildContext context, String docPath, String displayName) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Dialog(
-          backgroundColor: isDark ? const Color(0xFF131B2E) : Colors.white,
-          insetPadding: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.image, size: 18, color: FinTheme.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        displayName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Flexible(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.65,
-                    maxWidth: 700,
-                  ),
-                  color: Colors.black,
-                  child: InteractiveViewer(
-                    panEnabled: true,
-                    minScale: 0.8,
-                    maxScale: 5.0,
-                    child: Center(
-                      child: Image.file(
-                        File(docPath),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text("Could not render image file", style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Pinch or scroll to zoom", style: TextStyle(fontSize: 11, color: Colors.grey)),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Share.shareXFiles([XFile(docPath)], text: "FinVault Document: $displayName");
-                      },
-                      icon: const Icon(Icons.share, size: 16),
-                      label: const Text("Share / Save", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FinTheme.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    FinImageViewerDialog.show(context, imagePath: docPath, title: displayName);
   }
 
   void _openDocument(BuildContext context, String docPath, String displayName) {
-    final file = File(docPath);
-    if (file.existsSync()) {
-      Share.shareXFiles([XFile(docPath)], text: "FinVault Document: $displayName");
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("File not found on local storage: $displayName")),
-      );
-    }
+    FinDocumentHelper.openDocumentWithOptions(context, docPath: docPath, displayName: displayName);
   }
 
   @override
@@ -491,7 +403,18 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        const Icon(Icons.share, size: 14, color: Colors.grey),
+                                        InkWell(
+                                          onTap: () {
+                                            if (file.existsSync()) {
+                                              Share.shareXFiles([XFile(docPath)], text: "FinVault Document: $displayName");
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4),
+                                            child: Icon(Icons.share, size: 16, color: FinTheme.primary),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
