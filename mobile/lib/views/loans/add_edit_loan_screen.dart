@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../models/loan.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/fin_theme.dart';
 import '../../theme/app_locale.dart';
 
@@ -234,6 +235,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
     }
 
     await StorageService.saveLoans(allLoans);
+    if (widget.settings?.cloudSyncEnabled == true && widget.settings!.vaultId.isNotEmpty) {
+      SupabaseService.pushLoans(allLoans, widget.settings!.vaultId);
+    }
     if (mounted) Navigator.pop(context, true);
   }
 

@@ -59,21 +59,19 @@ class SupabaseService {
     if (_client == null) return null;
 
     try {
-      // First attempt query filtered by vault_id column
-      try {
-        final res = await _client!.from('loans').select().eq('vault_id', vaultId);
-        final list = (res as List).map((row) {
-          return Loan.fromJson(Map<String, dynamic>.from(row));
-        }).toList();
-        return list;
-      } catch (_) {
-        // Fallback for schemas where vaultId is encoded inside notes / record
-        final res = await _client!.from('loans').select().filter('notes', 'ilike', '%$vaultId%');
-        final list = (res as List).map((row) {
-          return Loan.fromJson(Map<String, dynamic>.from(row));
-        }).toList();
-        return list;
-      }
+      final res = await _client!.from('loans').select().filter('notes', 'ilike', '%[vault:$vaultId]%');
+      final list = (res as List).map((row) {
+        final map = Map<String, dynamic>.from(row);
+        if (!map.containsKey('interest') && map.containsKey('rate')) {
+          map['interest'] = map['rate'];
+        }
+        map['id'] = map['id'].toString();
+        if (map['notes'] != null) {
+          map['notes'] = map['notes'].toString().replaceAll(RegExp(r'\s*\[vault:[^\]]+\]'), '').trim();
+        }
+        return Loan.fromJson(map);
+      }).toList();
+      return list;
     } catch (_) {
       return null;
     }
@@ -87,39 +85,25 @@ class SupabaseService {
 
     try {
       final rows = loans.map((l) {
-        final map = l.toJson();
+        final rawId = int.tryParse(l.id) ?? l.id.hashCode.abs();
+        final baseNotes = (l.notes ?? '').replaceAll(RegExp(r'\s*\[vault:[^\]]+\]'), '').trim();
         return {
-          'id': map['id'],
-          'borrower': map['borrower'],
-          'phone': map['phone'],
-          'principal': map['principal'],
-          'interest': map['interest'],
-          'tenure': map['tenure'],
-          'model': map['model'],
-          'startDate': map['startDate'],
-          'created': map['created'],
-          'notes': map['notes'] ?? '',
-          'payments': map['payments'],
-          'vault_id': vaultId,
+          'id': rawId,
+          'borrower': l.borrower,
+          'phone': l.phone,
+          'principal': l.principal,
+          'rate': l.interest,
+          'tenure': l.tenure,
+          'model': l.model,
+          'startDate': l.startDate,
+          'created': l.created,
+          'notes': "$baseNotes [vault:$vaultId]".trim(),
+          'payments': l.payments.map((p) => p.toJson()).toList(),
         };
       }).toList();
 
-      try {
-        await _client!.from('loans').upsert(rows);
-        return true;
-      } catch (_) {
-        // If 'vault_id' column doesn't exist yet, strip it to prevent 400 error while tagging notes
-        final fallbackRows = rows.map((r) {
-          final copy = Map<String, dynamic>.from(r);
-          copy.remove('vault_id');
-          if (!copy['notes'].toString().contains(vaultId)) {
-            copy['notes'] = "${copy['notes']} [vault:$vaultId]";
-          }
-          return copy;
-        }).toList();
-        await _client!.from('loans').upsert(fallbackRows);
-        return true;
-      }
+      await _client!.from('loans').upsert(rows);
+      return true;
     } catch (_) {
       return false;
     }
@@ -129,7 +113,8 @@ class SupabaseService {
     if (!isConfigured) await init();
     if (_client == null) return false;
     try {
-      await _client!.from('loans').delete().eq('id', loanId);
+      final rawId = int.tryParse(loanId) ?? loanId.hashCode.abs();
+      await _client!.from('loans').delete().eq('id', rawId);
       return true;
     } catch (_) {
       return false;

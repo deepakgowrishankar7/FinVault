@@ -65,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (vaultId.isEmpty) return;
 
     if (!SupabaseService.isConfigured) {
-      await SupabaseService.init();
+      await SupabaseService.init(settings: _currentSettings);
     }
 
     setState(() => _isSyncing = true);
@@ -946,8 +946,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => UpiQrScreen(
-                          amount: 0,
-                          borrowerName: "General Collection",
                           ownerUpiId: _currentSettings.ownerUpiId,
                           firmName: _currentSettings.firmName,
                         ),

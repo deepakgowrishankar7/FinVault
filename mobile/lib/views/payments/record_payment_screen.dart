@@ -6,6 +6,7 @@ import '../../models/loan.dart';
 import '../../models/payment.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/fin_theme.dart';
@@ -113,6 +114,9 @@ class _RecordPaymentScreenState extends State<RecordPaymentScreen> {
         payments: updatedPayments,
       );
       await StorageService.saveLoans(allLoans);
+      if (widget.settings.cloudSyncEnabled && widget.settings.vaultId.isNotEmpty) {
+        SupabaseService.pushLoans(allLoans, widget.settings.vaultId);
+      }
     }
 
     if (!mounted) return;

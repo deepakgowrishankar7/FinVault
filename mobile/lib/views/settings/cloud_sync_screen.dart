@@ -210,12 +210,15 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
         _statusMessage = "Synchronized $_cloudCount loans for Vault: $vaultId";
       });
     } else if (localLoans.isNotEmpty) {
-      await SupabaseService.pushLoans(localLoans, vaultId);
+      final ok = await SupabaseService.pushLoans(localLoans, vaultId);
+      final fresh = await SupabaseService.pullLoans(vaultId);
       setState(() {
-        _cloudCount = localLoans.length;
-        _isHealthy = true;
+        _cloudCount = fresh?.length ?? (ok ? localLoans.length : 0);
+        _isHealthy = ok;
         _isSyncing = false;
-        _statusMessage = "Pushed ${localLoans.length} loans to cloud database!";
+        _statusMessage = ok
+            ? "Pushed ${localLoans.length} loans to cloud database!"
+            : "Could not connect to cloud. Operating in local mode.";
       });
     } else {
       setState(() {

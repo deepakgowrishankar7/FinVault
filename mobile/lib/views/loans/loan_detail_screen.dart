@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/loan.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/fin_theme.dart';
@@ -76,6 +77,10 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
       final all = await StorageService.getLoans();
       all.removeWhere((l) => l.id == _currentLoan.id);
       await StorageService.saveLoans(all);
+      if (widget.settings.cloudSyncEnabled && widget.settings.vaultId.isNotEmpty) {
+        SupabaseService.deleteLoan(_currentLoan.id, widget.settings.vaultId);
+        SupabaseService.pushLoans(all, widget.settings.vaultId);
+      }
       if (mounted) Navigator.pop(context, true);
     }
   }
