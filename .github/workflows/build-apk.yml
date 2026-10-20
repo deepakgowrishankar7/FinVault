@@ -242,11 +242,11 @@ jobs:
             1. ⚡ **Instant Cloud EMI Auto-Sync**: Recording an EMI collection now saves immediately to local device storage and pushes the updated loan in real-time to the Supabase cloud in the background. No manual refresh or app restart required.
             2. 🔑 **Preserve & Restore Owner Name and UPI ID on Login**: Logging in with an existing Vault ID (`FV-XXXXXX`) on a new phone or laptop automatically pulls and restores the saved Owner Name, Firm Name, and Owner UPI ID from the cloud.
             3. 🔒 **Separated Quick Lock & Secure Logout**: "Lock Vault" provides immediate 1-second PIN / Biometric lock. "Logout from Device" features an informative confirmation modal reassuring you that all data remains safely preserved in the cloud under your Vault ID.
-            4. 📖 **Daily Cash Daybook (నిత్య క్యాష్ బుక్ / Daily Tally)**: Dedicated evening cash drawer balance tracker answering today's disbursements, cash collections, UPI/Bank totals, and physical cash box drawer reconciliation with agent-wise breakdown and Daybook PDF export.
-            5. 📑 **Borrower Digital Passbook (WhatsApp Mini-Statement / పాస్‌బుక్)**: 1-tap bank-style bilingual mini-statement PDF showing all installment dates, receipts, principal/interest breakdown, and remaining balance ready to send directly on WhatsApp.
-            6. 🔒 **Biometric Fingerprint & Face Unlock (బయోమెట్రిక్)**: Instant 1-second biometric unlock via hardware sensor with 4-digit Master PIN fallback.
-            7. 📜 **Auto Promissory Note (బాండ్ పేపర్ నోటు / Demand Promissory Note)**: One-tap bilingual promissory note generator formatted with Indian Rupee numbering in words, ₹1 revenue stamp box, and witnesses ready to print on ₹100 stamp paper or plain A4.
-            8. 🪙 **Village Rupee Vaddi (రూపాయి వడ్డీ)**: Monthly interest per ₹100 calculation with dual interest and principal repayment tracking.
+            4. 📖 **Daily Cash Daybook (Daily Tally)**: Dedicated evening cash drawer balance tracker answering today's disbursements, cash collections, UPI/Bank totals, and physical cash box drawer reconciliation with agent-wise breakdown and Daybook PDF export.
+            5. 📑 **Borrower Digital Passbook (WhatsApp Mini-Statement)**: 1-tap bank-style bilingual mini-statement PDF showing all installment dates, receipts, principal/interest breakdown, and remaining balance ready to send directly on WhatsApp.
+            6. 🔒 **Biometric Fingerprint & Face Unlock**: Instant 1-second biometric unlock via hardware sensor with 4-digit Master PIN fallback.
+            7. 📜 **Auto Promissory Note (Demand Promissory Note)**: One-tap bilingual promissory note generator formatted with Indian Rupee numbering in words, ₹1 revenue stamp box, and witnesses ready to print on ₹100 stamp paper or plain A4.
+            8. 🪙 **Village Rupee Interest (Vaddi Model)**: Monthly interest per ₹100 calculation with dual interest and principal repayment tracking.
             9. ⚡ **Dynamic UPI QR Code**: Live QR generator for 1x EMI, 2x EMI, or full loan payoff.
             10. 👥 **Multi-Device Cloud Sync & Field Agents**: Automatic sync across field agents and laptops using isolated 6-digit Vault Codes or Supabase.
           files: |

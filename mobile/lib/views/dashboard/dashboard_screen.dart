@@ -461,7 +461,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           );
                         },
                         icon: const Icon(Icons.menu_book_rounded, color: Colors.amber),
-                        tooltip: "Daily Cash Daybook (నిత్య క్యాష్ బుక్)",
+                        tooltip: "Daily Cash Daybook",
                       ),
                       if (widget.settings.cloudSyncEnabled)
                         IconButton(
@@ -1011,7 +1011,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   },
                   icon: const Icon(Icons.menu_book_rounded, size: 18, color: Colors.amber),
-                  label: const Text("Daily Daybook (క్యాష్ బుక్)", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.amber)),
+                  label: const Text("Daily Daybook", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.amber)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.amber),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

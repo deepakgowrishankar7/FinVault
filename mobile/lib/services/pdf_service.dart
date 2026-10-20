@@ -220,7 +220,7 @@ class PdfService {
                       firmName.toUpperCase(),
                       style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                     ),
-                    pw.Text("OFFICIAL BORROWER DIGITAL PASSBOOK (రుణ పాస్‌బుక్ స్టేట్‌మెంట్)",
+                    pw.Text("OFFICIAL BORROWER DIGITAL PASSBOOK",
                         style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                   ],
                 ),
@@ -424,7 +424,7 @@ class PdfService {
     );
   }
 
-  /// 📜 Feature 4: Generate Bilingual Demand Promissory Note (బాండ్ పేపర్ నోటు / D.P. Note)
+  /// 📜 Feature 4: Generate Demand Promissory Note (D.P. Note)
   static Future<Uint8List> generatePromissoryNotePdf({
     required Loan loan,
     required String firmName,
@@ -434,7 +434,7 @@ class PdfService {
     final pdf = pw.Document();
     final amountWords = IndianNumberWords.convert(loan.principal);
     final rateDisplay = loan.model == 'rupee'
-        ? "Rs. ${loan.interest} per Rs. 100 per month (రూపాయి వడ్డీ)"
+        ? "Rs. ${loan.interest} per Rs. 100 per month (Rupee Interest)"
         : "${loan.interest}% per annum (${loan.model.toUpperCase()})";
 
     pdf.addPage(
@@ -460,7 +460,7 @@ class PdfService {
                 // Title Header
                 pw.Center(
                   child: pw.Text(
-                    "DEMAND PROMISSORY NOTE (డిమాండ్ ప్రామిసరీ నోటు)",
+                    "DEMAND PROMISSORY NOTE",
                     style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                   ),
                 ),
@@ -524,8 +524,8 @@ class PdfService {
                 pw.SizedBox(height: 10),
 
                 pw.Text(
-                  "తెలుగు ఒప్పందం: పైన పేర్కొన్న రుణదాత ($firmName) గారి వద్ద నుండి నగదు రూపంలో ముట్టిన అసలు మొత్తం ${_currency.format(loan.principal)}/- (అక్షరాలా $amountWords) కు గాను నిర్ణయించిన వడ్డీ రేటుతో కోరిన వెంటనే లేదా నా/మా స్థిర చరాస్తుల ద్వారా చెల్లించగలనని స్వచ్ఛందంగా అంగీకరిస్తూ వ్రాసిచ్చిన ప్రామిసరీ నోటు.",
-                  style: const pw.TextStyle(fontSize: 9, height: 1.4),
+                  "LEGAL UNDERTAKING: I / We hereby acknowledge receipt of the principal amount in full and agree to be bound by the terms, interest conditions, and repayment schedule specified herein without demur or protest.",
+                  style: const pw.TextStyle(fontSize: 9, height: 1.4, color: PdfColors.grey800),
                   textAlign: pw.TextAlign.justify,
                 ),
                 pw.SizedBox(height: 14),
@@ -564,7 +564,7 @@ class PdfService {
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text("WITNESSES (సాక్షులు):", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        pw.Text("WITNESSES:", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         pw.SizedBox(height: 8),
                         pw.Text("1. Sign: ___________________________", style: const pw.TextStyle(fontSize: 9)),
                         pw.Text("   Name & Address: _________________", style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
@@ -617,7 +617,7 @@ class PdfService {
     return pdf.save();
   }
 
-  /// 📅 Feature 1: Generate Daily Daybook PDF (నిత్య క్యాష్ బుక్ స్టేట్‌మెంట్)
+  /// 📅 Feature 1: Generate Daily Daybook PDF
   static Future<Uint8List> generateDaybookPdf({
     required DateTime date,
     required List<Loan> allLoans,
@@ -693,7 +693,7 @@ class PdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(firmName.toUpperCase(), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                    pw.Text("DAILY CASH DAYBOOK & DRAWER TALLY (నిత్య క్యాష్ బుక్)", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                    pw.Text("DAILY CASH DAYBOOK & DRAWER TALLY", style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                   ],
                 ),
                 pw.Container(

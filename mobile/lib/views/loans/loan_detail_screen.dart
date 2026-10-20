@@ -156,7 +156,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Borrower Digital Passbook (రుణ పాస్‌బుక్)",
+                            "Borrower Digital Passbook",
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -307,7 +307,7 @@ Please find your official passbook PDF statement attached.
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Auto Promissory Note (డిమాండ్ ప్రామిసరీ నోటు)",
+                            "Auto Promissory Note",
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -343,7 +343,7 @@ Please find your official passbook PDF statement attached.
                     ),
                     child: const Icon(Icons.gavel_outlined, color: Colors.deepOrange),
                   ),
-                  title: const Text("₹100 Stamp Paper Margin (బాండ్ పేపర్)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  title: const Text("₹100 Stamp Paper Margin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   subtitle: const Text("Leaves top 3.3 inches for government stamp paper emblem", style: TextStyle(fontSize: 11)),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () => _generateAndShowBond(true),

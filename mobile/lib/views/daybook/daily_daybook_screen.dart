@@ -189,7 +189,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
     return Scaffold(
       backgroundColor: isDark ? FinTheme.bgDark : FinTheme.bgLight,
       appBar: AppBar(
-        title: const Text("Daily Cash Daybook (నిత్య క్యాష్ బుక్)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text("Daily Cash Daybook", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
@@ -269,7 +269,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                       children: [
                         Expanded(
                           child: _buildMetricTile(
-                            title: "Disbursed (ఇచ్చినవి)",
+                            title: "Disbursed",
                             amount: cashDisbursed,
                             icon: Icons.arrow_outward_rounded,
                             color: FinTheme.danger,
@@ -279,7 +279,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildMetricTile(
-                            title: "Cash Collected (వసూలు)",
+                            title: "Cash Collected",
                             amount: cashCollected,
                             icon: Icons.south_west_rounded,
                             color: FinTheme.success,
@@ -293,7 +293,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                       children: [
                         Expanded(
                           child: _buildMetricTile(
-                            title: "UPI / Bank (ఆన్‌లైన్)",
+                            title: "UPI / Bank",
                             amount: onlineCollected,
                             icon: Icons.account_balance_wallet_outlined,
                             color: FinTheme.primary,
@@ -303,7 +303,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildMetricTile(
-                            title: "Cash Box (గల్లా పెట్టె)",
+                            title: "Cash Box",
                             amount: netDrawerCash,
                             icon: Icons.savings_outlined,
                             color: Colors.deepPurpleAccent,
@@ -332,7 +332,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                                 children: [
                                   Icon(Icons.calculate_outlined, size: 18, color: FinTheme.primary),
                                   SizedBox(width: 6),
-                                  Text("Physical Cash Drawer Tally (గల్లా లెక్క)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text("Physical Cash Drawer Tally", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 ],
                               ),
                               Text("Closing 8:00 PM", style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : Colors.black54)),
@@ -344,7 +344,7 @@ class _DailyDaybookScreenState extends State<DailyDaybookScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("Opening Cash in Box (ఉదయం మొదలు):", style: TextStyle(fontSize: 12)),
+                              const Text("Opening Cash in Box:", style: TextStyle(fontSize: 12)),
                               SizedBox(
                                 width: 110,
                                 height: 36,

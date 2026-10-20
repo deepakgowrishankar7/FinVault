@@ -390,7 +390,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildTile(
               icon: Icons.lock_outline,
-              title: "Lock Vault Screen (లాక్ చేయండి)",
+              title: "Lock Vault Screen",
               subtitle: "Instantly lock app and require 4-digit PIN / fingerprint to unlock",
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
@@ -403,7 +403,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildTile(
               icon: Icons.logout_rounded,
-              title: "Logout from Device (లాగౌట్)",
+              title: "Logout from Device",
               subtitle: "Sign out of Vault ID ${_settings.vaultId} safely and return to Welcome screen",
               trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: FinTheme.danger),
               onTap: () async {

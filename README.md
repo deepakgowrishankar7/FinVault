@@ -44,7 +44,7 @@
 ## ✨ Key Highlights & Features
 
 ### 🪙 Dual Lending Interest Models
-* **Village Rupee Interest (Vaddi Model / వడ్డీ విధానం):**  
+* **Village Rupee Interest (Vaddi Model):**  
   Standard rural and micro-finance calculation based on rupees per month per ₹100 principal (e.g., ₹1, ₹1.5, ₹2, ₹3 per ₹100/mo).
 * **Bank Reducing Balance EMI:**  
   Standard monthly compounding EMI with transparent principal-to-interest split amortization schedules.
@@ -54,7 +54,7 @@
 ### 🌐 5 Indian Regional Languages
 Fully localized with dynamic, instant language switching without restarting the app:
 * **English**
-* **Telugu (తెలుగు)**
+* **Telugu**
 * **Hindi (हिंदी)**
 * **Tamil (தமிழ்)**
 * **Kannada (ಕನ್ನಡ)**
