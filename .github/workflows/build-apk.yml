@@ -65,12 +65,6 @@ jobs:
 
           # Ensure minSdkVersion 24 in build.gradle
           sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' android/app/build.gradle* || true
-
-          if [ -f "android/app/build.gradle.kts" ]; then
-            sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig = signingConfigs.getByName("debug")\n        }/' android/app/build.gradle.kts || true
-          elif [ -f "android/app/build.gradle" ]; then
-            sed -i 's/buildTypes {/buildTypes {\n        release {\n            signingConfig signingConfigs.debug\n        }/' android/app/build.gradle || true
-          fi
           chmod +x android/gradlew || true
 
       - name: Inject Permissions into Manifest
@@ -99,6 +93,18 @@ jobs:
         with:
           name: android-build-log
           path: mobile/build.log
+
+      - name: Post Failure Log to Commit Comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOG_CONTENT=$(tail -n 80 mobile/build.log 2>/dev/null || tail -n 80 build.log 2>/dev/null || echo "No log found")
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+            -f body="### ❌ Android Build Failure:
+          \`\`\`text
+          $LOG_CONTENT
+          \`\`\`" || true
 
       - name: Prepare Android Output
         run: |
@@ -151,18 +157,16 @@ jobs:
         working-directory: mobile
         shell: pwsh
         run: |
-          flutter analyze
-          $proc = Start-Process -FilePath "flutter.bat" -ArgumentList "build", "windows", "--release" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "build_win.log" -RedirectStandardError "build_win_err.log"
-          if ($proc.ExitCode -ne 0) {
-            "### ❌ Windows Build Error" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-            '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-            if (Test-Path "build_win_err.log") { Get-Content "build_win_err.log" -Tail 60 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8 }
-            if (Test-Path "build_win.log") { Get-Content "build_win.log" -Tail 60 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8 }
-            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-            if (Test-Path "build_win_err.log") { Get-Content "build_win_err.log" -Tail 60 }
-            if (Test-Path "build_win.log") { Get-Content "build_win.log" -Tail 60 }
-            exit 1
-          }
+          flutter config --no-analytics
+          flutter build windows --release
+
+      - name: Post Windows Failure to Commit Comment
+        if: failure()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -f body="### ❌ Windows Build Failed on Windows Runner" || true
 
       - name: Package Windows Desktop ZIP
         shell: pwsh
