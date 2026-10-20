@@ -22,7 +22,7 @@ class FinPdfViewerScreen extends StatelessWidget {
     final exists = file.existsSync();
 
     return Scaffold(
-      backgroundColor: isDark ? FinTheme.backgroundDark : FinTheme.backgroundLight,
+      backgroundColor: isDark ? FinTheme.bgDark : FinTheme.bgLight,
       appBar: AppBar(
         title: Text(
           title,
