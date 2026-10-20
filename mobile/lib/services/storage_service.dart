@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -26,6 +27,48 @@ class StorageService {
   static const String _loansKey = 'finvault_loans_v1';
   static const String _settingsKey = 'finvault_settings_v1';
 
+  /// Safely merges loans by their millisecond creation timestamp (preserving multi-loan borrowers)
+  static List<Loan> deduplicateLoans(List<Loan> loans) {
+    if (loans.length <= 1) return loans;
+    final Map<String, Loan> byCreatedOrId = {};
+
+    for (var l in loans) {
+      final key = l.created > 0 ? "c_${l.created}" : "id_${l.id}";
+
+      if (!byCreatedOrId.containsKey(key)) {
+        byCreatedOrId[key] = l;
+      } else {
+        final existing = byCreatedOrId[key]!;
+        final paymentsMap = {for (var p in existing.payments) p.id: p};
+        for (var p in l.payments) {
+          paymentsMap[p.id] = p;
+        }
+        final mergedPayments = paymentsMap.values.toList()
+          ..sort((a, b) => b.id.compareTo(a.id));
+
+        final bestId = (l.created > 0) ? l.created.toString() : existing.id;
+
+        byCreatedOrId[key] = Loan(
+          id: bestId,
+          borrower: existing.borrower,
+          phone: existing.phone,
+          whatsappPhone: existing.whatsappPhone.isNotEmpty ? existing.whatsappPhone : l.whatsappPhone,
+          documentProofs: {...existing.documentProofs, ...l.documentProofs}.toList(),
+          principal: existing.principal,
+          interest: existing.interest,
+          tenure: existing.tenure,
+          model: existing.model,
+          startDate: existing.startDate,
+          created: existing.created > 0 ? existing.created : l.created,
+          notes: existing.notes?.isNotEmpty == true ? existing.notes : l.notes,
+          legacyPaid: max(existing.legacyPaid, l.legacyPaid),
+          payments: mergedPayments,
+        );
+      }
+    }
+    return byCreatedOrId.values.toList();
+  }
+
   static Future<List<Loan>> getLoans() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_loansKey);
@@ -34,7 +77,12 @@ class StorageService {
     }
     try {
       final list = jsonDecode(raw) as List;
-      return list.map((item) => Loan.fromJson(Map<String, dynamic>.from(item))).toList();
+      final parsed = list.map((item) => Loan.fromJson(Map<String, dynamic>.from(item))).toList();
+      final deduped = deduplicateLoans(parsed);
+      if (deduped.length != parsed.length) {
+        await saveLoans(deduped);
+      }
+      return deduped;
     } catch (_) {
       return [];
     }

@@ -72,13 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final remoteLoans = await SupabaseService.pullLoans(vaultId);
       if (remoteLoans != null && remoteLoans.isNotEmpty) {
-        final mergedMap = {for (var l in _loans) l.id: l};
-        for (var r in remoteLoans) {
-          mergedMap[r.id] = r;
-        }
-        final mergedList = mergedMap.values.toList();
+        final mergedList = StorageService.deduplicateLoans([..._loans, ...remoteLoans]);
         await StorageService.saveLoans(mergedList);
         setState(() => _loans = mergedList);
+        await SupabaseService.pushLoans(mergedList, vaultId);
       } else if (_loans.isNotEmpty) {
         await SupabaseService.pushLoans(_loans, vaultId);
       }

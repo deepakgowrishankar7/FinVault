@@ -216,8 +216,9 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
         );
       }
     } else {
+      final nowTs = DateTime.now().millisecondsSinceEpoch;
       final newLoan = Loan(
-        id: "L-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}",
+        id: nowTs.toString(),
         borrower: _borrowerCtrl.text.trim(),
         phone: callingPhone,
         whatsappPhone: waPhone,
@@ -227,7 +228,7 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
         tenure: _currentTenure,
         model: _model,
         startDate: DateFormat('yyyy-MM-dd').format(_startDate),
-        created: DateTime.now().millisecondsSinceEpoch,
+        created: nowTs,
         notes: _notesCtrl.text.trim(),
         payments: [],
       );

@@ -65,7 +65,9 @@ class SupabaseService {
         if (!map.containsKey('interest') && map.containsKey('rate')) {
           map['interest'] = map['rate'];
         }
-        map['id'] = map['id'].toString();
+        final createdVal = map['created'] != null ? int.tryParse(map['created'].toString()) ?? 0 : 0;
+        final idVal = map['id']?.toString() ?? createdVal.toString();
+        map['id'] = (createdVal > 0) ? createdVal.toString() : idVal;
         if (map['notes'] != null) {
           map['notes'] = map['notes'].toString().replaceAll(RegExp(r'\s*\[vault:[^\]]+\]'), '').trim();
         }
@@ -85,7 +87,7 @@ class SupabaseService {
 
     try {
       final rows = loans.map((l) {
-        final rawId = int.tryParse(l.id) ?? l.id.hashCode.abs();
+        final rawId = l.created > 0 ? l.created : (int.tryParse(l.id) ?? l.id.hashCode.abs());
         final baseNotes = (l.notes ?? '').replaceAll(RegExp(r'\s*\[vault:[^\]]+\]'), '').trim();
         return {
           'id': rawId,
@@ -96,7 +98,7 @@ class SupabaseService {
           'tenure': l.tenure,
           'model': l.model,
           'startDate': l.startDate,
-          'created': l.created,
+          'created': l.created > 0 ? l.created : rawId,
           'notes': "$baseNotes [vault:$vaultId]".trim(),
           'payments': l.payments.map((p) => p.toJson()).toList(),
         };

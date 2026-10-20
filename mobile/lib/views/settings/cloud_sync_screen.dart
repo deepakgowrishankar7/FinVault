@@ -196,18 +196,17 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
     final remoteLoans = await SupabaseService.pullLoans(vaultId);
 
     if (remoteLoans != null && remoteLoans.isNotEmpty) {
-      final mergedMap = {for (var l in localLoans) l.id: l};
-      for (var r in remoteLoans) {
-        mergedMap[r.id] = r;
-      }
-      final mergedList = mergedMap.values.toList();
+      final mergedList = StorageService.deduplicateLoans([...localLoans, ...remoteLoans]);
       await StorageService.saveLoans(mergedList);
-      await SupabaseService.pushLoans(mergedList, vaultId);
+      final ok = await SupabaseService.pushLoans(mergedList, vaultId);
+      final fresh = await SupabaseService.pullLoans(vaultId);
       setState(() {
-        _cloudCount = mergedList.length;
-        _isHealthy = true;
+        _cloudCount = fresh?.length ?? (ok ? mergedList.length : 0);
+        _isHealthy = ok;
         _isSyncing = false;
-        _statusMessage = "Synchronized $_cloudCount loans for Vault: $vaultId";
+        _statusMessage = ok
+            ? "Synchronized $_cloudCount loans for Vault: $vaultId"
+            : "Connected to cloud. Operating in local mode.";
       });
     } else if (localLoans.isNotEmpty) {
       final ok = await SupabaseService.pushLoans(localLoans, vaultId);
