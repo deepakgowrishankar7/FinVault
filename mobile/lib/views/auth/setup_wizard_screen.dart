@@ -100,7 +100,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       // Pull loans from Supabase cloud database
       final remoteLoans = await SupabaseService.pullLoans(vaultCode);
 
-      if (remoteLoans.isNotEmpty) {
+      if (remoteLoans != null && remoteLoans.isNotEmpty) {
         await StorageService.saveLoans(remoteLoans);
       }
 
@@ -120,11 +120,12 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       await StorageService.saveSettings(newSettings);
 
       if (!mounted) return;
+      final loanCount = remoteLoans?.length ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            remoteLoans.isNotEmpty
-                ? "✨ Connected! Restored ${remoteLoans.length} loans for $vaultCode"
+            loanCount > 0
+                ? "✨ Connected! Restored $loanCount loans for $vaultCode"
                 : "✨ Connected to Vault $vaultCode! (Ledger is ready)",
           ),
           backgroundColor: FinTheme.success,
