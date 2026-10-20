@@ -52,9 +52,16 @@ jobs:
       - name: Get Packages & Build Android APK
         working-directory: mobile
         run: |
-          set -o pipefail
           flutter pub get
-          flutter build apk --release --no-tree-shake-icons -v
+          flutter analyze || true
+          if ! flutter build apk --release --no-tree-shake-icons > build.log 2>&1; then
+            echo "### ❌ Android Build Error" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 100 build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat build.log
+            exit 1
+          fi
 
       - name: Prepare Android Output
         run: |
@@ -107,7 +114,18 @@ jobs:
         working-directory: mobile
         shell: pwsh
         run: |
-          flutter build windows --release
+          flutter analyze
+          $proc = Start-Process -FilePath "flutter.bat" -ArgumentList "build", "windows", "--release" -NoNewWindow -PassThru -Wait -RedirectStandardOutput "build_win.log" -RedirectStandardError "build_win_err.log"
+          if ($proc.ExitCode -ne 0) {
+            "### ❌ Windows Build Error" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            if (Test-Path "build_win_err.log") { Get-Content "build_win_err.log" -Tail 60 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8 }
+            if (Test-Path "build_win.log") { Get-Content "build_win.log" -Tail 60 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8 }
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            if (Test-Path "build_win_err.log") { Get-Content "build_win_err.log" -Tail 60 }
+            if (Test-Path "build_win.log") { Get-Content "build_win.log" -Tail 60 }
+            exit 1
+          }
 
       - name: Package Windows Desktop ZIP
         shell: pwsh

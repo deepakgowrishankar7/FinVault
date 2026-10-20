@@ -38,7 +38,7 @@ android {
 
     defaultConfig {
         applicationId "com.finvault.dgsfinance"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
