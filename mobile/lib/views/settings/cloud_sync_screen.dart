@@ -54,6 +54,28 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
   }
 
   Future<void> _checkHealth() async {
+    if (!_enabled) {
+      setState(() {
+        _isHealthy = false;
+        _isSyncing = false;
+        _statusMessage = "Cloud sync is disabled. All loan ledgers are stored strictly offline on this device.";
+      });
+      return;
+    }
+
+    if (_useCustomCloud) {
+      final url = _customUrlCtrl.text.trim();
+      final key = _customKeyCtrl.text.trim();
+      if (url.isEmpty || key.isEmpty) {
+        setState(() {
+          _isHealthy = false;
+          _isSyncing = false;
+          _statusMessage = "Custom cloud is selected, but Supabase URL or Key is empty. Please enter credentials and test connection below.";
+        });
+        return;
+      }
+    }
+
     setState(() => _isSyncing = true);
     final connected = await SupabaseService.init(settings: widget.settings);
     if (connected) {
@@ -81,7 +103,16 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
     widget.onSettingsUpdated(updated);
 
     if (value) {
-      _syncNow();
+      await _checkHealth();
+      if (_isHealthy) {
+        _syncNow();
+      }
+    } else {
+      setState(() {
+        _isHealthy = false;
+        _isSyncing = false;
+        _statusMessage = "Cloud sync is disabled. All loan ledgers are stored strictly offline on this device.";
+      });
     }
   }
 
@@ -139,6 +170,16 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
   }
 
   Future<void> _syncNow() async {
+    if (!_enabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cloud sync is turned off. Enable the toggle above to sync."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSyncing = true);
     final connected = await SupabaseService.init(settings: widget.settings);
     if (!connected) {
@@ -536,14 +577,18 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _isHealthy
-                    ? FinTheme.success.withOpacity(0.08)
-                    : (isDark ? FinTheme.cardDark : Colors.white),
+                color: !_enabled
+                    ? (isDark ? const Color(0xFF1E2838) : const Color(0xFFF1F5F9))
+                    : (_isHealthy
+                        ? FinTheme.success.withOpacity(0.08)
+                        : FinTheme.danger.withOpacity(0.08)),
                 borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
                 border: Border.all(
-                  color: _isHealthy
-                      ? FinTheme.success.withOpacity(0.3)
-                      : (isDark ? FinTheme.borderDark : FinTheme.borderLight),
+                  color: !_enabled
+                      ? (isDark ? FinTheme.borderDark : FinTheme.borderLight)
+                      : (_isHealthy
+                          ? FinTheme.success.withOpacity(0.3)
+                          : FinTheme.danger.withOpacity(0.3)),
                 ),
               ),
               child: Column(
@@ -552,17 +597,25 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
                   Row(
                     children: [
                       Icon(
-                        _isHealthy ? Icons.check_circle : Icons.cloud_off,
-                        color: _isHealthy ? FinTheme.success : Colors.grey,
+                        !_enabled
+                            ? Icons.lock_outline
+                            : (_isHealthy ? Icons.check_circle : Icons.cloud_off),
+                        color: !_enabled
+                            ? Colors.grey
+                            : (_isHealthy ? FinTheme.success : FinTheme.danger),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isHealthy ? "Connected & Healthy" : "Offline Mode",
+                        !_enabled
+                            ? "Offline Only (Cloud Sync Disabled)"
+                            : (_isHealthy ? "Connected & Healthy" : "Connection Offline"),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: _isHealthy ? FinTheme.success : Colors.grey,
+                          color: !_enabled
+                              ? Colors.grey
+                              : (_isHealthy ? FinTheme.success : FinTheme.danger),
                         ),
                       ),
                     ],
@@ -576,7 +629,7 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
                       color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
-                  if (_isHealthy) ...[
+                  if (_enabled && _isHealthy) ...[
                     const SizedBox(height: 14),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -596,16 +649,29 @@ class _CloudSyncScreenState extends State<CloudSyncScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isSyncing ? null : _syncNow,
+                onPressed: _isSyncing
+                    ? null
+                    : (!_enabled
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please enable the Cloud Synchronization toggle above first."),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        : _syncNow),
                 icon: _isSyncing
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.cloud_sync),
+                    : Icon(_enabled ? Icons.cloud_sync : Icons.lock_outline),
                 label: Text(
-                  _isSyncing ? "Synchronizing with Cloud..." : "☁️ Sync Now Across Devices",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  _isSyncing
+                      ? "Synchronizing with Cloud..."
+                      : (_enabled ? "☁️ Sync Now Across Devices" : "Cloud Sync Disabled (Operating 100% Offline)"),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: FinTheme.primary,
+                  backgroundColor: _enabled ? FinTheme.primary : (isDark ? const Color(0xFF2D3748) : const Color(0xFF94A3B8)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),

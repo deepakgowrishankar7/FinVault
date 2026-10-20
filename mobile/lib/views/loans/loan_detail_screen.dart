@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/loan.dart';
 import '../../models/user_role.dart';
@@ -75,6 +77,118 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
       all.removeWhere((l) => l.id == _currentLoan.id);
       await StorageService.saveLoans(all);
       if (mounted) Navigator.pop(context, true);
+    }
+  }
+
+  String _getDocDisplayName(String pathOrName) {
+    final sep = pathOrName.contains('/') ? '/' : '\\';
+    final name = pathOrName.split(sep).last;
+    return name.replaceFirst(RegExp(r'^\d+_'), '');
+  }
+
+  bool _isImagePath(String pathOrName) {
+    final lower = pathOrName.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic');
+  }
+
+  void _showFullImageViewer(BuildContext context, String docPath, String displayName) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          backgroundColor: isDark ? const Color(0xFF131B2E) : Colors.white,
+          insetPadding: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.image, size: 18, color: FinTheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.65,
+                    maxWidth: 700,
+                  ),
+                  color: Colors.black,
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.8,
+                    maxScale: 5.0,
+                    child: Center(
+                      child: Image.file(
+                        File(docPath),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text("Could not render image file", style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Pinch or scroll to zoom", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Share.shareXFiles([XFile(docPath)], text: "FinVault Document: $displayName");
+                      },
+                      icon: const Icon(Icons.share, size: 16),
+                      label: const Text("Share / Save", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FinTheme.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openDocument(BuildContext context, String docPath, String displayName) {
+    final file = File(docPath);
+    if (file.existsSync()) {
+      Share.shareXFiles([XFile(docPath)], text: "FinVault Document: $displayName");
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("File not found on local storage: $displayName")),
+      );
     }
   }
 
@@ -234,7 +348,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                     if (loan.documentProofs.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: isDark ? FinTheme.cardDark : Colors.white,
                           borderRadius: BorderRadius.circular(FinTheme.radiusMedium),
@@ -243,23 +357,139 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> with SingleTickerPr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(Icons.attach_file, size: 16, color: FinTheme.primary),
-                                SizedBox(width: 6),
-                                Text("Attached Proof Documents", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                const Row(
+                                  children: [
+                                    Icon(Icons.folder_shared_outlined, size: 16, color: FinTheme.primary),
+                                    SizedBox(width: 6),
+                                    Text("Proof & KYC Documents", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: FinTheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    "${loan.documentProofs.length} Attached",
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: FinTheme.primary),
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: loan.documentProofs.map((doc) {
-                                return Chip(
-                                  avatar: const Icon(Icons.description_outlined, size: 14, color: FinTheme.primary),
-                                  label: Text(doc, style: const TextStyle(fontSize: 11)),
-                                  backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: loan.documentProofs.map((docPath) {
+                                final displayName = _getDocDisplayName(docPath);
+                                final isImage = _isImagePath(docPath);
+                                final file = File(docPath);
+                                final exists = file.existsSync();
+
+                                if (isImage && exists) {
+                                  return InkWell(
+                                    onTap: () => _showFullImageViewer(context, docPath, displayName),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
+                                      ),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(11),
+                                            child: Image.file(
+                                              file,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => const Center(
+                                                child: Icon(Icons.broken_image, size: 28, color: Colors.grey),
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withOpacity(0.65),
+                                                borderRadius: const BorderRadius.only(
+                                                  bottomLeft: Radius.circular(11),
+                                                  bottomRight: Radius.circular(11),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.zoom_in, size: 12, color: Colors.white),
+                                                  const SizedBox(width: 2),
+                                                  Expanded(
+                                                    child: Text(
+                                                      displayName,
+                                                      style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                return InkWell(
+                                  onTap: () => _openDocument(context, docPath, displayName),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          displayName.toLowerCase().endsWith('.pdf') ? Icons.picture_as_pdf : Icons.description,
+                                          size: 20,
+                                          color: displayName.toLowerCase().endsWith('.pdf') ? Colors.redAccent : FinTheme.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 160),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                displayName,
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const Text("Tap to view / share", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.share, size: 14, color: Colors.grey),
+                                      ],
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                             ),

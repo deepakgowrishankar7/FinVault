@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
 import '../../theme/app_locale.dart';
@@ -308,9 +309,26 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDesktop = MediaQuery.of(context).size.width > 700;
 
-    return Scaffold(
-      backgroundColor: isDark ? FinTheme.bgDark : Colors.white,
-      body: SafeArea(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.backspace) {
+            _onBackspace();
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+            _onClear();
+            return KeyEventResult.handled;
+          } else if (event.character != null && RegExp(r'^[0-9]$').hasMatch(event.character!)) {
+            _onKeyPress(event.character!);
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? FinTheme.bgDark : Colors.white,
+        body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
@@ -589,7 +607,25 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
                 ],
               ),
 
-              const SizedBox(height: 16),
+              if (isDesktop) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.keyboard_outlined, size: 14, color: isDark ? Colors.white54 : Colors.black45),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Type 4-digit PIN with your laptop keyboard",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white54 : Colors.black45,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 12),
 
               TextButton(
                 onPressed: _showRecoveryDialog,
@@ -606,6 +642,7 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     ),
   ),
 ),
+      ),
     );
   }
 

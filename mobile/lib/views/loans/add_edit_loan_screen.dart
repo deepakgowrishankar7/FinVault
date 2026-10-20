@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../models/loan.dart';
 import '../../models/user_role.dart';
 import '../../services/storage_service.dart';
@@ -121,6 +123,21 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
 
   double get _computedTotalInterest => (_computedTotalPayable - _currentPrincipal).clamp(0.0, double.infinity);
 
+  String _getDocDisplayName(String pathOrName) {
+    final sep = pathOrName.contains('/') ? '/' : '\\';
+    final name = pathOrName.split(sep).last;
+    return name.replaceFirst(RegExp(r'^\d+_'), '');
+  }
+
+  bool _isImagePath(String pathOrName) {
+    final lower = pathOrName.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic');
+  }
+
   Future<void> _pickDocuments() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -129,19 +146,43 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
       );
 
       if (result != null && result.files.isNotEmpty) {
+        final appDir = await getApplicationDocumentsDirectory();
+        final proofsDir = Directory('${appDir.path}/finvault_proofs');
+        if (!await proofsDir.exists()) {
+          await proofsDir.create(recursive: true);
+        }
+
         setState(() {
           for (final f in result.files) {
-            final name = f.name;
-            if (!_documentProofs.contains(name)) {
-              _documentProofs.add(name);
+            String savedPath = '';
+            final cleanName = f.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final targetPath = '${proofsDir.path}/${timestamp}_$cleanName';
+
+            if (f.path != null && File(f.path!).existsSync()) {
+              File(f.path!).copySync(targetPath);
+              savedPath = targetPath;
+            } else if (f.bytes != null) {
+              File(targetPath).writeAsBytesSync(f.bytes!);
+              savedPath = targetPath;
+            } else if (f.path != null) {
+              savedPath = f.path!;
+            } else {
+              savedPath = f.name;
+            }
+
+            if (savedPath.isNotEmpty && !_documentProofs.contains(savedPath)) {
+              _documentProofs.add(savedPath);
             }
           }
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Could not pick file: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Could not pick file: $e")),
+        );
+      }
     }
   }
 
@@ -492,19 +533,67 @@ class _AddEditLoanScreenState extends State<AddEditLoanScreen> {
                       )
                     else
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _documentProofs.map((doc) {
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: _documentProofs.map((docPath) {
+                          final displayName = _getDocDisplayName(docPath);
+                          final isImage = _isImagePath(docPath);
+                          final file = File(docPath);
+                          final exists = file.existsSync();
+
+                          if (isImage && exists) {
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: isDark ? FinTheme.borderDark : const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(9),
+                                    child: Image.file(
+                                      file,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 28),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: -6,
+                                  right: -6,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _documentProofs.remove(docPath)),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(
+                                        color: FinTheme.danger,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
                           return Chip(
-                            avatar: const Icon(Icons.attach_file, size: 14, color: FinTheme.primary),
+                            avatar: Icon(
+                              isImage ? Icons.image_outlined : Icons.description_outlined,
+                              size: 14,
+                              color: FinTheme.primary,
+                            ),
                             label: Text(
-                              doc,
+                              displayName,
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                             deleteIcon: const Icon(Icons.close, size: 14),
                             onDeleted: () {
-                              setState(() => _documentProofs.remove(doc));
+                              setState(() => _documentProofs.remove(docPath));
                             },
                             backgroundColor: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

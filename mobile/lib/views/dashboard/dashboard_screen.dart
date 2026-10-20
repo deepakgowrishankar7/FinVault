@@ -110,13 +110,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     ];
 
-    return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1080),
-          child: pages[_currentIndex],
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 750;
+
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            _buildDesktopSidebar(isDark),
+            Expanded(
+              child: pages[_currentIndex],
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    return Scaffold(
+      body: pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? FinTheme.cardDark : Colors.white,
@@ -127,44 +138,209 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1080),
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: (index) => setState(() => _currentIndex = index),
-              backgroundColor: Colors.transparent,
-              type: BottomNavigationBarType.fixed,
-              elevation: 0,
-              selectedItemColor: FinTheme.primary,
-              unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
-              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontSize: 12),
-              items: [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.dashboard_outlined),
-                  activeIcon: const Icon(Icons.dashboard),
-                  label: _t('overview'),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          backgroundColor: Colors.transparent,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          selectedItemColor: FinTheme.primary,
+          unselectedItemColor: isDark ? FinTheme.textDarkSecondary : FinTheme.textLightSecondary,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.dashboard_outlined),
+              activeIcon: const Icon(Icons.dashboard),
+              label: _t('overview'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              activeIcon: const Icon(Icons.account_balance_wallet),
+              label: _t('loans'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.calculate_outlined),
+              activeIcon: const Icon(Icons.calculate),
+              label: _t('calculator'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: _t('settings'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopSidebar(bool isDark) {
+    final navItems = [
+      {'icon': Icons.dashboard_outlined, 'activeIcon': Icons.dashboard, 'label': _t('overview')},
+      {'icon': Icons.account_balance_wallet_outlined, 'activeIcon': Icons.account_balance_wallet, 'label': _t('loans')},
+      {'icon': Icons.calculate_outlined, 'activeIcon': Icons.calculate, 'label': _t('calculator')},
+      {'icon': Icons.settings_outlined, 'activeIcon': Icons.settings, 'label': _t('settings')},
+    ];
+
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF131B2E) : Colors.white,
+        border: Border(
+          right: BorderSide(
+            color: isDark ? FinTheme.borderDark : FinTheme.borderLight,
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Branding Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 38,
+                    height: 38,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.account_balance_wallet_outlined),
-                  activeIcon: const Icon(Icons.account_balance_wallet),
-                  label: _t('loans'),
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.calculate_outlined),
-                  activeIcon: const Icon(Icons.calculate),
-                  label: _t('calculator'),
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.settings_outlined),
-                  activeIcon: const Icon(Icons.settings),
-                  label: _t('settings'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _currentSettings.firmName.isNotEmpty ? _currentSettings.firmName : "FinVault",
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentSettings.cloudSyncEnabled ? FinTheme.success : Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.role == UserRole.admin ? "ADMIN DESKTOP" : "STAFF PORTAL",
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: FinTheme.primary,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+
+          // Navigation Links
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: navItems.length,
+              itemBuilder: (context, index) {
+                final item = navItems[index];
+                final isSelected = _currentIndex == index;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => setState(() => _currentIndex = index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected ? FinTheme.primary.withOpacity(0.12) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: isSelected
+                              ? Border.all(color: FinTheme.primary.withOpacity(0.35))
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isSelected ? item['activeIcon'] as IconData : item['icon'] as IconData,
+                              color: isSelected ? FinTheme.primary : (isDark ? Colors.white60 : Colors.black54),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                item['label'] as String,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? FinTheme.primary : (isDark ? Colors.white70 : Colors.black87),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Bottom Actions
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                if (_isSyncing)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 8),
+                        Text("Syncing Cloud...", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PasscodeScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.lock_outline, size: 16),
+                  label: const Text("Lock Vault", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(42),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
