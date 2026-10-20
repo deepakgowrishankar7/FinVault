@@ -298,6 +298,44 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
     );
   }
 
+  Future<void> _confirmResetVault() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.restart_alt, color: FinTheme.danger),
+            SizedBox(width: 8),
+            Text("Start Fresh Setup Wizard?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          "Are you testing or setting up a new firm?\n\nThis will clear the local vault cache on this laptop and restart the First-Time Setup Wizard (Master Admin & Field Agent onboarding).",
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: FinTheme.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Reset & Run Setup Wizard", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await StorageService.resetAllData();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const SetupWizardScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -627,12 +665,30 @@ class _PasscodeScreenState extends State<PasscodeScreen> {
 
               const SizedBox(height: 12),
 
-              TextButton(
-                onPressed: _showRecoveryDialog,
-                child: const Text(
-                  "Forgot Passcode?",
-                  style: TextStyle(fontSize: 13, color: FinTheme.primary, fontWeight: FontWeight.w600),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: _showRecoveryDialog,
+                    child: const Text(
+                      "Forgot Passcode?",
+                      style: TextStyle(fontSize: 13, color: FinTheme.primary, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (isDesktop) ...[
+                    const SizedBox(width: 4),
+                    const Text("•", style: TextStyle(color: Colors.grey)),
+                    const SizedBox(width: 4),
+                    TextButton.icon(
+                      onPressed: _confirmResetVault,
+                      icon: const Icon(Icons.restart_alt, size: 14, color: Colors.grey),
+                      label: const Text(
+                        "Fresh Setup / Reset",
+                        style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 10),
             ],

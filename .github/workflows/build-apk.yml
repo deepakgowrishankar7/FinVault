@@ -93,6 +93,14 @@ jobs:
         run: |
           flutter config --enable-windows-desktop
           flutter create . --org com.finvault --project-name finvault --platforms windows
+          if (Test-Path "assets/app_icon.ico") {
+            Copy-Item -Path "assets/app_icon.ico" -Destination "windows/runner/resources/app_icon.ico" -Force
+            Write-Host "Replaced Windows app_icon.ico with FinVault logo!"
+          }
+          if (Test-Path "windows/runner/main.cpp") {
+            (Get-Content "windows/runner/main.cpp") -replace 'window\.Create\(L"finvault"', 'window.Create(L"FinVault"' | Set-Content "windows/runner/main.cpp"
+            Write-Host "Set Windows window title to FinVault!"
+          }
           flutter pub get
 
       - name: Build Windows Desktop Release (.exe)

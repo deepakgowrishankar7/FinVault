@@ -8,6 +8,7 @@ import '../../theme/app_locale.dart';
 import 'team_management_screen.dart';
 import 'cloud_sync_screen.dart';
 import '../auth/passcode_screen.dart';
+import '../auth/setup_wizard_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -324,6 +325,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       content: Text("⚠️ ${result.message}"),
                       backgroundColor: FinTheme.danger,
                     ),
+                  );
+                }
+              },
+              isDark: isDark,
+            ),
+            _buildTile(
+              icon: Icons.restart_alt,
+              title: "Reset Vault / Fresh Setup",
+              subtitle: "Clear local cache and restart the initial Setup Wizard",
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: FinTheme.danger),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: FinTheme.danger),
+                        SizedBox(width: 8),
+                        Text("Reset All Data?"),
+                      ],
+                    ),
+                    content: const Text(
+                      "This will clear all local loans, borrower ledgers, and firm settings on this computer, and restart the initial Setup Wizard.\n\nAre you sure you want to proceed?",
+                      style: TextStyle(fontSize: 13, height: 1.4),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: FinTheme.danger),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text("Reset All Data", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && mounted) {
+                  await StorageService.resetAllData();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SetupWizardScreen()),
+                    (route) => false,
                   );
                 }
               },

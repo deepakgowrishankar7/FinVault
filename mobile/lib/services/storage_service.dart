@@ -67,6 +67,12 @@ class StorageService {
     await prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
   }
 
+  /// Wipes all local preferences and loans to start a fresh Setup Wizard
+  static Future<void> resetAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
   /* ----------------- Export Functions ----------------- */
 
   /// Export complete encrypted FinVault file (.finvault)
